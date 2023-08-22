@@ -1,0 +1,9 @@
+import : main
+
+sources:
+    - src/syn/top.sv
+    - src/syn/pcie_wrapper.sv
+    - src/syn/time_meashure_wrapper.sv
+#    - src/syn/axi_if.svh
+#    - src/syn/system.svh
+    - src/syn/time_meashure.v

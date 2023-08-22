@@ -1,0 +1,4 @@
+type   : axi_protocol_converter
+
+config :
+    DATA_WIDTH : 64

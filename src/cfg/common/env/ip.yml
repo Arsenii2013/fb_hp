@@ -1,0 +1,4 @@
+
+sources:
+    - ip/pcie.yml
+    - ip/axi_protocol_converter.yml
