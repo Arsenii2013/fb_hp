@@ -37,7 +37,7 @@ module top(
         input  logic    clock,
         input  logic    reset_n
     );
-    axi4_lite_if axi();
+    axi4_lite_if #(.DW(32), .AW(32)) axi();
     
     pcie_wrapper pcie_i(
         `ifndef SYNTHESIS
@@ -75,10 +75,17 @@ module top(
         .clk_out(),
         .axi
     );
-    
+    /*
     time_meashure_wrapper
      # (.AW(32), .DW(64))
     time_meashure_i (
+        .aclk(clock),
+        .aresetn(reset_n),
+        .axi
+    );*/
+
+    mem_wrapper
+    mem_i (
         .aclk(clock),
         .aresetn(reset_n),
         .axi

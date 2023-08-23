@@ -287,6 +287,9 @@ module time_meashure #
 	    end 
 	  else
 	    begin    
+          if(axi_awready || S_AXI_AWVALID )
+            $display("%x, %x, %x, %x, %x, %x", axi_awready, S_AXI_AWVALID, ~axi_bvalid, axi_wready, S_AXI_WVALID, 
+                                           axi_awready && S_AXI_AWVALID && ~axi_bvalid && axi_wready && S_AXI_WVALID);
 	      if (axi_awready && S_AXI_AWVALID && ~axi_bvalid && axi_wready && S_AXI_WVALID)
 	        begin
 	          // indicates a valid write response is available

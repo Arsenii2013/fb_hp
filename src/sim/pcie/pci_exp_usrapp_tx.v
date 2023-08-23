@@ -306,6 +306,9 @@ end
   reg expect_finish_check;
   reg test_failed_flag;
 
+      
+  integer recv_data;  
+
   initial begin
     if ($value$plusargs("TESTNAME=%s", testname))
       $display("Running test {%0s}......", testname);
@@ -2952,6 +2955,63 @@ endtask   // TSK_MEM_TEST_DEVICE
 	endfunction // FNC_CONVERT_RANGE_TO_SIZE_HI32
 
 
+
+task automatic pci_e_write(input [2:0] bar, input [32:0] addr, input [32:0] data);
+    begin
+    $display("[%t] : Write to Memory 32 Space BAR %x", $realtime, bar);
+
+    //--------------------------------------------------------------------------
+    // Event : Memory Write 32 bit TLP
+    //--------------------------------------------------------------------------
+
+    topTB.RP.tx_usrapp.DATA_STORE[0] = data[7:0];
+    topTB.RP.tx_usrapp.DATA_STORE[1] = data[15:8];
+    topTB.RP.tx_usrapp.DATA_STORE[2] = data[23:16];
+    topTB.RP.tx_usrapp.DATA_STORE[3] = data[32:24];
+
+    topTB.RP.tx_usrapp.TSK_TX_MEMORY_WRITE_32(
+        topTB.RP.tx_usrapp.DEFAULT_TAG,
+        topTB.RP.tx_usrapp.DEFAULT_TC, 
+        10'd1, // one word
+        topTB.RP.tx_usrapp.BAR_INIT_P_BAR[bar][31:0] + addr, 
+        4'h0,  // last word byte enable
+        4'hF,  // first word byte enable
+        1'b0   // endpoint
+    );
+    topTB.RP.tx_usrapp.TSK_TX_CLK_EAT(10);
+    topTB.RP.tx_usrapp.DEFAULT_TAG = topTB.RP.tx_usrapp.DEFAULT_TAG + 1;
+    $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
+    end
+endtask
+
+task automatic pci_e_read(input [2:0] bar, input [32:0] addr, output [32:0] data);
+    begin
+    $display("[%t] : Read from Memory 32 Space BAR %x", $realtime, bar);
+
+    //--------------------------------------------------------------------------
+    // Event : Memory Read 32 bit TLP
+    //--------------------------------------------------------------------------
+
+    // make sure P_READ_DATA has known initial value
+    topTB.RP.tx_usrapp.P_READ_DATA = 32'hffff_ffff;
+    fork
+        topTB.RP.tx_usrapp.TSK_TX_MEMORY_READ_32(
+            topTB.RP.tx_usrapp.DEFAULT_TAG,
+            topTB.RP.tx_usrapp.DEFAULT_TC, 
+            10'd1, // one word
+            topTB.RP.tx_usrapp.BAR_INIT_P_BAR[bar][31:0]+addr, 
+            4'h0,  // last word byte enable
+            4'hF  // first word byte enable
+        );
+        topTB.RP.tx_usrapp.TSK_WAIT_FOR_READ_DATA;
+    join
+    data = topTB.RP.tx_usrapp.P_READ_DATA;
+    topTB.RP.tx_usrapp.TSK_TX_CLK_EAT(10);
+    topTB.RP.tx_usrapp.DEFAULT_TAG = topTB.RP.tx_usrapp.DEFAULT_TAG + 1;
+
+    $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
+    end
+endtask
 
 
 endmodule // pci_exp_usrapp_tx

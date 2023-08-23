@@ -209,6 +209,44 @@ module pcie_wrapper(
       .pci_exp_rxn(pcie_7x_mgt_rxn)
       `endif //SYNTHESIS 
     );
+    /*
+    axi_memory mem(
+        .init_complete_in(1),
+        .init_complete_out(),
+        .aclk(clk_out),
+        .aresetn,
+        .s_axi_awaddr(axi4_awaddr),
+        .s_axi_awlen(axi4_awlen),
+        .s_axi_awsize(axi4_awsize),
+        .s_axi_awburst(axi4_awburst),
+        .s_axi_awprot(axi4_awprot),
+        .s_axi_awvalid(axi4_awvalid),
+        .s_axi_awready(axi4_awready),
+        .s_axi_awlock(axi4_awlock),
+        .s_axi_awcache(axi4_awcache),
+        .s_axi_wdata(axi4_wdata),
+        .s_axi_wstrb(axi4_wstrb),
+        .s_axi_wlast(axi4_wlast),
+        .s_axi_wvalid(axi4_wvalid),
+        .s_axi_wready(axi4_wready),
+        .s_axi_bresp(axi4_bresp),
+        .s_axi_bvalid(axi4_bvalid),
+        .s_axi_bready(axi4_bready),
+        .s_axi_araddr(axi4_araddr),
+        .s_axi_arlen(axi4_arlen),
+        .s_axi_arsize(axi4_arsize),
+        .s_axi_arburst(axi4_arburst),
+        .s_axi_arprot(axi4_arprot),
+        .s_axi_arvalid(axi4_arvalid),
+        .s_axi_arready(axi4_arready),
+        .s_axi_arlock(axi4_arlock),
+        .s_axi_arcache(axi4_arcache),
+        .s_axi_rdata(axi4_rdata),
+        .s_axi_rresp(axi4_rresp),
+        .s_axi_rlast(axi4_rlast),
+        .s_axi_rvalid(axi4_rvalid),
+        .s_axi_rready(axi4_rready)
+    );*/
     
     axi_protocol_converter axi_pcie_protocol_converter_i(
         .aclk(clk_out),

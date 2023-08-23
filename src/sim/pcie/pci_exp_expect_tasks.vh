@@ -1387,6 +1387,3 @@ task TSK_EXPECT_MSG;
     end
   end
 endtask
-
-
-

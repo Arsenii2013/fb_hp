@@ -7,3 +7,4 @@ sources:
 #    - src/syn/axi_if.svh
 #    - src/syn/system.svh
     - src/syn/time_meashure.v
+    - src/syn/mem_wrapper.sv
