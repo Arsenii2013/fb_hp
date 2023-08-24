@@ -1,13 +1,11 @@
 else if(testname == "pio_writeReadBack_test0")
 begin
-
-    // This test performs a 32 bit write to a 32 bit Memory space and performs a read back
-
+    integer asdasdasd;
+    `ifdef PCIE_PIPE_STACK
     topTB.RP.tx_usrapp.TSK_SIMULATION_TIMEOUT(10050);
-
     topTB.RP.tx_usrapp.TSK_SYSTEM_INITIALIZATION;
-
     topTB.RP.tx_usrapp.TSK_BAR_INIT;
+    `endif //PCIE_PIPE_STACK
 
 //--------------------------------------------------------------------------
 // Event : Testing BARs

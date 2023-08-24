@@ -10,3 +10,4 @@ sources:
     - src/sim/pcie/pci_exp_usrapp_tx.v
     - src/sim/pcie/sys_clk_gen.v
     - src/sim/pcie/xilinx_pcie_2_1_rport_7x.v
+    - src/sim/pcie/axi_model.sv

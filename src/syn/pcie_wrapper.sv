@@ -305,8 +305,12 @@ module pcie_wrapper(
         .m_axi_wvalid(axi.wvalid)
     );
     `else // __NEED_PCI_IP
-    // TODO:
-    // AXI4-Lite transaction generator
+    axi_pcie_model axi_pcie_model_i(
+        .REFCLK,
+        .aresetn,
+        .clk_out,
+        .axi
+    );
     `endif // __NEED_PCI_IP
 endmodule
 
