@@ -1,6 +1,8 @@
 else if(testname == "pio_writeReadBack_test0")
 begin
-    integer asdasdasd;
+    integer recv_data;  
+
+
     `ifdef PCIE_PIPE_STACK
     topTB.RP.tx_usrapp.TSK_SIMULATION_TIMEOUT(10050);
     topTB.RP.tx_usrapp.TSK_SYSTEM_INITIALIZATION;

@@ -306,9 +306,6 @@ end
   reg expect_finish_check;
   reg test_failed_flag;
 
-      
-  integer recv_data;  
-
   initial begin
     if ($value$plusargs("TESTNAME=%s", testname))
       $display("Running test {%0s}......", testname);

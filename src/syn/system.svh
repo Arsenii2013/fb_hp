@@ -1,1 +1,1 @@
-//`define PCIE_PIPE_STACK
+`define PCIE_PIPE_STACK

@@ -32,4 +32,4 @@ module mem_wrapper
         .s_axi_rready(axi.rready)
     );
 
-endmodule;
+endmodule

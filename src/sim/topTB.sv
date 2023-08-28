@@ -78,8 +78,9 @@ module topTB(
         .pipe_tx_7_sigs     (xil_tx7_sigs_ep),
         `endif //PCIE_FULL_STACK
         
-        .clock,
-        .reset_n
+        .REFCLK_p(clock),
+        .REFCLK_n(~clock),
+        .PERST(reset_n)
     );
     
     `ifdef PCIE_PIPE_STACK

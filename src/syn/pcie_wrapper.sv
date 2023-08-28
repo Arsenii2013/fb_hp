@@ -35,7 +35,7 @@ module pcie_wrapper(
         `endif //SYNTHESIS      
         
         input  logic    REFCLK,
-        input  logic    aresetn,
+        input  logic    PERST,
         output logic    clk_out,
         axi4_lite_if.m  axi
     );
@@ -84,8 +84,8 @@ module pcie_wrapper(
     wire          axi4_rvalid;
     wire          axi4_rready;
     
-    pcie pcier_i(
-      .axi_aresetn(aresetn),
+    pcie pcie_i(
+      .axi_aresetn(PERST),
       .user_link_up(),
       .axi_aclk_out(clk_out),
       .axi_ctl_aclk_out(),
@@ -250,7 +250,7 @@ module pcie_wrapper(
     
     axi_protocol_converter axi_pcie_protocol_converter_i(
         .aclk(clk_out),
-        .aresetn,
+        .aresetn(PERST),
         
         .s_axi_awaddr(axi4_awaddr),
         .s_axi_awlen(axi4_awlen),
@@ -307,7 +307,7 @@ module pcie_wrapper(
     `else // __NEED_PCI_IP
     axi_pcie_model axi_pcie_model_i(
         .REFCLK,
-        .aresetn,
+        .aresetn(PERST),
         .clk_out,
         .axi
     );

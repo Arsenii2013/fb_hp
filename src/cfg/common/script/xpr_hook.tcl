@@ -132,7 +132,8 @@ set_msg_config -id "Synth 8-6014" -regexp -string [list ".+Unused sequential ele
 set_msg_config -id "Synth 8-6014" -regexp -string [list ".+Unused sequential element.+was removed.+data/ip/xpm/xpm_memory/hdl/xpm_memory.sv.+"] -suppress
 set_msg_config -id "Synth 8-6014" -regexp -string [list ".+Unused sequential element.+was removed.+data/ip/xpm/xpm_cdc/hdl/xpm_cdc.sv.+"]       -suppress
 set_msg_config -id "Synth 8-3332" -regexp -string [list ".+Sequential element.+is unused and will be removed from module xpm_fifo_base.+"]      -suppress
-
+set_msg_config -id "Synth 8-4442" -regexp -string [list ".+pipe.+.common_commands_in.+.common_commands_out.+"]                                  -suppress
+set_msg_config -id "Synth 8-7071" -regexp -string {{.pipe.} {.common_commands_in.} {.common_commands_out.}}                                      -suppress
 
 #---------------------------------------
 #

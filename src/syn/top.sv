@@ -34,9 +34,17 @@ module top(
         output logic pcie_7x_mgt_txp,
         `endif //SYNTHESIS 
         
-        input  logic    clock,
-        input  logic    reset_n
+        input  logic    REFCLK_n,
+        input  logic    REFCLK_p,
+        input  logic    PERST
     );
+    logic REFCLK;
+    logic PERST_i;
+
+    IBUF        PERST_ibuf_i (.O(PERST_i), .I(PERST));
+    IBUFDS_GTE2 REFCLK_ibuf_i (.O(REFCLK), .ODIV2(), .I(REFCLK_p), .CEB(1'b0), .IB(REFCLK_n));
+
+
     axi4_lite_if #(.DW(32), .AW(32)) axi();
     
     pcie_wrapper pcie_i(
@@ -70,8 +78,8 @@ module top(
         .pcie_7x_mgt_txp,
         `endif //SYNTHESIS 
         
-        .REFCLK(clock),
-        .aresetn(reset_n),
+        .REFCLK(REFCLK),
+        .PERST(PERST_i),
         .clk_out(),
         .axi
     );
@@ -83,11 +91,11 @@ module top(
         .aresetn(reset_n),
         .axi
     );*/
-
+    
     mem_wrapper
     mem_i (
-        .aclk(clock),
-        .aresetn(reset_n),
+        .aclk(REFCLK),
+        .aresetn(PERST_i),
         .axi
     );
 endmodule
