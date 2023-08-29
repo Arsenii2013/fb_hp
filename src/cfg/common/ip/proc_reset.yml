@@ -1,0 +1,9 @@
+type   : proc_sys_reset
+
+config :
+  C_AUX_RESET_HIGH : 1
+  C_AUX_RST_WIDTH : 4
+  C_EXT_RESET_HIGH : 1
+  C_EXT_RST_WIDTH : 4
+  C_NUM_PERP_ARESETN : 1
+  C_NUM_PERP_RST : 1

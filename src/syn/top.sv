@@ -4,40 +4,69 @@
 `include "system.svh"
 
 module top(
-        `ifndef SYNTHESIS
-        `ifdef PCIE_PIPE_STACK
-        input  logic [11:0] common_commands_in,
-        input  logic [24:0] pipe_rx_0_sigs,
-        input  logic [24:0] pipe_rx_1_sigs,
-        input  logic [24:0] pipe_rx_2_sigs,
-        input  logic [24:0] pipe_rx_3_sigs,
-        input  logic [24:0] pipe_rx_4_sigs,
-        input  logic [24:0] pipe_rx_5_sigs,
-        input  logic [24:0] pipe_rx_6_sigs,
-        input  logic [24:0] pipe_rx_7_sigs,
-        output logic [11:0] common_commands_out,
-        output logic [24:0] pipe_tx_0_sigs,
-        output logic [24:0] pipe_tx_1_sigs,
-        output logic [24:0] pipe_tx_2_sigs,
-        output logic [24:0] pipe_tx_3_sigs,
-        output logic [24:0] pipe_tx_4_sigs,
-        output logic [24:0] pipe_tx_5_sigs,
-        output logic [24:0] pipe_tx_6_sigs,
-        output logic [24:0] pipe_tx_7_sigs,
-        `endif //PCIE_FULL_STACK 
-        `endif //SYNTHESIS      
-        
-        `ifdef SYNTHESIS
-        input  logic pcie_7x_mgt_rxn,
-        input  logic pcie_7x_mgt_rxp,
-        output logic pcie_7x_mgt_txn,
-        output logic pcie_7x_mgt_txp,
-        `endif //SYNTHESIS 
-        
-        input  logic    REFCLK_n,
-        input  logic    REFCLK_p,
-        input  logic    PERST
+    //-------------PCI-E-------------\\
+    `ifndef SYNTHESIS
+    `ifdef PCIE_PIPE_STACK
+    input  logic [11:0] common_commands_in,
+    input  logic [24:0] pipe_rx_0_sigs,
+    input  logic [24:0] pipe_rx_1_sigs,
+    input  logic [24:0] pipe_rx_2_sigs,
+    input  logic [24:0] pipe_rx_3_sigs,
+    input  logic [24:0] pipe_rx_4_sigs,
+    input  logic [24:0] pipe_rx_5_sigs,
+    input  logic [24:0] pipe_rx_6_sigs,
+    input  logic [24:0] pipe_rx_7_sigs,
+    output logic [11:0] common_commands_out,
+    output logic [24:0] pipe_tx_0_sigs,
+    output logic [24:0] pipe_tx_1_sigs,
+    output logic [24:0] pipe_tx_2_sigs,
+    output logic [24:0] pipe_tx_3_sigs,
+    output logic [24:0] pipe_tx_4_sigs,
+    output logic [24:0] pipe_tx_5_sigs,
+    output logic [24:0] pipe_tx_6_sigs,
+    output logic [24:0] pipe_tx_7_sigs,
+    `endif //PCIE_FULL_STACK 
+    `endif //SYNTHESIS      
+    
+    `ifdef SYNTHESIS
+    input  logic pcie_7x_mgt_rxn,
+    input  logic pcie_7x_mgt_rxp,
+    output logic pcie_7x_mgt_txn,
+    output logic pcie_7x_mgt_txp,
+    `endif //SYNTHESIS 
+    
+    input  logic    REFCLK_n,
+    input  logic    REFCLK_p,
+    input  logic    PERST,
+
+    //-------Processing System-------\\
+    inout wire [14:0]  DDR_Addr,
+    inout wire [2:0]   DDR_BankAddr,
+    inout wire         DDR_CAS_n,
+    inout wire         DDR_CKE,
+    inout wire         DDR_CS_n,
+    inout wire [3:0]   DDR_DM,
+    inout wire [31:0]  DDR_DQ,
+    inout wire [3:0]   DDR_DQS_n,
+    inout wire [3:0]   DDR_DQS,
+    inout wire         DDR_ODT,
+    inout wire         DDR_RAS_n,
+    inout wire         DDR_reset_n,
+    inout wire         DDR_we_n,
+    inout wire         DDR_VRN,
+    inout wire         DDR_VRP,
+    inout wire         DDR_Clk_n,
+    inout wire         DDR_Clk,
+    inout wire         DDR_DRSTB,
+    inout wire         DDR_WEB,
+
+    inout wire [53:0]  MIO,
+    inout wire         PS_SRSTB,
+    inout wire         PS_CLK,
+    inout wire         PS_PORB
     );
+
+    //-------------PCI-E-------------\\
     logic REFCLK;
     logic PERST_i;
 
@@ -45,7 +74,7 @@ module top(
     IBUFDS_GTE2 REFCLK_ibuf_i (.O(REFCLK), .ODIV2(), .I(REFCLK_p), .CEB(1'b0), .IB(REFCLK_n));
 
 
-    axi4_lite_if #(.DW(32), .AW(32)) axi();
+    axi4_lite_if #(.DW(32), .AW(32)) pcie_axi();
     
     pcie_wrapper pcie_i(
         `ifndef SYNTHESIS
@@ -81,21 +110,55 @@ module top(
         .REFCLK(REFCLK),
         .PERST(PERST_i),
         .clk_out(),
-        .axi
+        .axi(pcie_axi)
     );
-    /*
-    time_meashure_wrapper
-     # (.AW(32), .DW(64))
-    time_meashure_i (
-        .aclk(clock),
-        .aresetn(reset_n),
-        .axi
-    );*/
-    
+
+    axi4_lite_if #(.DW(32), .AW(32)) GP0();
+    axi4_lite_if #(.DW(64), .AW(32)) HP0();
+
+     
+    `ifdef SYNTHESIS
+    PS_wrapper 
+    PS_wrapper_i (
+        .DDR_Addr,
+        .DDR_BankAddr,
+        .DDR_CAS_n,
+        .DDR_CKE,
+        .DDR_CS_n,
+        .DDR_DM,
+        .DDR_DQ,
+        .DDR_DQS_n,
+        .DDR_DQS,
+        .DDR_ODT,
+        .DDR_RAS_n,
+        .DDR_reset_n,
+        .DDR_we_n,
+        .DDR_VRN,
+        .DDR_VRP,
+        .DDR_Clk_n,
+        .DDR_Clk,
+        .DDR_DRSTB,
+        .DDR_WEB,
+
+        .MIO,
+        .PS_SRSTB,
+        .PS_CLK,
+        .PS_PORB,
+
+        .GP0,
+        .HP0,
+        .clock(),
+        .aresetn(),
+        .reset()
+    );
+    `endif // SYNTHESIS
+
+
     mem_wrapper
     mem_i (
         .aclk(REFCLK),
         .aresetn(PERST_i),
-        .axi
+        .axi(pcie_axi)
     );
+
 endmodule
