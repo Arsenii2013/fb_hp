@@ -1,8 +1,0 @@
-type   : axi_protocol_converter
-
-config :
-  DATA_WIDTH : 32
-  MI_PROTOCOL : 'AXI4LITE'
-  SI_PROTOCOL : 'AXI3'
-  TRANSLATION_MODE : 2
-  ID_WIDTH : 12

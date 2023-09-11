@@ -37,7 +37,9 @@ module pcie_wrapper(
         input  logic    REFCLK,
         input  logic    PERST,
         output logic    clk_out,
-        axi4_lite_if.m  axi
+        axi4_lite_if.m  axi,
+        output logic    mmcm_lock,
+        output logic    user_link_up
     );
     
     `ifdef SYNTHESIS
@@ -86,10 +88,10 @@ module pcie_wrapper(
     
     pcie pcie_i(
       .axi_aresetn(PERST),
-      .user_link_up(),
+      .user_link_up,
       .axi_aclk_out(clk_out),
       .axi_ctl_aclk_out(),
-      .mmcm_lock(),
+      .mmcm_lock,
       .interrupt_out(),
       .INTX_MSI_Request('b0),
       .INTX_MSI_Grant(),

@@ -1,6 +1,6 @@
 else if(testname == "pio_writeReadBack_test0")
 begin
-    integer recv_data;  
+    //integer recv_data;  
 
 
     `ifdef PCIE_PIPE_STACK
