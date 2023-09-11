@@ -28,6 +28,6 @@ config:
   M_AXI_DATA_WIDTH  : 64
   PCIEBAR2AXIBAR_1  : '0x100000'
   PCIEBAR2AXIBAR_2  : '0x200000'
-  REF_CLK_FREQ      : 125_MHz
+  REF_CLK_FREQ      : 100_MHz
   S_AXI_DATA_WIDTH  : 64
   en_ext_pipe_interface : true

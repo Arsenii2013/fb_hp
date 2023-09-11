@@ -4,10 +4,20 @@
 module topTB(
 
     );
-    parameter REF_CLK_FREQ               = 1;
+    parameter  REF_CLK_FREQ          = 0; // 0 = 100 MHZ, 1 = 125 MHZ, 2 = 250 MHZ
+    localparam REF_CLK_HALF_CYCLE    = (REF_CLK_FREQ == 0) ? 5000 :
+                                        (REF_CLK_FREQ == 1) ? 4000 :
+                                        (REF_CLK_FREQ == 2) ? 2000 : 0;
+
+    // RP Parameters
     parameter USER_CLK_FREQ_RP           = 4;
     parameter USER_CLK2_DIV2_RP          = "TRUE";
     parameter LINK_CAP_MAX_LINK_WIDTH_RP = 6'h8;
+    
+    // EP Parameters
+    parameter USER_CLK_FREQ_EP           = 2; 
+    parameter USER_CLK2_DIV2_EP          = "FALSE";
+    parameter LINK_CAP_MAX_LINK_WIDTH_EP = 6'h1;
     
     //defparam topTB.RP.rport.EXT_PIPE_SIM = "TRUE";
     
@@ -133,7 +143,7 @@ module topTB(
     
     sys_clk_gen
     #(
-        .halfcycle (4000),
+        .halfcycle (REF_CLK_HALF_CYCLE),
         .offset    (0)
     ) CLK_GEN (
         .sys_clk (clock)

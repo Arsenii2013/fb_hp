@@ -1,5 +1,5 @@
 
 sources:
     - ip/pcie.yml
-    - ip/axi_protocol_converter.yml
+    - ip/pcie_protocol_converter.yml
     - ip/axi_memory.yml

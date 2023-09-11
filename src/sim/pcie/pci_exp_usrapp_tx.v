@@ -305,6 +305,8 @@ end
   reg expect_status;
   reg expect_finish_check;
   reg test_failed_flag;
+  
+  integer recv_data; 
 
   initial begin
     if ($value$plusargs("TESTNAME=%s", testname))
