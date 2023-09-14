@@ -1,6 +1,6 @@
 `timescale 1ns/1ns
 
-`include "axi_if.svh"
+`include "axi4_lite_if.svh"
 
 module axi_pcie_model(
     input  logic    REFCLK,

@@ -3,4 +3,4 @@ parameters:
     PROJECT_NAME        : = VARIANT_NAME
     TOP_NAME            : top
     TESTBENCH_NAME      : topTB
-    DEVICE              : xc7z015clg485-3
+    DEVICE              : xc7z015clg485-2

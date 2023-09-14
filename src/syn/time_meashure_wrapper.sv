@@ -1,6 +1,6 @@
 `timescale 1 ns / 1 ps
 
-`include "axi_if.svh"
+`include "axi4_lite_if.svh"
 
 module time_meashure_wrapper 
 #(

@@ -1,0 +1,7 @@
+type   : axi_dwidth_converter
+
+config :
+    ADDR_WIDTH : 32
+    MI_DATA_WIDTH : 32
+    PROTOCOL : AXI4LITE
+    SI_DATA_WIDTH : 64

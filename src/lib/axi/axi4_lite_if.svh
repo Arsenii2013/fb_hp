@@ -1,5 +1,5 @@
-`ifndef AXI_IF
-`define AXI_IF
+`ifndef _AXI_IF
+`define _AXI_IF
 
 interface axi4_lite_if #(
     parameter AW = 32,
@@ -70,4 +70,4 @@ interface axi4_lite_if #(
     );
 endinterface
 
-`endif //AXI_IF
+`endif //_AXI_IF

@@ -1,6 +1,6 @@
 `timescale 1ns/1ns
 
-`include "axi_if.svh"
+`include "axi4_lite_if.svh"
 `include "system.svh"
 
 module pcie_wrapper(   
@@ -28,10 +28,10 @@ module pcie_wrapper(
         `endif //SYNTHESIS      
         
         `ifdef SYNTHESIS
-        input  logic pcie_7x_mgt_rxn,
-        input  logic pcie_7x_mgt_rxp,
-        output logic pcie_7x_mgt_txn,
-        output logic pcie_7x_mgt_txp,
+        input  logic [1:0] pcie_7x_mgt_rxn,
+        input  logic [1:0] pcie_7x_mgt_rxp,
+        output logic [1:0] pcie_7x_mgt_txn,
+        output logic [1:0] pcie_7x_mgt_txp,
         `endif //SYNTHESIS      
         
         input  logic    REFCLK,
@@ -54,37 +54,40 @@ module pcie_wrapper(
     
     
     `ifdef  __NEED_PCI_IP
-    wire [31 : 0] axi4_awaddr;
-    wire [7 : 0]  axi4_awlen;
-    wire [2 : 0]  axi4_awsize;
-    wire [1 : 0]  axi4_awburst;
-    wire [2 : 0]  axi4_awprot;
-    wire          axi4_awvalid;
-    wire          axi4_awready;
-    wire          axi4_awlock;
-    wire [3 : 0]  axi4_awcache;
-    wire [63 : 0] axi4_wdata;
-    wire [7 : 0]  axi4_wstrb;
-    wire          axi4_wlast;
-    wire          axi4_wvalid;
-    wire          axi4_wready;
-    wire [1 : 0]  axi4_bresp;
-    wire          axi4_bvalid;
-    wire          axi4_bready;
-    wire [31 : 0] axi4_araddr;
-    wire [7 : 0]  axi4_arlen;
-    wire [2 : 0]  axi4_arsize;
-    wire [1 : 0]  axi4_arburst;
-    wire [2 : 0]  axi4_arprot;
-    wire          axi4_arvalid;
-    wire          axi4_arready;
-    wire          axi4_arlock;
-    wire [3 : 0]  axi4_arcache;
-    wire [63 : 0] axi4_rdata;
-    wire [1 : 0]  axi4_rresp;
-    wire          axi4_rlast;
-    wire          axi4_rvalid;
-    wire          axi4_rready;
+    wire [31 : 0]   axi4_awaddr;
+    wire [7 : 0]    axi4_awlen;
+    wire [2 : 0]    axi4_awsize;
+    wire [1 : 0]    axi4_awburst;
+    wire [2 : 0]    axi4_awprot;
+    wire            axi4_awvalid;
+    wire            axi4_awready;
+    wire            axi4_awlock;
+    wire [3 : 0]    axi4_awcache;
+    wire [63 : 0]   axi4_wdata;
+    wire [7 : 0]    axi4_wstrb;
+    wire            axi4_wlast;
+    wire            axi4_wvalid;
+    wire            axi4_wready;
+    wire [1 : 0]    axi4_bresp;
+    wire            axi4_bvalid;
+    wire            axi4_bready;
+    wire [31 : 0]   axi4_araddr;
+    wire [7 : 0]    axi4_arlen;
+    wire [2 : 0]    axi4_arsize;
+    wire [1 : 0]    axi4_arburst;
+    wire [2 : 0]    axi4_arprot;
+    wire            axi4_arvalid;
+    wire            axi4_arready;
+    wire            axi4_arlock;
+    wire [3 : 0]    axi4_arcache;
+    wire [63 : 0]   axi4_rdata;
+    wire [1 : 0]    axi4_rresp;
+    wire            axi4_rlast;
+    wire            axi4_rvalid;
+    wire            axi4_rready;
+    
+
+    axi4_lite_if #(.DW(64), .AW(32)) axi64();
     
     pcie pcie_i(
       .axi_aresetn(PERST),
@@ -248,25 +251,31 @@ module pcie_wrapper(
         .s_axi_rvalid(axi4_rvalid),
         .s_axi_rready(axi4_rready),
         
-        .m_axi_araddr(axi.araddr),
-        .m_axi_arprot(axi.arprot),
-        .m_axi_arready(axi.arready),
-        .m_axi_arvalid(axi.arvalid),
-        .m_axi_awaddr(axi.awaddr),
-        .m_axi_awprot(axi.awprot),
-        .m_axi_awready(axi.awready),
-        .m_axi_awvalid(axi.awvalid),
-        .m_axi_bready(axi.bready),
-        .m_axi_bresp(axi.bresp),
-        .m_axi_bvalid(axi.bvalid),
-        .m_axi_rdata(axi.rdata),
-        .m_axi_rready(axi.rready),
-        .m_axi_rresp(axi.rresp),
-        .m_axi_rvalid(axi.rvalid),
-        .m_axi_wdata(axi.wdata),
-        .m_axi_wready(axi.wready),
-        .m_axi_wstrb(axi.wstrb),
-        .m_axi_wvalid(axi.wvalid)
+        .m_axi_araddr(axi64.araddr),
+        .m_axi_arprot(axi64.arprot),
+        .m_axi_arready(axi64.arready),
+        .m_axi_arvalid(axi64.arvalid),
+        .m_axi_awaddr(axi64.awaddr),
+        .m_axi_awprot(axi64.awprot),
+        .m_axi_awready(axi64.awready),
+        .m_axi_awvalid(axi64.awvalid),
+        .m_axi_bready(axi64.bready),
+        .m_axi_bresp(axi64.bresp),
+        .m_axi_bvalid(axi64.bvalid),
+        .m_axi_rdata(axi64.rdata),
+        .m_axi_rready(axi64.rready),
+        .m_axi_rresp(axi64.rresp),
+        .m_axi_rvalid(axi64.rvalid),
+        .m_axi_wdata(axi64.wdata),
+        .m_axi_wready(axi64.wready),
+        .m_axi_wstrb(axi64.wstrb),
+        .m_axi_wvalid(axi64.wvalid)
+    );
+    
+    
+    axi4_lite_dw_translator axi4_lite_dw_translator_i(
+        .m(axi64),
+        .s(axi)
     );
     `else // __NEED_PCI_IP
     axi_pcie_model axi_pcie_model_i(

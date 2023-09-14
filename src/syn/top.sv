@@ -1,6 +1,6 @@
 `timescale 1ns/1ns
 
-`include "axi_if.svh"
+`include "axi4_lite_if.svh"
 `include "system.svh"
 
 module top(
@@ -29,10 +29,10 @@ module top(
     `endif //SYNTHESIS      
     
     `ifdef SYNTHESIS
-    input  logic pcie_7x_mgt_rxn,
-    input  logic pcie_7x_mgt_rxp,
-    output logic pcie_7x_mgt_txn,
-    output logic pcie_7x_mgt_txp,
+    input  logic [1:0] pcie_7x_mgt_rxn,
+    input  logic [1:0] pcie_7x_mgt_rxp,
+    output logic [1:0] pcie_7x_mgt_txn,
+    output logic [1:0] pcie_7x_mgt_txp,
     `endif //SYNTHESIS 
     
     input  logic    REFCLK_n,
@@ -70,22 +70,12 @@ module top(
 
     //-------------PCI-E-------------\\
     logic REFCLK;
-    logic pcie_arsetn;
+    logic pcie_aresetn;
     logic pcie_reset;
     logic pcie_axi_clk;
     logic PS_aresetn;
 
     IBUFDS_GTE2 REFCLK_ibuf_i (.O(REFCLK), .ODIV2(), .I(REFCLK_p), .CEB(1'b0), .IB(REFCLK_n));
-
-    pcie_reset pcie_reset_i(
-        .slowest_sync_clk(pcie_axi_clk),
-        .ext_reset_in(PERST),
-        .aux_reset_in(1),
-        .mb_debug_sys_rst(0),
-        .dcm_locked(1),
-        .peripheral_aresetn(pcie_aresetn),
-        .peripheral_reset(pcie_reset)
-    );
     
     axi4_lite_if #(.DW(32), .AW(32)) pcie_axi();
     
@@ -121,7 +111,7 @@ module top(
         `endif //SYNTHESIS 
         
         .REFCLK(REFCLK),
-        .PERST(pcie_aresetn),
+        .PERST(PERST),
         .clk_out(pcie_axi_clk),
         .axi(pcie_axi),
         .user_link_up,
@@ -129,7 +119,7 @@ module top(
     );
 
     axi4_lite_if #(.DW(32), .AW(32)) GP0();
-    axi4_lite_if #(.DW(64), .AW(32)) HP0();
+    axi4_lite_if #(.DW(32), .AW(32)) HP0();
 
      
     //-------Processing System-------\\
@@ -171,7 +161,7 @@ module top(
     mem_wrapper
     mem_i (
         .aclk(pcie_axi_clk),
-        .aresetn(pcie_aresetn),
+        .aresetn(PERST),
         .axi(pcie_axi)
     );
 

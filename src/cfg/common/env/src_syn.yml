@@ -9,4 +9,5 @@ sources:
     - src/syn/time_meashure.v
     - src/syn/mem_wrapper.sv
     - src/syn/PS_wrapper.sv
-    - src/syn/blink.sv
+    - src/lib/common/blink.sv
+    - src/lib/axi/axi4_lite_dw_translator.sv

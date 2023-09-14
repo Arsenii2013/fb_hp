@@ -1,4 +1,4 @@
-`include "axi_if.svh"
+`include "axi4_lite_if.svh"
 
 module PS_wrapper(
     inout wire [14:0]  DDR_addr,
