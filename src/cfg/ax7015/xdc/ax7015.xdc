@@ -12,5 +12,8 @@ set_property -dict { PACKAGE_PIN A5   IOSTANDARD LVCMOS33 } [get_ports { PL_led 
 set_property -dict { PACKAGE_PIN A7   IOSTANDARD LVCMOS33 } [get_ports { user_link_up }];
 set_property -dict { PACKAGE_PIN A6   IOSTANDARD LVCMOS33 } [get_ports { mmcm_lock }];
 
-set_property PACKAGE_PIN W8 [get_ports {pcie_7x_mgt_rxp}]
-set_property PACKAGE_PIN W4 [get_ports {pcie_7x_mgt_txp}]
+set_property PACKAGE_PIN W8 [get_ports {pcie_7x_mgt_rxp[0]}]
+set_property PACKAGE_PIN AA7 [get_ports {pcie_7x_mgt_rxp[1]}]
+
+set_property PACKAGE_PIN W4 [get_ports {pcie_7x_mgt_txp[0]}]
+set_property PACKAGE_PIN AA3 [get_ports {pcie_7x_mgt_txp[1]}]

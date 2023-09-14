@@ -3,4 +3,5 @@ sources:
     - ip/pcie.yml
     - ip/pcie_protocol_converter.yml
     - ip/axi_memory.yml
-    - ip/pcie_reset.yml
+#    - ip/pcie_reset.yml
+#    - ip/pcie_dwidth_converter.yml

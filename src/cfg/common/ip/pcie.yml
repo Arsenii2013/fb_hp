@@ -30,4 +30,5 @@ config:
   PCIEBAR2AXIBAR_2  : '0x200000'
   REF_CLK_FREQ      : 100_MHz
   S_AXI_DATA_WIDTH  : 64
+  NO_OF_LANES       : X2 
   en_ext_pipe_interface : true
