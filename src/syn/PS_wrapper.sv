@@ -1,6 +1,7 @@
 `include "axi4_lite_if.svh"
 
-module PS_wrapper(
+module PS_wrapper_(
+    `ifdef SYNTHESIS
     inout wire [14:0]  DDR_addr,
     inout wire [2:0]   DDR_ba,
     inout wire         DDR_cas_n,
@@ -22,6 +23,7 @@ module PS_wrapper(
     inout wire         FIXED_IO_ps_clk,
     inout wire         FIXED_IO_ps_porb,
     inout wire         FIXED_IO_ps_srstb,
+    `endif //SYNTHESIS 
 
     axi4_lite_if.m     GP0,
     axi4_lite_if.s     HP0,
@@ -30,7 +32,8 @@ module PS_wrapper(
     output logic       peripheral_reset
    );
    
-   PS PS_i   (
+    `ifdef SYNTHESIS
+    PS PS_i   (
         .DDR_addr(DDR_addr),
         .DDR_ba(DDR_ba),
         .DDR_cas_n(DDR_cas_n),
@@ -71,7 +74,7 @@ module PS_wrapper(
         .GP0_wready(GP0.wready),
         .GP0_wstrb(GP0.wstrb),
         .GP0_wvalid(GP0.wvalid),
-        
+
         .HP0_araddr(HP0.araddr),
         .HP0_arprot(HP0.arprot),
         .HP0_arready(HP0.arready),
@@ -91,10 +94,30 @@ module PS_wrapper(
         .HP0_wready(HP0.wready),
         .HP0_wstrb(HP0.wstrb),
         .HP0_wvalid(HP0.wvalid),
-        
+
         .peripheral_aresetn,
         .peripheral_clock,
         .peripheral_reset
     );
+    `endif //SYNTHESIS 
+
+    `ifndef SYNTHESIS
+    sys_clk_gen
+    #(
+        .halfcycle (5000), // 100 MHZ
+        .offset    (0)
+    ) CLK_GEN (
+        .sys_clk (peripheral_clock)
+    );
+
+    initial begin
+        peripheral_aresetn <= 0;
+        peripheral_reset   <= 1;
+        for(int i = 0; i < 500; i++)
+            @(posedge peripheral_clock)
+        peripheral_aresetn <= 1;
+        peripheral_reset   <= 0;
+    end
+    `endif //SYNTHESIS 
         
  endmodule

@@ -40,6 +40,8 @@ module top(
     input  logic    PERST,
 
     //-------Processing System-------\\
+
+    `ifdef SYNTHESIS
     inout wire [14:0]  DDR_addr,
     inout wire [2:0]   DDR_ba,
     inout wire         DDR_cas_n,
@@ -61,11 +63,10 @@ module top(
     inout wire         FIXED_IO_ps_clk,
     inout wire         FIXED_IO_ps_porb,
     inout wire         FIXED_IO_ps_srstb,
+    `endif //SYNTHESIS 
 
     //-------------GPIO--------------\\
-    output PL_led,
-    output logic    mmcm_lock,
-    output logic    user_link_up
+    output PL_led
     );
 
     logic REFCLK;
@@ -126,9 +127,9 @@ module top(
 
      
     //-------Processing System-------\\
-    `ifdef SYNTHESIS
-    PS_wrapper 
+    PS_wrapper_ 
     PS_wrapper_i (
+        `ifdef SYNTHESIS
         .DDR_addr(DDR_addr),
         .DDR_ba(DDR_ba),
         .DDR_cas_n(DDR_cas_n),
@@ -150,6 +151,7 @@ module top(
         .FIXED_IO_ps_clk(FIXED_IO_ps_clk),
         .FIXED_IO_ps_porb(FIXED_IO_ps_porb),
         .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
+        `endif // SYNTHESIS
 
         .GP0,
         .HP0(bar2),
@@ -158,7 +160,6 @@ module top(
         .peripheral_aresetn(PS_aresetn),
         .peripheral_reset()
     );
-    `endif // SYNTHESIS
 
 
     mem_wrapper
@@ -173,7 +174,7 @@ module top(
     //-------------GPIO--------------\\
     blink
     blink_i (
-        .reset(pcie_reset),
+        .reset(PS_aresetn),
         .clk(REFCLK),
         .led(PL_led)
     );
