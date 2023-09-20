@@ -3,7 +3,7 @@
 `include "axi4_lite_if.svh"
 `include "system.svh"
 
-module pcie_wrapper(   
+module pcie_wrapper_(   
         `ifndef SYNTHESIS
         `ifdef PCIE_PIPE_STACK
         input  logic [11:0] common_commands_in,
@@ -34,12 +34,14 @@ module pcie_wrapper(
         output logic [1:0] pcie_7x_mgt_txp,
         `endif //SYNTHESIS      
         
+        axi4_lite_if    bar0,
+        axi4_lite_if    bar1,
+        axi4_lite_if    bar2,
+        
         input  logic    REFCLK,
         input  logic    PERST,
-        output logic    clk_out,
-        axi4_lite_if.m  axi,
-        output logic    mmcm_lock,
-        output logic    user_link_up
+        input  logic    bar_clk,
+        input  logic    bar_aresetn
     );
     
     `ifdef SYNTHESIS
@@ -54,229 +56,123 @@ module pcie_wrapper(
     
     
     `ifdef  __NEED_PCI_IP
-    wire [31 : 0]   axi4_awaddr;
-    wire [7 : 0]    axi4_awlen;
-    wire [2 : 0]    axi4_awsize;
-    wire [1 : 0]    axi4_awburst;
-    wire [2 : 0]    axi4_awprot;
-    wire            axi4_awvalid;
-    wire            axi4_awready;
-    wire            axi4_awlock;
-    wire [3 : 0]    axi4_awcache;
-    wire [63 : 0]   axi4_wdata;
-    wire [7 : 0]    axi4_wstrb;
-    wire            axi4_wlast;
-    wire            axi4_wvalid;
-    wire            axi4_wready;
-    wire [1 : 0]    axi4_bresp;
-    wire            axi4_bvalid;
-    wire            axi4_bready;
-    wire [31 : 0]   axi4_araddr;
-    wire [7 : 0]    axi4_arlen;
-    wire [2 : 0]    axi4_arsize;
-    wire [1 : 0]    axi4_arburst;
-    wire [2 : 0]    axi4_arprot;
-    wire            axi4_arvalid;
-    wire            axi4_arready;
-    wire            axi4_arlock;
-    wire [3 : 0]    axi4_arcache;
-    wire [63 : 0]   axi4_rdata;
-    wire [1 : 0]    axi4_rresp;
-    wire            axi4_rlast;
-    wire            axi4_rvalid;
-    wire            axi4_rready;
-    
 
-    axi4_lite_if #(.DW(64), .AW(32)) axi64();
+    axi4_lite_if #(.DW(64), .AW(32)) bar0_64();
+    axi4_lite_if #(.DW(64), .AW(32)) bar1_64();
+    axi4_lite_if #(.DW(64), .AW(32)) bar2_64();
     
     pcie pcie_i(
-      .axi_aresetn(PERST),
-      .user_link_up,
-      .axi_aclk_out(clk_out),
-      .axi_ctl_aclk_out(),
-      .mmcm_lock,
-      .interrupt_out(),
-      .INTX_MSI_Request('b0),
-      .INTX_MSI_Grant(),
-      .MSI_enable(),
-      .MSI_Vector_Num('b0),
-      .MSI_Vector_Width(),
-      .REFCLK(REFCLK),
-      
-      .s_axi_awid('b0),
-      .s_axi_awaddr('b0),
-      .s_axi_awregion('b0),
-      .s_axi_awlen('b0),
-      .s_axi_awsize('b0),
-      .s_axi_awburst('b0),
-      .s_axi_awvalid('b0),
-      .s_axi_awready(),
-      .s_axi_wdata('b0),
-      .s_axi_wstrb('b0),
-      .s_axi_wlast('b0),
-      .s_axi_wvalid('b0),
-      .s_axi_wready(),
-      .s_axi_bid(),
-      .s_axi_bresp(),
-      .s_axi_bvalid(),
-      .s_axi_bready('b0),
-      .s_axi_arid('b0),
-      .s_axi_araddr('b0),
-      .s_axi_arregion('b0),
-      .s_axi_arlen('b0),
-      .s_axi_arsize('b0),
-      .s_axi_arburst('b0),
-      .s_axi_arvalid('b0),
-      .s_axi_arready(),
-      .s_axi_rid(),
-      .s_axi_rdata(),
-      .s_axi_rresp(),
-      .s_axi_rlast(),
-      .s_axi_rvalid(),
-      .s_axi_rready('b0),
-      .s_axi_ctl_awaddr('b0),
-      .s_axi_ctl_awvalid('b0),
-      .s_axi_ctl_awready(),
-      .s_axi_ctl_wdata('b0),
-      .s_axi_ctl_wstrb('b0),
-      .s_axi_ctl_wvalid('b0),
-      .s_axi_ctl_wready(),
-      .s_axi_ctl_bresp(),
-      .s_axi_ctl_bvalid(),
-      .s_axi_ctl_bready('b0),
-      .s_axi_ctl_araddr('b0),
-      .s_axi_ctl_arvalid('b0),
-      .s_axi_ctl_arready(),
-      .s_axi_ctl_rdata(),
-      .s_axi_ctl_rresp(),
-      .s_axi_ctl_rvalid(),
-      .s_axi_ctl_rready('b0),
-      
-      .m_axi_awaddr(axi4_awaddr),
-      .m_axi_awlen(axi4_awlen),
-      .m_axi_awsize(axi4_awsize),
-      .m_axi_awburst(axi4_awburst),
-      .m_axi_awprot(axi4_awprot),
-      .m_axi_awvalid(axi4_awvalid),
-      .m_axi_awready(axi4_awready),
-      .m_axi_awlock(axi4_awlock),
-      .m_axi_awcache(axi4_awcache),
-      .m_axi_wdata(axi4_wdata),
-      .m_axi_wstrb(axi4_wstrb),
-      .m_axi_wlast(axi4_wlast),
-      .m_axi_wvalid(axi4_wvalid),
-      .m_axi_wready(axi4_wready),
-      .m_axi_bresp(axi4_bresp),
-      .m_axi_bvalid(axi4_bvalid),
-      .m_axi_bready(axi4_bready),
-      .m_axi_araddr(axi4_araddr),
-      .m_axi_arlen(axi4_arlen),
-      .m_axi_arsize(axi4_arsize),
-      .m_axi_arburst(axi4_arburst),
-      .m_axi_arprot(axi4_arprot),
-      .m_axi_arvalid(axi4_arvalid),
-      .m_axi_arready(axi4_arready),
-      .m_axi_arlock(axi4_arlock),
-      .m_axi_arcache(axi4_arcache),
-      .m_axi_rdata(axi4_rdata),
-      .m_axi_rresp(axi4_rresp),
-      .m_axi_rlast(axi4_rlast),
-      .m_axi_rvalid(axi4_rvalid),
-      .m_axi_rready(axi4_rready),
-      
-      `ifndef SYNTHESIS
-      `ifdef PCIE_PIPE_STACK
-      .common_commands_in,
-      .pipe_rx_0_sigs,
-      .pipe_rx_1_sigs,
-      .pipe_rx_2_sigs,
-      .pipe_rx_3_sigs,
-      .pipe_rx_4_sigs,
-      .pipe_rx_5_sigs,
-      .pipe_rx_6_sigs,
-      .pipe_rx_7_sigs,
-      .common_commands_out,
-      .pipe_tx_0_sigs,
-      .pipe_tx_1_sigs,
-      .pipe_tx_2_sigs,
-      .pipe_tx_3_sigs,
-      .pipe_tx_4_sigs,
-      .pipe_tx_5_sigs,
-      .pipe_tx_6_sigs,
-      .pipe_tx_7_sigs
-      `endif //PCIE_FULL_STACK 
-      `endif //SYNTHESIS 
-      
-      `ifdef SYNTHESIS
-      .pci_exp_txp(pcie_7x_mgt_txp),
-      .pci_exp_txn(pcie_7x_mgt_txn),
-      .pci_exp_rxp(pcie_7x_mgt_rxp),
-      .pci_exp_rxn(pcie_7x_mgt_rxn)
-      `endif //SYNTHESIS 
-    );
+        .PERST(PERST),
+        .REFCLK(REFCLK),
+        .m_axi_aclk(bar_clk),
+        .m_axi_aresetn(bar_aresetn),
     
-    pcie_protocol_converter pcie_protocol_converter_i(
-        .aclk(clk_out),
-        .aresetn(PERST),
+        .bar0_araddr(bar0_64.araddr),
+        .bar0_arprot(bar0_64.arprot),
+        .bar0_arready(bar0_64.arready),
+        .bar0_arvalid(bar0_64.arvalid),
+        .bar0_awaddr(bar0_64.awaddr),
+        .bar0_awprot(bar0_64.awprot),
+        .bar0_awready(bar0_64.awready),
+        .bar0_awvalid(bar0_64.awvalid),
+        .bar0_bready(bar0_64.bready),
+        .bar0_bresp(bar0_64.bresp),
+        .bar0_bvalid(bar0_64.bvalid),
+        .bar0_rdata(bar0_64.rdata),
+        .bar0_rready(bar0_64.rready),
+        .bar0_rresp(bar0_64.rresp),
+        .bar0_rvalid(bar0_64.rvalid),
+        .bar0_wdata(bar0_64.wdata),
+        .bar0_wready(bar0_64.wready),
+        .bar0_wstrb(bar0_64.wstrb),
+        .bar0_wvalid(bar0_64.wvalid),
         
-        .s_axi_awaddr(axi4_awaddr),
-        .s_axi_awlen(axi4_awlen),
-        .s_axi_awsize(axi4_awsize),
-        .s_axi_awburst(axi4_awburst),
-        .s_axi_awprot(axi4_awprot),
-        .s_axi_awvalid(axi4_awvalid),
-        .s_axi_awready(axi4_awready),
-        .s_axi_awlock(axi4_awlock),
-        .s_axi_awcache(axi4_awcache),
-        .s_axi_wdata(axi4_wdata),
-        .s_axi_wstrb(axi4_wstrb),
-        .s_axi_wlast(axi4_wlast),
-        .s_axi_wvalid(axi4_wvalid),
-        .s_axi_wready(axi4_wready),
-        .s_axi_bresp(axi4_bresp),
-        .s_axi_bvalid(axi4_bvalid),
-        .s_axi_bready(axi4_bready),
-        .s_axi_araddr(axi4_araddr),
-        .s_axi_arlen(axi4_arlen),
-        .s_axi_arsize(axi4_arsize),
-        .s_axi_arburst(axi4_arburst),
-        .s_axi_arprot(axi4_arprot),
-        .s_axi_arvalid(axi4_arvalid),
-        .s_axi_arready(axi4_arready),
-        .s_axi_arlock(axi4_arlock),
-        .s_axi_arcache(axi4_arcache),
-        .s_axi_rdata(axi4_rdata),
-        .s_axi_rresp(axi4_rresp),
-        .s_axi_rlast(axi4_rlast),
-        .s_axi_rvalid(axi4_rvalid),
-        .s_axi_rready(axi4_rready),
+        .bar1_araddr(bar1_64.araddr),
+        .bar1_arprot(bar1_64.arprot),
+        .bar1_arready(bar1_64.arready),
+        .bar1_arvalid(bar1_64.arvalid),
+        .bar1_awaddr(bar1_64.awaddr),
+        .bar1_awprot(bar1_64.awprot),
+        .bar1_awready(bar1_64.awready),
+        .bar1_awvalid(bar1_64.awvalid),
+        .bar1_bready(bar1_64.bready),
+        .bar1_bresp(bar1_64.bresp),
+        .bar1_bvalid(bar1_64.bvalid),
+        .bar1_rdata(bar1_64.rdata),
+        .bar1_rready(bar1_64.rready),
+        .bar1_rresp(bar1_64.rresp),
+        .bar1_rvalid(bar1_64.rvalid),
+        .bar1_wdata(bar1_64.wdata),
+        .bar1_wready(bar1_64.wready),
+        .bar1_wstrb(bar1_64.wstrb),
+        .bar1_wvalid(bar1_64.wvalid),
         
-        .m_axi_araddr(axi64.araddr),
-        .m_axi_arprot(axi64.arprot),
-        .m_axi_arready(axi64.arready),
-        .m_axi_arvalid(axi64.arvalid),
-        .m_axi_awaddr(axi64.awaddr),
-        .m_axi_awprot(axi64.awprot),
-        .m_axi_awready(axi64.awready),
-        .m_axi_awvalid(axi64.awvalid),
-        .m_axi_bready(axi64.bready),
-        .m_axi_bresp(axi64.bresp),
-        .m_axi_bvalid(axi64.bvalid),
-        .m_axi_rdata(axi64.rdata),
-        .m_axi_rready(axi64.rready),
-        .m_axi_rresp(axi64.rresp),
-        .m_axi_rvalid(axi64.rvalid),
-        .m_axi_wdata(axi64.wdata),
-        .m_axi_wready(axi64.wready),
-        .m_axi_wstrb(axi64.wstrb),
-        .m_axi_wvalid(axi64.wvalid)
+        .bar2_araddr(bar2_64.araddr),
+        .bar2_arprot(bar2_64.arprot),
+        .bar2_arready(bar2_64.arready),
+        .bar2_arvalid(bar2_64.arvalid),
+        .bar2_awaddr(bar2_64.awaddr),
+        .bar2_awprot(bar2_64.awprot),
+        .bar2_awready(bar2_64.awready),
+        .bar2_awvalid(bar2_64.awvalid),
+        .bar2_bready(bar2_64.bready),
+        .bar2_bresp(bar2_64.bresp),
+        .bar2_bvalid(bar2_64.bvalid),
+        .bar2_rdata(bar2_64.rdata),
+        .bar2_rready(bar2_64.rready),
+        .bar2_rresp(bar2_64.rresp),
+        .bar2_rvalid(bar2_64.rvalid),
+        .bar2_wdata(bar2_64.wdata),
+        .bar2_wready(bar2_64.wready),
+        .bar2_wstrb(bar2_64.wstrb),
+        .bar2_wvalid(bar2_64.wvalid),
+        
+        `ifndef SYNTHESIS
+        `ifdef PCIE_PIPE_STACK
+        .pcie_ext_pipe_commands_in(common_commands_in),
+        .pcie_ext_pipe_rx_0(pipe_rx_0_sigs),
+        .pcie_ext_pipe_rx_1(pipe_rx_1_sigs),
+        .pcie_ext_pipe_rx_2(pipe_rx_2_sigs),
+        .pcie_ext_pipe_rx_3(pipe_rx_3_sigs),
+        .pcie_ext_pipe_rx_4(pipe_rx_4_sigs),
+        .pcie_ext_pipe_rx_5(pipe_rx_5_sigs),
+        .pcie_ext_pipe_rx_6(pipe_rx_6_sigs),
+        .pcie_ext_pipe_rx_7(pipe_rx_7_sigs),
+        .pcie_ext_pipe_commands_out(common_commands_out),
+        .pcie_ext_pipe_tx_0(pipe_tx_0_sigs),
+        .pcie_ext_pipe_tx_1(pipe_tx_1_sigs),
+        .pcie_ext_pipe_tx_2(pipe_tx_2_sigs),
+        .pcie_ext_pipe_tx_3(pipe_tx_3_sigs),
+        .pcie_ext_pipe_tx_4(pipe_tx_4_sigs),
+        .pcie_ext_pipe_tx_5(pipe_tx_5_sigs),
+        .pcie_ext_pipe_tx_6(pipe_tx_6_sigs),
+        .pcie_ext_pipe_tx_7(pipe_tx_7_sigs)
+        `endif //PCIE_FULL_STACK 
+        `endif //SYNTHESIS 
+        
+        `ifdef SYNTHESIS
+        .pcie_7x_mgt_txp(pcie_7x_mgt_txp),
+        .pcie_7x_mgt_txn(pcie_7x_mgt_txn),
+        .pcie_7x_mgt_rxp(pcie_7x_mgt_rxp),
+        .pcie_7x_mgt_rxn(pcie_7x_mgt_rxn)
+        `endif //SYNTHESIS 
     );
     
-    
-    axi4_lite_dw_translator axi4_lite_dw_translator_i(
-        .m(axi64),
-        .s(axi)
+    axi4_lite_dw_translator bar0_t_i(
+        .m(bar0_64),
+        .s(bar0)
     );
+    
+    axi4_lite_dw_translator bar1_t_i(
+        .m(bar1_64),
+        .s(bar1)
+    );
+    
+    axi4_lite_dw_translator bar2_t_i(
+        .m(bar2_64),
+        .s(bar2)
+    );
+    
     `else // __NEED_PCI_IP
     axi_pcie_model axi_pcie_model_i(
         .REFCLK,
