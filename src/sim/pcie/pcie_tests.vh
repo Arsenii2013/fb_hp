@@ -13,7 +13,9 @@ begin
 // Event : Testing BARs
 //--------------------------------------------------------------------------
     pci_e_write(0, 'h0, 'hDEAD);
+    pci_e_write(2, 'h0, 'hBEEF);
     pci_e_read(0, 'h0, recv_data);
+    pci_e_read(2, 'h0, recv_data);
     $display("[%t] : Finished transmission of PCI-Express TLPs", $realtime);
     if (!test_failed_flag) begin 
         $display ("Test Completed Successfully");

@@ -110,6 +110,13 @@ module PS_wrapper_(
         .sys_clk (peripheral_clock)
     );
 
+    mem_wrapper
+    PS_mem_i (
+        .aclk(peripheral_clock),
+        .aresetn(peripheral_aresetn),
+        .axi(HP0)
+    );
+
     initial begin
         peripheral_aresetn <= 0;
         peripheral_reset   <= 1;
