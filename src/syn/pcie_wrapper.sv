@@ -34,9 +34,9 @@ module pcie_wrapper_(
         output logic [1:0] pcie_7x_mgt_txp,
         `endif //SYNTHESIS      
         
-        axi4_lite_if    bar0,
-        axi4_lite_if    bar1,
-        axi4_lite_if    bar2,
+        axi4_lite_if.m    bar0,
+        axi4_lite_if.m    bar1,
+        axi4_lite_if.m    bar2,
         
         input  logic    REFCLK,
         input  logic    PERST,
@@ -175,10 +175,14 @@ module pcie_wrapper_(
     
     `else // __NEED_PCI_IP
     axi_pcie_model axi_pcie_model_i(
-        .REFCLK,
-        .aresetn(PERST),
-        .clk_out,
-        .axi
+        .bar0(bar0),
+        .bar1(bar1),
+        .bar2(bar2),
+
+        .REFCLK(REFCLK),
+        .PERST(PERST),
+        .bar_clk(bar_clk),
+        .bar_aresetn(bar_aresetn)
     );
     `endif // __NEED_PCI_IP
 endmodule
