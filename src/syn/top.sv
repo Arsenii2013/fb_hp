@@ -68,18 +68,19 @@ module top(
     output logic    user_link_up
     );
 
-    //-------------PCI-E-------------\\
     logic REFCLK;
-    logic pcie_aresetn;
-    logic pcie_reset;
-    logic pcie_axi_clk;
     logic PS_aresetn;
+    logic PS_clk;
+    
+    //-------------PCI-E-------------\\ 
+    
+    axi4_lite_if #(.DW(32), .AW(32)) bar0();
+    axi4_lite_if #(.DW(32), .AW(32)) bar1();
+    axi4_lite_if #(.DW(32), .AW(32)) bar2();
 
     IBUFDS_GTE2 REFCLK_ibuf_i (.O(REFCLK), .ODIV2(), .I(REFCLK_p), .CEB(1'b0), .IB(REFCLK_n));
     
-    axi4_lite_if #(.DW(32), .AW(32)) pcie_axi();
-    
-    pcie_wrapper pcie_i(
+    pcie_wrapper_ pcie_i(
         `ifndef SYNTHESIS
         `ifdef PCIE_PIPE_STACK
         .common_commands_in,
@@ -112,14 +113,16 @@ module top(
         
         .REFCLK(REFCLK),
         .PERST(PERST),
-        .clk_out(pcie_axi_clk),
-        .axi(pcie_axi),
-        .user_link_up,
-        .mmcm_lock
+        
+        .bar0(bar0),
+        .bar1(bar1),
+        .bar2(bar2),
+        .bar_clk(PS_clk),
+        .bar_aresetn(PS_aresetn)
     );
 
     axi4_lite_if #(.DW(32), .AW(32)) GP0();
-    axi4_lite_if #(.DW(32), .AW(32)) HP0();
+    //axi4_lite_if #(.DW(32), .AW(32)) HP0();
 
      
     //-------Processing System-------\\
@@ -149,9 +152,9 @@ module top(
         .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
 
         .GP0,
-        .HP0,
+        .HP0(bar2),
         
-        .peripheral_clock(),
+        .peripheral_clock(PS_clk),
         .peripheral_aresetn(PS_aresetn),
         .peripheral_reset()
     );
@@ -160,9 +163,9 @@ module top(
 
     mem_wrapper
     mem_i (
-        .aclk(pcie_axi_clk),
-        .aresetn(PERST),
-        .axi(pcie_axi)
+        .aclk(PS_clk),
+        .aresetn(PS_aresetn),
+        .axi(bar0)
     );
 
 
