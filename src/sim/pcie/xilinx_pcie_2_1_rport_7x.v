@@ -155,8 +155,8 @@ module xilinx_pcie_2_1_rport_7x
 
   // EP Specific Parameters
   localparam                      EP_LINK_CAP_MAX_LINK_SPEED = 4'd2;
-  localparam                      EP_LINK_CAP_MAX_LINK_WIDTH = 6'd1;
-  localparam                      EP_DEV_ID = 16'h7021;
+  localparam                      EP_LINK_CAP_MAX_LINK_WIDTH = 6'd2;
+  localparam                      EP_DEV_ID = 16'h7022;
 
   // Local Wires
   // Common
