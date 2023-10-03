@@ -1,3 +1,4 @@
 build/
 vivado*
 .Xil/
+.sconsign.dblite
