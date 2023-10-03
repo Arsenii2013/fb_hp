@@ -138,13 +138,15 @@ end
 //
 //      Instances
 //
-oddr_m sck_out
+ODDR SCK_OUT
 (
-    .datain_h   ( 1    ),
-    .datain_l   ( 0    ),
-    .outclocken ( 1    ),
-    .outclock   ( oclk ),
-    .dataout    ( SCK  )
+   .Q  ( SCK  ),
+   .C  ( oclk ),
+   .CE ( 1    ),
+   .D1 ( 1    ),
+   .D2 ( 0    ),
+   .R  ( 0    ),
+   .S  ( 0    )
 );
 
 //------------------------------------------------
