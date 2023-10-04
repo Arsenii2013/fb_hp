@@ -1,0 +1,6 @@
+parameters:
+    VARIANT_NAME        : = ARGUMENTS['bv']
+    PROJECT_NAME        : = VARIANT_NAME
+    TOP_NAME            : axi4_lite_qspi
+    TESTBENCH_NAME      : axi4_lite_qspiTB
+    DEVICE              : xc7z015clg485-2

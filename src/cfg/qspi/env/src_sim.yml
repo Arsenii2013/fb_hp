@@ -1,0 +1,4 @@
+
+sources:
+    - lib/qspi/qspi.sv
+    - lib/qspi/qspiTB.sv
