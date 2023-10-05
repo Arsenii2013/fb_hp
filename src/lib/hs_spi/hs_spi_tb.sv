@@ -9,6 +9,8 @@ module hs_spi_tb;
 //
 localparam PRD          = 10ns;
 
+localparam SPI_AXI_AW  = 10;
+localparam SPI_AXI_DW  = 32;
 localparam SPI_AVMM_AW  = 10;
 localparam SPI_AVMM_DW  = 32;
 localparam MAX_BURST    = 128;
@@ -18,9 +20,10 @@ localparam SPI_W        = 4;
 //
 //      Objects
 //
-logic             clk  = 1;
+logic             clk     = 1;
 logic             oclk;
-logic             rst  = 1;
+logic             rst     = 1;
+logic             aresetn  = 0;
 logic             clkout;
 
 logic             sck;
@@ -28,10 +31,9 @@ logic             cs_n;
 logic [SPI_W-1:0] mosi;
 logic [SPI_W-1:0] miso;
 
-avmm_if #(
-    .AW        ( SPI_AVMM_AW ),
-    .DW        ( SPI_AVMM_DW ),
-    .MAX_BURST ( MAX_BURST   )
+axi4_lite_if #(
+    .AW        ( SPI_AXI_AW  ),
+    .DW        ( SPI_AXI_DW  )
 ) m_i();
 
 avmm_if #(
@@ -49,26 +51,26 @@ assign          oclk = ~clk;
 
 initial begin
     #20ns
-    rst = 0;
+    rst    = 0;
+    aresetn = 1;
 end
 
 //------------------------------------------------
 //
 //      Instances
 //
-hs_spi_master_avmm_m
+hs_spi_master_axi_m
 #(
     .AW        ( SPI_AVMM_AW ),
     .DW        ( SPI_AVMM_DW ),
-    .SPI_W     ( SPI_W       ),
-    .MAX_BURST ( MAX_BURST   )
+    .SPI_W     ( SPI_W       )
 )
 spi_master
 (
-    .clk       ( clk         ),
+    .aclk      ( clk         ),
     .oclk      ( oclk        ),
-    .rst       ( rst         ),
-    .bus       ( m_i         ),
+    .aresetn   ( aresetn     ),
+    .bus_axi   ( m_i         ),
     .SCK       ( sck         ),
     .CSn       ( cs_n        ),
     .MISO      ( miso        ),
@@ -93,13 +95,13 @@ spi_slave
     .MOSI      ( mosi        )
 );
 //------------------------------------------------
-avmm_master_m
+axi_transaction_generator
 #(
-    .MAX_BURST ( MAX_BURST   )
 )
-avmm_master
+axi_master
 (
-    .clk       ( clk         ),
+    .aresetn   ( aresetn     ),
+    .aclk      ( clk         ),
     .bus       ( m_i         )
 );
 //------------------------------------------------
@@ -118,83 +120,89 @@ avmm_slave
 endmodule : hs_spi_tb
 
 
-
-//------------------------------------------------
-//
-//      Test transaction generator
-//
-module avmm_master_m
-#(
+module axi_transaction_generator #(
     parameter AW        = 10,
-    parameter DW        = 32,
-    parameter MAX_BURST = 256
+    parameter DW        = 32
 )
 (
-    input logic    clk,
-    avmm_if.master bus
+    axi4_lite_if.m    bus,
+
+    input  logic      aresetn,
+    input  logic      aclk
 );
 
-//------------------------------------------------
-`timescale 1ns / 1ps;
-
-//------------------------------------------------
-//
-//      Types
-//
 typedef logic [DW-1:0] data_t;
 typedef logic [AW-1:0] addr_t;
 
-//------------------------------------------------
-//
-//      Function & Tasks
-//
-task automatic spi_write(input int    len,
-                         input addr_t addr,
-                         input data_t wdata[MAX_BURST]);
+task automatic read(input addr_t addr, output data_t data);
+    begin
 
-    automatic int cnt = 0;
+    logic [3:0] rresp;
     
-    @(posedge clk)
-    bus.write      <= 1;
-    bus.burstcount <= len;
-    bus.address    <= addr;
-    bus.writedata  <= wdata[0];
-    
-    while (cnt < len) begin
-        @(posedge clk)
-        if (!bus.waitrequest) cnt++;
-        bus.writedata <= wdata[cnt];
+    $display("[%t] : Read", $realtime);
+    @(posedge aclk)
+    bus.araddr  <= addr;
+    bus.arvalid <= 1;
+    bus.rready  <= 1;
+
+    for(;;) begin
+        @(posedge aclk)
+        if(bus.arready)
+            break;
     end
+    bus.arvalid <= 0;
 
-    bus.write <= 0;   
+    for(;;) begin
+        @(posedge aclk)
+        if(bus.rvalid)
+            break;
+    end
+    data        = bus.rdata;
+    rresp       = bus.rresp;
+    bus.rready  <= 0;
 
+    if(rresp != 'b000)
+        $display("RRESP isnt equal 0! RRESP = %x", rresp);
+
+    $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
+    end
 endtask
 
-//------------------------------------------------
-task automatic spi_read(input  int    len,
-                        input  addr_t addr,
-                        output data_t rdata[MAX_BURST]);
+task automatic write(input addr_t addr, input data_t data);
+    begin
 
-    automatic int cnt = 0;
+    logic [3:0] wresp;
 
-    @(posedge clk)
-    bus.read       <= 1;
-    bus.burstcount <= len;
-    bus.address    <= addr;
+    $display("[%t] : Write", $realtime);
+    @(posedge aclk)
+    bus.awaddr  <= addr;
+    bus.wdata   <= data;
+    bus.awvalid <= 1;
+    bus.wvalid  <= 1;
+    bus.wstrb   <= 'hFFFF;
+    bus.bready  <= 1;
 
-    wait(bus.waitrequest == 0);
-    
-    @(posedge clk)
-    bus.read <= 0;
-
-    while (cnt < len) begin
-        @(posedge clk)
-        if (bus.readdatavalid) begin
-            rdata[cnt] = bus.readdata;
-            cnt++;
-        end
+    for(;;) begin
+        @(posedge aclk)
+        if(bus.awready && bus.wready)
+            break;
     end
+    bus.awvalid <= 0;
+    bus.wvalid  <= 0;
 
+    for(;;) begin
+        @(posedge aclk)
+        if(bus.bvalid)
+            break;
+    end
+    wresp       = bus.bresp;
+    bus.rready  <= 0;
+
+    if(wresp != 'b000)
+        $display("BRESP isnt equal 0! BRESP = %x", wresp);
+
+    $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
+    end
 endtask
 
 //------------------------------------------------
@@ -203,37 +211,26 @@ endtask
 //
 initial begin
 
-    automatic int    n = 1;
-    automatic data_t wdata[MAX_BURST];
-    automatic data_t rdata[MAX_BURST];
+    automatic data_t wdata;
+    automatic data_t rdata;
+    automatic int i = 0;
 
-    bus.write = 0;
-    bus.read  = 0;
+    @(posedge aresetn)
+    #100ns
+    
+    for (i = 0; i < 2 ** AW; i++) begin
+        wdata = data_t'(i);
 
-    #100ns;
+        write(i, wdata);
+        read(i, rdata);
 
-    while (n <= MAX_BURST) begin
-        
-        automatic int i = 0;
-        
-        for (i=0; i<n; i++) begin
-            wdata[i] = data_t'(n+i);
+        if (wdata != rdata) begin
+            $display("Error: wdata = 0x%x, rdata = 0x%x", wdata, rdata);
+            $stop();
         end
-
-        spi_write(n, 4*n, wdata);
-        spi_read(n, 4*n, rdata);
-
-        for (i=0; i<n; i++) begin
-            if (wdata[i] != rdata[i]) begin
-                $display("Error: wdata = 0x%x, rdata = 0x%x", wdata[i], rdata[i]);
-                $stop();
-            end
-            else begin
-                $display("wdata = 0x%x, rdata = 0x%x", wdata[i], rdata[i]);
-            end
+        else begin
+            $display("wdata = 0x%x, rdata = 0x%x", wdata, rdata);
         end
-
-        n++;
     end
 
     $display("Success");
@@ -243,4 +240,4 @@ initial begin
 end
 
 //------------------------------------------------
-endmodule : avmm_master_m
+endmodule : axi_transaction_generator

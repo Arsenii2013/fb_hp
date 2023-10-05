@@ -1,6 +1,6 @@
 `include "axi4_lite_if.svh"
 
-module hs_spi_master_axi
+module hs_spi_master_axi_m
 #(
     parameter AW           = 10,
     parameter DW           = 32,
@@ -20,13 +20,13 @@ module hs_spi_master_axi
     input  logic  [SPI_W-1:0] MISO,
     output logic  [SPI_W-1:0] MOSI
 
-)
+);
 
     avmm_if #(.AW(AW), .DW(DW), .MAX_BURST(1)) bus_avmm();
 
     axi2avmm axi2avmm_m(
         .s_axi_aclk(aclk),
-        .s_axi_aresetn(arsetn),
+        .s_axi_aresetn(aresetn),
 
         .s_axi_awaddr(bus_axi.awaddr),
         .s_axi_awvalid(bus_axi.awvalid),
@@ -68,13 +68,13 @@ module hs_spi_master_axi
     (
         .clk(aclk),
         .oclk(oclk),
-        .rst(~arsetn),
+        .rst(~aresetn),
         .idle(idle),
         .bus(bus_avmm),
         .SCK(SCK),
         .CSn(CSn),
         .MISO(MISO),
         .MOSI(MOSI)
-    )
+    );
 
 endmodule 
