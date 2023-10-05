@@ -25,7 +25,7 @@ module qspi_wrapper
     axi4_lite_if #(.DW(32), .AW(32)) spi_bus_spi_aclk();
 
 
-    spi_crossbar spi_crossbar_m(
+    qspi_crossbar spi_crossbar_m(
         .aclk(aclk),
         .aresetn(aresetn),
 
@@ -70,7 +70,7 @@ module qspi_wrapper
         .m_axi_rready(spi_bus_aclk.rready)
     );
 
-    spi_clock_converter spi_clock_converter_m(
+    qspi_clock_converter spi_clock_converter_m(
         .s_axi_awaddr(spi_bus_aclk.awaddr),
         .s_axi_awprot(spi_bus_aclk.awprot),
         .s_axi_awvalid(spi_bus_aclk.awvalid),
@@ -124,7 +124,7 @@ module qspi_wrapper
     (
         .aclk(spi_aclk),
         .aresetn(spi_aresetn),
-        .ock(spi_oclk),
+        .oclk(spi_oclk),
         .idle(),
         .bus_axi(spi_bus_spi_aclk),
         .SCK(SCK),

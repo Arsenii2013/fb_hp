@@ -78,6 +78,9 @@ module top(
     logic REFCLK;
     logic PS_aresetn;
     logic PS_clk;
+    logic spi_aclk;
+    logic spi_oclk;
+    logic spi_aresetn;
     
     //-------------PCI-E-------------\\ 
     axi4_lite_if #(.DW(32), .AW(32)) bar0();
@@ -175,7 +178,22 @@ module top(
     );
 
     //-------------QSPI--------------\\
-    
+    qspi_wrapper qspi_wrapper_m
+    (
+        .aclk(PS_clk),
+        .aresetn(PS_aresetn),
+        .ps_bus(GP0),
+        .pcie_bus(bar1),
+
+        .spi_aclk(spi_aclk),
+        .spi_oclk(spi_oclk),
+        .spi_aresetn(spi_aresetn),
+        
+        .SCK(SCK),
+        .CSn(CSn),
+        .MISO(MISO),
+        .MOSI(MOSI)
+    );
 
     //-------------GPIO--------------\\
     blink
