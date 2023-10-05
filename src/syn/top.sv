@@ -29,44 +29,50 @@ module top(
     `endif //SYNTHESIS      
     
     `ifdef SYNTHESIS
-    input  logic [1:0] pcie_7x_mgt_rxn,
-    input  logic [1:0] pcie_7x_mgt_rxp,
-    output logic [1:0] pcie_7x_mgt_txn,
-    output logic [1:0] pcie_7x_mgt_txp,
+    input  logic [1:0]  pcie_7x_mgt_rxn,
+    input  logic [1:0]  pcie_7x_mgt_rxp,
+    output logic [1:0]  pcie_7x_mgt_txn,
+    output logic [1:0]  pcie_7x_mgt_txp,
     `endif //SYNTHESIS 
     
-    input  logic    REFCLK_n,
-    input  logic    REFCLK_p,
-    input  logic    PERST,
+    input  logic        REFCLK_n,
+    input  logic        REFCLK_p,
+    input  logic        PERST,
 
     //-------Processing System-------\\
-
     `ifdef SYNTHESIS
-    inout wire [14:0]  DDR_addr,
-    inout wire [2:0]   DDR_ba,
-    inout wire         DDR_cas_n,
-    inout wire         DDR_ck_n,
-    inout wire         DDR_ck_p,
-    inout wire         DDR_cke,
-    inout wire         DDR_cs_n,
-    inout wire [3:0]   DDR_dm,
-    inout wire [31:0]  DDR_dq,
-    inout wire [3:0]   DDR_dqs_n,
-    inout wire [3:0]   DDR_dqs_p,
-    inout wire         DDR_odt,
-    inout wire         DDR_ras_n,
-    inout wire         DDR_reset_n,
-    inout wire         DDR_we_n,
-    inout wire         FIXED_IO_ddr_vrn,
-    inout wire         FIXED_IO_ddr_vrp,
-    inout wire [53:0]  FIXED_IO_mio,
-    inout wire         FIXED_IO_ps_clk,
-    inout wire         FIXED_IO_ps_porb,
-    inout wire         FIXED_IO_ps_srstb,
+    inout wire [14:0]   DDR_addr,
+    inout wire [2:0]    DDR_ba,
+    inout wire          DDR_cas_n,
+    inout wire          DDR_ck_n,
+    inout wire          DDR_ck_p,
+    inout wire          DDR_cke,
+    inout wire          DDR_cs_n,
+    inout wire [3:0]    DDR_dm,
+    inout wire [31:0]   DDR_dq,
+    inout wire [3:0]    DDR_dqs_n,
+    inout wire [3:0]    DDR_dqs_p,
+    inout wire          DDR_odt,
+    inout wire          DDR_ras_n,
+    inout wire          DDR_reset_n,
+    inout wire          DDR_we_n,
+    inout wire          FIXED_IO_ddr_vrn,
+    inout wire          FIXED_IO_ddr_vrp,
+    inout wire [53:0]   FIXED_IO_mio,
+    inout wire          FIXED_IO_ps_clk,
+    inout wire          FIXED_IO_ps_porb,
+    inout wire          FIXED_IO_ps_srstb,
     `endif //SYNTHESIS 
+
+    //-------------QSPI--------------\\
+    output logic        SCK,
+    output logic        CSn,
+    input  logic [3:0]  MISO,
+    output logic [3:0]  MOSI,
 
     //-------------GPIO--------------\\
     output PL_led
+
     );
 
     logic REFCLK;
@@ -74,7 +80,6 @@ module top(
     logic PS_clk;
     
     //-------------PCI-E-------------\\ 
-    
     axi4_lite_if #(.DW(32), .AW(32)) bar0();
     axi4_lite_if #(.DW(32), .AW(32)) bar1();
     axi4_lite_if #(.DW(32), .AW(32)) bar2();
@@ -169,7 +174,8 @@ module top(
         .axi(bar0)
     );
 
-
+    //-------------QSPI--------------\\
+    
 
     //-------------GPIO--------------\\
     blink

@@ -1,0 +1,12 @@
+
+type : axi_clock_converter
+
+config:
+  ARUSER_WIDTH : 0
+  AWUSER_WIDTH : 0
+  BUSER_WIDTH  : 0
+  DATA_WIDTH   : 32
+  ID_WIDTH     : 0
+  PROTOCOL     : AXI4LITE
+  RUSER_WIDTH  : 0
+  WUSER_WIDTH  : 0

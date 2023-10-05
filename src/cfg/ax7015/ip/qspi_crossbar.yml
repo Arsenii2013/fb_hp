@@ -1,0 +1,8 @@
+
+type : axi_crossbar
+
+config:
+  M00_A00_ADDR_WIDTH : 32
+  NUM_MI             : 1
+  NUM_SI             : 2
+  PROTOCOL           : AXI4LITE
