@@ -5,3 +5,8 @@ sources:
     - ip/axi_memory.yml
 #    - ip/pcie_reset.yml
 #    - ip/pcie_dwidth_converter.yml
+
+
+    - ../qspi/ip/axi2avmm.yml
+    - ip/qspi_crossbar.yml
+    - ip/qspi_clock_converter.yml

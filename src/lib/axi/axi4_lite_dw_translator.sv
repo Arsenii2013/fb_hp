@@ -34,7 +34,7 @@ always_comb begin
     m.wready  = s.wready;
     m.bresp   = s.bresp;
     m.bvalid  = s.bvalid;
-    s.bready  = s.bready;
+    s.bready  = m.bready;
     s.araddr  = m.araddr;
     s.arprot  = m.arprot;
     s.arvalid = m.arvalid;

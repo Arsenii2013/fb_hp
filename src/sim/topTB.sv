@@ -20,9 +20,22 @@ module topTB(
     parameter LINK_CAP_MAX_LINK_WIDTH_EP = 6'h1;
     
     //defparam topTB.RP.rport.EXT_PIPE_SIM = "TRUE";
+
+    localparam SPI_AVMM_AW  = 10;
+    localparam SPI_AVMM_DW  = 32;
+    localparam MAX_BURST    = 1;
+    localparam SPI_W        = 4;
     
-    logic clock;
-    logic reset_n;
+    logic             clock;
+    logic             reset_n;
+    logic             reset;
+
+    logic             clkout;
+
+    logic             sck;
+    logic             cs_n;
+    logic [SPI_W-1:0] mosi;
+    logic [SPI_W-1:0] miso;
     
     `ifdef PCIE_PIPE_STACK
     //------------------- EP ------------------------------------
@@ -87,6 +100,11 @@ module topTB(
         .pipe_tx_6_sigs     (xil_tx6_sigs_ep),
         .pipe_tx_7_sigs     (xil_tx7_sigs_ep),
         `endif //PCIE_FULL_STACK
+
+        .SCK(sck),
+        .CSn(cs_n),
+        .MISO(miso),
+        .MOSI(mosi),
         
         .REFCLK_p(clock),
         .REFCLK_n(~clock),
@@ -140,7 +158,43 @@ module topTB(
     
     );
     `endif //PCIE_FULL_STACK
-    
+
+    avmm_if #(
+        .AW        ( SPI_AVMM_AW ),
+        .DW        ( SPI_AVMM_DW ),
+        .MAX_BURST ( MAX_BURST   )
+    ) s_i();
+
+    hs_spi_slave_avmm_m
+    #(
+        .AW        ( 10 ),
+        .DW        ( 32 ),
+        .SPI_W     ( 4  ),
+        .MAX_BURST ( 1  )
+    )
+    spi_slave
+    (
+        .clkout    ( clkout      ),
+        .rst       ( reset       ),
+        .bus       ( s_i         ),
+        .SCK       ( sck         ),
+        .CSn       ( cs_n        ),
+        .MISO      ( miso        ),
+        .MOSI      ( mosi        )
+    );
+
+    avmm_slave_stub #(
+        .AW        ( SPI_AVMM_AW ),
+        .DW        ( SPI_AVMM_DW ),
+        .MAX_BURST ( MAX_BURST   )
+    )
+    avmm_slave
+    (
+        .clk       ( clkout      ),
+        .rst       ( reset         ),
+        .bus       ( s_i         )
+    );
+        
     sys_clk_gen
     #(
         .halfcycle (REF_CLK_HALF_CYCLE),
@@ -154,6 +208,7 @@ module topTB(
         $display("[%t] : System Reset Asserted...", $realtime);
         
         reset_n = 1'b0;
+        reset = 1'b1;
         
         for (i = 0; i < 500; i = i + 1) begin
         
@@ -164,6 +219,7 @@ module topTB(
         $display("[%t] : System Reset De-asserted...", $realtime);
         
         reset_n = 1'b1;
+        reset = 1'b0;
     end
     
     

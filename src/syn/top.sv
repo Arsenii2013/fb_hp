@@ -29,52 +29,60 @@ module top(
     `endif //SYNTHESIS      
     
     `ifdef SYNTHESIS
-    input  logic [1:0] pcie_7x_mgt_rxn,
-    input  logic [1:0] pcie_7x_mgt_rxp,
-    output logic [1:0] pcie_7x_mgt_txn,
-    output logic [1:0] pcie_7x_mgt_txp,
+    input  logic [1:0]  pcie_7x_mgt_rxn,
+    input  logic [1:0]  pcie_7x_mgt_rxp,
+    output logic [1:0]  pcie_7x_mgt_txn,
+    output logic [1:0]  pcie_7x_mgt_txp,
     `endif //SYNTHESIS 
     
-    input  logic    REFCLK_n,
-    input  logic    REFCLK_p,
-    input  logic    PERST,
+    input  logic        REFCLK_n,
+    input  logic        REFCLK_p,
+    input  logic        PERST,
 
     //-------Processing System-------\\
-
     `ifdef SYNTHESIS
-    inout wire [14:0]  DDR_addr,
-    inout wire [2:0]   DDR_ba,
-    inout wire         DDR_cas_n,
-    inout wire         DDR_ck_n,
-    inout wire         DDR_ck_p,
-    inout wire         DDR_cke,
-    inout wire         DDR_cs_n,
-    inout wire [3:0]   DDR_dm,
-    inout wire [31:0]  DDR_dq,
-    inout wire [3:0]   DDR_dqs_n,
-    inout wire [3:0]   DDR_dqs_p,
-    inout wire         DDR_odt,
-    inout wire         DDR_ras_n,
-    inout wire         DDR_reset_n,
-    inout wire         DDR_we_n,
-    inout wire         FIXED_IO_ddr_vrn,
-    inout wire         FIXED_IO_ddr_vrp,
-    inout wire [53:0]  FIXED_IO_mio,
-    inout wire         FIXED_IO_ps_clk,
-    inout wire         FIXED_IO_ps_porb,
-    inout wire         FIXED_IO_ps_srstb,
+    inout wire [14:0]   DDR_addr,
+    inout wire [2:0]    DDR_ba,
+    inout wire          DDR_cas_n,
+    inout wire          DDR_ck_n,
+    inout wire          DDR_ck_p,
+    inout wire          DDR_cke,
+    inout wire          DDR_cs_n,
+    inout wire [3:0]    DDR_dm,
+    inout wire [31:0]   DDR_dq,
+    inout wire [3:0]    DDR_dqs_n,
+    inout wire [3:0]    DDR_dqs_p,
+    inout wire          DDR_odt,
+    inout wire          DDR_ras_n,
+    inout wire          DDR_reset_n,
+    inout wire          DDR_we_n,
+    inout wire          FIXED_IO_ddr_vrn,
+    inout wire          FIXED_IO_ddr_vrp,
+    inout wire [53:0]   FIXED_IO_mio,
+    inout wire          FIXED_IO_ps_clk,
+    inout wire          FIXED_IO_ps_porb,
+    inout wire          FIXED_IO_ps_srstb,
     `endif //SYNTHESIS 
+
+    //-------------QSPI--------------\\
+    output logic        SCK,
+    output logic        CSn,
+    input  logic [3:0]  MISO,
+    output logic [3:0]  MOSI,
 
     //-------------GPIO--------------\\
     output PL_led
+
     );
 
     logic REFCLK;
     logic PS_aresetn;
     logic PS_clk;
+    logic spi_aclk;
+    logic spi_oclk;
+    logic spi_aresetn;
     
     //-------------PCI-E-------------\\ 
-    
     axi4_lite_if #(.DW(32), .AW(32)) bar0();
     axi4_lite_if #(.DW(32), .AW(32)) bar1();
     axi4_lite_if #(.DW(32), .AW(32)) bar2();
@@ -169,7 +177,35 @@ module top(
         .axi(bar0)
     );
 
+    //-------------QSPI--------------\\
+    `ifndef SYNTHESIS
+    sys_clk_gen
+    #(
+        .halfcycle (5000), // 100 MHZ
+        .offset    (0)  // 
+    ) CLK_GEN (
+        .sys_clk (spi_aclk)
+    );
+    assign spi_oclk = ~spi_aclk;
+    assign spi_aresetn = PS_aresetn;
+    `endif // SYNTHESIS
 
+    qspi_wrapper qspi_wrapper_m
+    (
+        .aclk(PS_clk),
+        .aresetn(PS_aresetn),
+        .ps_bus(GP0),
+        .pcie_bus(bar1),
+
+        .spi_aclk(spi_aclk),
+        .spi_oclk(spi_oclk),
+        .spi_aresetn(spi_aresetn),
+        
+        .SCK(SCK),
+        .CSn(CSn),
+        .MISO(MISO),
+        .MOSI(MOSI)
+    );
 
     //-------------GPIO--------------\\
     blink

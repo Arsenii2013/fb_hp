@@ -105,7 +105,7 @@ module PS_wrapper_(
     sys_clk_gen
     #(
         .halfcycle (5000), // 100 MHZ
-        .offset    (0)
+        .offset    (2500)
     ) CLK_GEN (
         .sys_clk (peripheral_clock)
     );
@@ -120,8 +120,9 @@ module PS_wrapper_(
     initial begin
         peripheral_aresetn <= 0;
         peripheral_reset   <= 1;
-        for(int i = 0; i < 500; i++)
-            @(posedge peripheral_clock)
+        for(int i = 0; i < 500; i++) begin
+            @(posedge peripheral_clock);
+        end
         peripheral_aresetn <= 1;
         peripheral_reset   <= 0;
     end
