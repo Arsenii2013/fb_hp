@@ -178,6 +178,18 @@ module top(
     );
 
     //-------------QSPI--------------\\
+    `ifndef SYNTHESIS
+    sys_clk_gen
+    #(
+        .halfcycle (5000), // 100 MHZ
+        .offset    (0)  // 
+    ) CLK_GEN (
+        .sys_clk (spi_aclk)
+    );
+    assign spi_oclk = ~spi_aclk;
+    assign spi_aresetn = PS_aresetn;
+    `endif // SYNTHESIS
+
     qspi_wrapper qspi_wrapper_m
     (
         .aclk(PS_clk),

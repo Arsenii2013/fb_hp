@@ -71,6 +71,8 @@ module qspi_wrapper
     );
 
     qspi_clock_converter spi_clock_converter_m(
+        .s_axi_aclk(aclk),
+        .s_axi_aresetn(aresetn),
         .s_axi_awaddr(spi_bus_aclk.awaddr),
         .s_axi_awprot(spi_bus_aclk.awprot),
         .s_axi_awvalid(spi_bus_aclk.awvalid),
@@ -91,6 +93,8 @@ module qspi_wrapper
         .s_axi_rvalid(spi_bus_aclk.rvalid),
         .s_axi_rready(spi_bus_aclk.rready),
 
+        .m_axi_aclk(spi_aclk),
+        .m_axi_aresetn(spi_aresetn),
         .m_axi_awaddr(spi_bus_spi_aclk.awaddr),
         .m_axi_awprot(spi_bus_spi_aclk.awprot),
         .m_axi_awvalid(spi_bus_spi_aclk.awvalid),
@@ -111,7 +115,6 @@ module qspi_wrapper
         .m_axi_rvalid(spi_bus_spi_aclk.rvalid),
         .m_axi_rready(spi_bus_spi_aclk.rready)
     );
-
 
     hs_spi_master_axi_m
     #(

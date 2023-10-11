@@ -6,3 +6,6 @@ config:
   NUM_MI             : 1
   NUM_SI             : 2
   PROTOCOL           : AXI4LITE
+  R_REGISTER         : 0
+  S00_ARB_PRIORITY   : 0
+  S01_ARB_PRIORITY   : 1
