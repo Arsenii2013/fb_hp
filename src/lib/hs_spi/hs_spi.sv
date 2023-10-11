@@ -242,6 +242,8 @@ always_ff @(posedge SCK) begin : spi_fsm
 end
 
 //------------------------------------------------
+initial 
+    MISO = 0;
 always @(*) MISO <= #TCO tx_sr[DW-1:DW-SPI_W];
 
 always_ff @(posedge SCK) tx_sr <= cs_n ? databuf : {tx_sr[DW-SPI_W-1:0], slice_t'(0)};
