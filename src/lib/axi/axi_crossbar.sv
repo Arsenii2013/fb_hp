@@ -13,7 +13,7 @@ module axi_crossbar
     input  logic  aresetn,
     axi_lite_if.s m,
     axi_lite_if.m s[N]
-)
+);
     localparam BASE      = $clog2(N);
     localparam SAW       = AW - BASE;
     localparam PAGE_SIZE = 2 ** AW / N;
@@ -21,45 +21,94 @@ module axi_crossbar
     typedef enum  { IDLE, READ, WRITE } state_t;
 
     state_t state = IDLE, next_state;
-    logic [BASE-1:0] id = 0;
+    logic [BASE-1:0] id;
+
+    logic [N-1:0]    awvalid;
+    logic [N-1:0]    awready;
+    logic [N-1:0]    wvalid;
+    logic [N-1:0]    wready;
+    logic [N-1:0]    bresp1;
+    logic [N-1:0]    bresp2;
+    logic [N-1:0]    bvalid;
+    logic [N-1:0]    bready;
+
+    logic [N-1:0]    arvalid;
+    logic [N-1:0]    arready;
+    logic [N-1:0]    rresp1;
+    logic [N-1:0]    rresp2;
+    logic [N-1:0]    rvalid;
+    logic [N-1:0]    rready;
+    logic [DW-1:0]   rdata[N];
 
     genvar i;
     generate
         for (i=0; i<N; i++) begin 
-            assign s[i].awaddr = m.awaddr;
-            assign s[i].awprot = m.awprot;
-            assign s[i].wdata  = m.wdata;
-            assign s[i].wstrb  = m.wstrb;
+            assign s[i].awaddr      = m.awaddr;
+            assign s[i].awprot      = m.awprot;
+            assign s[i].wdata       = m.wdata;
+            assign s[i].wstrb       = m.wstrb;
 
-            assign s[i].araddr = m.araddr;
-            assign s[i].arprot = m.arprot;
+            assign s[i].awvalid     = awvalid[i];
+            assign awready[i]       = s[i].awready;
+            assign s[i].wvalid      = wvalid[i];
+            assign wready[i]        = s[i].wready;
+            assign bresp1[i]        = s[i].bresp[0];
+            assign bresp2[i]        = s[i].bresp[1];
+            assign bready[i]        = s[i].bready;
+
+            assign s[i].araddr      = m.araddr;
+            assign s[i].arprot      = m.arprot;
+
+            assign s[i].arvalid     = arvalid[i];
+            assign arready[i]       = s[i].arready;
+            assign rdata[i]         = s[i].rdata;
+            assign rresp1[i]        = s[i].rresp[0];
+            assign rresp2[i]        = s[i].rresp[1];
+            assign rvalid[i]        = s[i].rvalid;
+            assign s[i].rready      = rready[i];
         end
     endgenerate
-    
-    assign s[id].awvalid = m.awvalid;
-    assign m.awready     = s[id].awready;
-    assign s[id].wvalid  = m.wvalid;
-    assign m.wready      = s[id].wready;
-    assign m.bresp       = s[id].bresp;
-    assign m.bvalid      = s[id].bvalid;
-    assign s[id].bready  = m.bready;
 
-    assign s[id].arvalid = m.arvalid;
-    assign m.arready     = s[id].arready;
-    assign m.rresp       = s[id].rresp;
-    assign m.rvalid      = s[id].rvalid;
-    assign s[id].rready  = m.rready;
+    always_comb begin 
+        if(next_state == READ)
+            id = m.araddr[AW-1:SAW-BASE];
+        else if(next_state == WRITE)
+            id = m.awaddr[AW-1:SAW-BASE];
+        else
+            id = 0;
+    end
+    
+    assign m.awready     = awready[id];
+    assign m.wready      = wready[id];
+    assign m.bresp       = {bresp1[id], bresp2[id]};
+    assign m.bvalid      = bvalid[id];
+
+    assign m.arready     = arready[id];
+    assign m.rresp       = {rresp1[id], rresp2[id]};
+    assign m.rvalid      = rvalid[id];
+    assign m.rdata       = rdata[id];
+
+    always_comb begin
+        for(int i=0;i<N;i++) begin
+            awvalid[i] = 0;
+            wvalid[i]  = 0;
+            bready[i]  = 0;
+            arvalid[i] = 0;
+            rready[i]  = 0;
+        end
+
+        awvalid[id]   = m.awvalid;
+        wvalid[id]    = m.wvalid;
+        bready[id]    = m.bready;
+        arvalid[id]   = m.arvalid;
+        rready[id]    = m.rready;
+    end
 
     always_ff @( posedge aclk ) begin 
         if(~aresetn) begin
             state <= IDLE;
-            id    <= 0;
         end
         else begin
-            if(next_state == READ)
-                id <= m.araddr[AW-1:SAW-BASE];
-            if(next_state == WRITE)
-                id <= m.awaddr[AW-1:SAW-BASE];
             state <= next_state;
         end
     end
@@ -72,4 +121,4 @@ module axi_crossbar
         endcase;
     end
 
-endmodule;
+endmodule

@@ -1,5 +1,5 @@
 type : axi_bram_ctrl
 config :
     BMG_INSTANCE : INTERNAL
-    MEM_DEPTH    : 256 
+    MEM_DEPTH    : 1024 
     PROTOCOL     : AXI4LITE 
