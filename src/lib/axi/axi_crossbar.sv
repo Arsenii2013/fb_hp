@@ -11,8 +11,8 @@ module axi_crossbar
 (    
     input  logic  aclk,
     input  logic  aresetn,
-    axi_lite_if.s m,
-    axi_lite_if.m s[N]
+    axi4_lite_if.s m,
+    axi4_lite_if.m s[N]
 );
     localparam BASE      = $clog2(N);
     localparam SAW       = AW - BASE;
@@ -43,7 +43,7 @@ module axi_crossbar
     genvar i;
     generate
         for (i=0; i<N; i++) begin 
-            assign s[i].awaddr      = m.awaddr;
+            assign s[i].awaddr      = m.awaddr[SAW-1:0];
             assign s[i].awprot      = m.awprot;
             assign s[i].wdata       = m.wdata;
             assign s[i].wstrb       = m.wstrb;
@@ -54,9 +54,8 @@ module axi_crossbar
             assign wready[i]        = s[i].wready;
             assign bresp1[i]        = s[i].bresp[0];
             assign bresp2[i]        = s[i].bresp[1];
-            assign bready[i]        = s[i].bready;
 
-            assign s[i].araddr      = m.araddr;
+            assign s[i].araddr      = m.araddr[SAW-1:0];
             assign s[i].arprot      = m.arprot;
 
             assign s[i].arvalid     = arvalid[i];
@@ -66,16 +65,18 @@ module axi_crossbar
             assign rresp2[i]        = s[i].rresp[1];
             assign rvalid[i]        = s[i].rvalid;
             assign s[i].rready      = rready[i];
+            assign bvalid[i]        = s[i].bvalid;
+            assign s[i].bready      = bready[i];
         end
     endgenerate
 
     always_comb begin 
-        if(next_state == READ)
-            id = m.araddr[AW-1:SAW-BASE];
-        else if(next_state == WRITE)
-            id = m.awaddr[AW-1:SAW-BASE];
-        else
-            id = 0;
+        if(next_state == WRITE)
+            id = m.awaddr[AW-1:SAW];
+        else if(next_state == READ)
+            id = m.araddr[AW-1:SAW];
+        else 
+            id = id;
     end
     
     assign m.awready     = awready[id];

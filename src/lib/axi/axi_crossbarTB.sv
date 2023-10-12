@@ -6,8 +6,57 @@
 
 module axi_crossbarTB(
     );
-    axi4_lite_if #(.AW(32), .DW(64)) m();
-    axi4_lite_if #(.AW(32), .DW(64)) s[`SLAVES]();
+    logic aresetn = 0;
+    logic aclk    = 0;
+
+    axi4_lite_if #(.AW(32), .DW(32)) m();
+    axi4_lite_if #(.AW(32), .DW(32)) s[`SLAVES]();
+
+    axi_transaction_generator #(.AW(32), .DW(32))
+    generator (
+        .bus(m),
+        .aresetn(aresetn),
+        .aclk(aclk)
+    );
+    axi_crossbar
+    #(
+        .N(`SLAVES),
+        .AW(32),
+        .DW(32)
+    ) 
+    DUT 
+    (
+        .aresetn(aresetn),
+        .aclk(aclk),
+        .m(m),
+        .s(s)
+    );
+
+    genvar i;
+    generate
+        for (i=0; i<`SLAVES; i++) begin 
+            mem_wrapper mem_i(
+                .aresetn(aresetn),
+                .aclk(aclk),
+                .axi(s[i])
+            );
+        end
+    endgenerate
+
+    initial begin 
+        forever begin
+            #10; 
+            aclk = ~aclk;
+        end 
+    end
+    initial begin
+        aresetn = 0;
+        #100ns;
+        aresetn = 1;
+
+        #10000000ns;
+        $finish();
+    end
 
 endmodule : axi_crossbarTB
 
@@ -101,7 +150,7 @@ endtask
 //
 //      Logic
 //
-localparam BASE      = $clog2(N);
+localparam BASE      = $clog2(`SLAVES);
 localparam SAW       = AW - BASE;
 
 initial begin
@@ -119,15 +168,15 @@ initial begin
         for (j = 0; j < 256; j++) begin
             wdata = data_t'(i * 2 ** SAW + j);
 
-            read(i * 2 ** SAW + j, rdata);
+            read(i * 2 ** SAW + j * 4, rdata);
 
             if (rdata != 0) begin
                 $display("Error: wdata = 0x%x, rdata = 0x%x", wdata, rdata);
                 $stop();
             end
 
-            write(i * 2 ** SAW + j, wdata);
-            read(i * 2 ** SAW + j, rdata);
+            write(i * 2 ** SAW + j * 4, wdata);
+            read(i * 2 ** SAW + j * 4, rdata);
 
             if (wdata != rdata) begin
                 $display("Error: wdata = 0x%x, rdata = 0x%x", wdata, rdata);
@@ -141,7 +190,6 @@ initial begin
 
     $display("Success");
     
-    #100ns
     $stop();
 end
 
