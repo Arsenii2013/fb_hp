@@ -27,7 +27,7 @@ localparam MMR_SYS         = '0;
 localparam MMR_SCC         = MMR_SYS   + 1;
 localparam MMR_MEM         = MMR_SCC   + 1;
 localparam MMR_QSPI        = MMR_MEM   + 1;
-localparam MMR_DEV_COUNT   = MMR_QSPI + 1;
+localparam MMR_DEV_COUNT   = MMR_QSPI  + 1;
 
 //      Processing system
 localparam GP0_ADDR_W      = 32;

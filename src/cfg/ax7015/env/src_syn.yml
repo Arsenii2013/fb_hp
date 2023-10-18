@@ -12,6 +12,7 @@ sources:
     - src/syn/PS_wrapper.sv
     - src/lib/common/blink.sv
     - src/lib/axi/axi4_lite_dw_translator.sv
+    - src/lib/axi/axi_crossbar.sv
 
     - src/lib/hs_spi/hs_spi.sv
     - src/lib/hs_spi/hs_spi_avmm.sv

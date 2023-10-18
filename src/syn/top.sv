@@ -81,7 +81,45 @@ module top(
     logic spi_aclk;
     logic spi_oclk;
     logic spi_aresetn;
-    
+     
+    //-------Processing System-------\\
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
+    axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
+
+    PS_wrapper_ 
+    PS_wrapper_i (
+        `ifdef SYNTHESIS
+        .DDR_addr(DDR_addr),
+        .DDR_ba(DDR_ba),
+        .DDR_cas_n(DDR_cas_n),
+        .DDR_ck_n(DDR_ck_n),
+        .DDR_ck_p(DDR_ck_p),
+        .DDR_cke(DDR_cke),
+        .DDR_cs_n(DDR_cs_n),
+        .DDR_dm(DDR_dm),
+        .DDR_dq(DDR_dq),
+        .DDR_dqs_n(DDR_dqs_n),
+        .DDR_dqs_p(DDR_dqs_p),
+        .DDR_odt(DDR_odt),
+        .DDR_ras_n(DDR_ras_n),
+        .DDR_reset_n(DDR_reset_n),
+        .DDR_we_n(DDR_we_n),
+        .FIXED_IO_ddr_vrn(FIXED_IO_ddr_vrn),
+        .FIXED_IO_ddr_vrp(FIXED_IO_ddr_vrp),
+        .FIXED_IO_mio(FIXED_IO_mio),
+        .FIXED_IO_ps_clk(FIXED_IO_ps_clk),
+        .FIXED_IO_ps_porb(FIXED_IO_ps_porb),
+        .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
+        `endif // SYNTHESIS
+
+        .GP0(GP0),
+        .HP0(HP0),
+        
+        .peripheral_clock(PS_clk),
+        .peripheral_aresetn(PS_aresetn),
+        .peripheral_reset()
+    );
+
     //-------------PCI-E-------------\\ 
     axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
     axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
@@ -125,56 +163,34 @@ module top(
         
         .bar0(bar0),
         .bar1(bar1),
-        .bar2(bar2),
+        .bar2(HP0),
         .bar_clk(PS_clk),
         .bar_aresetn(PS_aresetn)
     );
 
-    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
-    //axi4_lite_if #(.DW(32), .AW(32)) HP0();
+    //-------------MMR--------------\\
+    localparam MMR_DEV_COUNT2 = 2 ** ($clog2(MMR_DEV_COUNT) + 1);
 
-     
-    //-------Processing System-------\\
-    PS_wrapper_ 
-    PS_wrapper_i (
-        `ifdef SYNTHESIS
-        .DDR_addr(DDR_addr),
-        .DDR_ba(DDR_ba),
-        .DDR_cas_n(DDR_cas_n),
-        .DDR_ck_n(DDR_ck_n),
-        .DDR_ck_p(DDR_ck_p),
-        .DDR_cke(DDR_cke),
-        .DDR_cs_n(DDR_cs_n),
-        .DDR_dm(DDR_dm),
-        .DDR_dq(DDR_dq),
-        .DDR_dqs_n(DDR_dqs_n),
-        .DDR_dqs_p(DDR_dqs_p),
-        .DDR_odt(DDR_odt),
-        .DDR_ras_n(DDR_ras_n),
-        .DDR_reset_n(DDR_reset_n),
-        .DDR_we_n(DDR_we_n),
-        .FIXED_IO_ddr_vrn(FIXED_IO_ddr_vrn),
-        .FIXED_IO_ddr_vrp(FIXED_IO_ddr_vrp),
-        .FIXED_IO_mio(FIXED_IO_mio),
-        .FIXED_IO_ps_clk(FIXED_IO_ps_clk),
-        .FIXED_IO_ps_porb(FIXED_IO_ps_porb),
-        .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
-        `endif // SYNTHESIS
-
-        .GP0(GP0),
-        .HP0(bar2),
-        
-        .peripheral_clock(PS_clk),
-        .peripheral_aresetn(PS_aresetn),
-        .peripheral_reset()
+    axi4_lite_if #(.AW(32), .DW(32)) mmr[MMR_DEV_COUNT2]();
+    axi_crossbar
+    #(
+        .N(MMR_DEV_COUNT2),
+        .AW(MMR_ADDR_W),
+        .DW(MMR_DATA_W)
+    ) 
+    mmr_crossbar 
+    (
+        .aresetn(PS_aresetn),
+        .aclk(PS_clk),
+        .m(bar0),
+        .s(mmr)
     );
-
 
     mem_wrapper
     mem_i (
         .aclk(PS_clk),
         .aresetn(PS_aresetn),
-        .axi(bar0)
+        .axi(mmr[MMR_SYS])
     );
 
     //-------------QSPI--------------\\
@@ -195,7 +211,7 @@ module top(
         .aclk(PS_clk),
         .aresetn(PS_aresetn),
         .ps_bus(GP0),
-        .pcie_bus(bar1),
+        .pcie_bus(mmr[MMR_QSPI]),
 
         .spi_aclk(spi_aclk),
         .spi_oclk(spi_oclk),

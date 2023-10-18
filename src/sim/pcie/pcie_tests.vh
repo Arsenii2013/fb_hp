@@ -14,13 +14,15 @@ begin
 //--------------------------------------------------------------------------
     pci_e_write(0, 'h0, 'h0000DEAD);
     pci_e_write(2, 'h0, 'h0000BEEF);
-    pci_e_read(0, 'h0, recv_data);
-    pci_e_read(2, 'h0, recv_data);
+    pci_e_read (0, 'h0, recv_data);
+    pci_e_read (2, 'h0, recv_data);
 
-    pci_e_write(1, 'h0, 'h0000DEAD);
-    pci_e_write(1, 'h4, 'h0000BEEF);
-    pci_e_read(1, 'h0, recv_data);
-    pci_e_read(1, 'h4, recv_data);
+    // QSPI read write test
+    pci_e_write(0, 'h6000, 'h0000DEAD);
+    pci_e_write(0, 'h6004, 'h0000BEEF);
+    pci_e_read (0, 'h6000, recv_data);
+    pci_e_read (0, 'h6004, recv_data);
+    
     $display("[%t] : Finished transmission of PCI-Express TLPs", $realtime);
     if (!test_failed_flag) begin 
         $display ("Test Completed Successfully");
