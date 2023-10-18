@@ -1,7 +1,7 @@
 `timescale 1ns/1ns
 
 `include "axi4_lite_if.svh"
-`include "system.svh"
+`include "top.svh"
 
 module top(
     //-------------PCI-E-------------\\
@@ -83,9 +83,9 @@ module top(
     logic spi_aresetn;
     
     //-------------PCI-E-------------\\ 
-    axi4_lite_if #(.DW(32), .AW(32)) bar0();
-    axi4_lite_if #(.DW(32), .AW(32)) bar1();
-    axi4_lite_if #(.DW(32), .AW(32)) bar2();
+    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
+    axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
+    axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();
 
     IBUFDS_GTE2 REFCLK_ibuf_i (.O(REFCLK), .ODIV2(), .I(REFCLK_p), .CEB(1'b0), .IB(REFCLK_n));
     
@@ -130,7 +130,7 @@ module top(
         .bar_aresetn(PS_aresetn)
     );
 
-    axi4_lite_if #(.DW(32), .AW(32)) GP0();
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
     //axi4_lite_if #(.DW(32), .AW(32)) HP0();
 
      
@@ -161,7 +161,7 @@ module top(
         .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
         `endif // SYNTHESIS
 
-        .GP0,
+        .GP0(GP0),
         .HP0(bar2),
         
         .peripheral_clock(PS_clk),
@@ -181,7 +181,7 @@ module top(
     `ifndef SYNTHESIS
     sys_clk_gen
     #(
-        .halfcycle (5000), // 100 MHZ
+        .halfcycle (CLK_PRD / 2 * 1000), // in ps
         .offset    (0)  // 
     ) CLK_GEN (
         .sys_clk (spi_aclk)

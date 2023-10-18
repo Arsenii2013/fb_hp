@@ -1,7 +1,7 @@
 `timescale 1ns/1ns
 
 `include "axi4_lite_if.svh"
-`include "system.svh"
+`include "top.svh"
 
 module qspi_wrapper
 (

@@ -1,4 +1,5 @@
 `include "axi4_lite_if.svh"
+`include "top.svh"
 
 module PS_wrapper_(
     `ifdef SYNTHESIS
@@ -104,8 +105,8 @@ module PS_wrapper_(
     `ifndef SYNTHESIS
     sys_clk_gen
     #(
-        .halfcycle (5000), // 100 MHZ
-        .offset    (2500)
+        .halfcycle (CLK_PRD / 2 * 1000), 
+        .offset    (CLK_PRD / 4 * 1000) // for simulate async with PCIE clock signal
     ) CLK_GEN (
         .sys_clk (peripheral_clock)
     );
