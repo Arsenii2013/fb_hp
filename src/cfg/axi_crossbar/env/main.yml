@@ -1,0 +1,6 @@
+parameters:
+    VARIANT_NAME        : = ARGUMENTS['bv']
+    PROJECT_NAME        : = VARIANT_NAME
+    TOP_NAME            : axi_crossbar
+    TESTBENCH_NAME      : axi_crossbarTB
+    DEVICE              : xc7z015clg485-2
