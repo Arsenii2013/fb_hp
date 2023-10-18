@@ -81,6 +81,7 @@ module top(
     logic spi_aclk;
     logic spi_oclk;
     logic spi_aresetn;
+    logic [HP0_ADDR_W-1:0] HP0_offset;
      
     //-------Processing System-------\\
     axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
@@ -114,6 +115,7 @@ module top(
 
         .GP0(GP0),
         .HP0(HP0),
+        .HP0_offset(HP0_offset),
         
         .peripheral_clock(PS_clk),
         .peripheral_aresetn(PS_aresetn),
@@ -190,9 +192,16 @@ module top(
     mem_i (
         .aclk(PS_clk),
         .aresetn(PS_aresetn),
-        .axi(mmr[MMR_SYS])
+        .axi(mmr[MMR_SYS]),
+        .offset(0)
     );
 
+    mem_controller mem_controller_i(
+        .aclk(PS_clk),
+        .aresetn(PS_aresetn),
+        .bus(mmr[MMR_MEM]),
+        .offset(HP0_offset)
+    );
     //-------------QSPI--------------\\
     `ifndef SYNTHESIS
     sys_clk_gen
