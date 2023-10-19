@@ -9,8 +9,13 @@ create_clock -add -name REFCLK -period 10.00 -waveform {0 5} [get_ports { REFCLK
 
 
 set_property -dict { PACKAGE_PIN A5   IOSTANDARD LVCMOS33 } [get_ports { PL_led }];
-set_property -dict { PACKAGE_PIN A7   IOSTANDARD LVCMOS33 } [get_ports { user_link_up }];
-set_property -dict { PACKAGE_PIN A6   IOSTANDARD LVCMOS33 } [get_ports { mmcm_lock }];
+
+set_property -dict { PACKAGE_PIN M1   IOSTANDARD LVCMOS33 } [get_ports { SCK }];
+set_property -dict { PACKAGE_PIN M2   IOSTANDARD LVCMOS33 } [get_ports { CSn }];
+set_property -dict { PACKAGE_PIN Y13   IOSTANDARD LVCMOS33 } [get_ports { MISO[0] }];
+set_property -dict { PACKAGE_PIN Y12   IOSTANDARD LVCMOS33 } [get_ports { MISO[1] }];
+set_property -dict { PACKAGE_PIN P2   IOSTANDARD LVCMOS33 } [get_ports { MOSI[0] }];
+set_property -dict { PACKAGE_PIN P3   IOSTANDARD LVCMOS33 } [get_ports { MOSI[1] }];
 
 set_property PACKAGE_PIN W8 [get_ports {pcie_7x_mgt_rxp[0]}]
 set_property PACKAGE_PIN AA7 [get_ports {pcie_7x_mgt_rxp[1]}]

@@ -1,28 +1,30 @@
 `timescale 1ns/1ns
 
 `include "axi4_lite_if.svh"
-`include "system.svh"
+`include "top.svh"
 
-module qspi_wrapper
+module qspi_wrapper#(
+    parameter SPI_W        = 4
+)
 (
-    input  logic       aclk,
-    input  logic       aresetn,
-    axi4_lite_if.s     ps_bus,
-    axi4_lite_if.s     pcie_bus,
+    input  logic             aclk,
+    input  logic             aresetn,
+    axi4_lite_if.s           ps_bus,
+    axi4_lite_if.s           pcie_bus,
 
-    input  logic       spi_aclk,
-    input  logic       spi_oclk,
-    input  logic       spi_aresetn,
+    input  logic             spi_aclk,
+    input  logic             spi_oclk,
+    input  logic             spi_aresetn,
     
-    output logic       SCK,
-    output logic       CSn,
-    input  logic [3:0] MISO,
-    output logic [3:0] MOSI
+    output logic             SCK,
+    output logic             CSn,
+    input  logic [SPI_W-1:0] MISO,
+    output logic [SPI_W-1:0] MOSI
 
 );
 
-    axi4_lite_if #(.DW(32), .AW(32)) spi_bus_aclk();
-    axi4_lite_if #(.DW(32), .AW(32)) spi_bus_spi_aclk();
+    axi4_lite_if #(.DW(SPI_AXI_DW), .AW(SPI_AXI_AW)) spi_bus_aclk();
+    axi4_lite_if #(.DW(SPI_AXI_DW), .AW(SPI_AXI_AW)) spi_bus_spi_aclk();
 
 
     qspi_crossbar spi_crossbar_m(
@@ -118,9 +120,9 @@ module qspi_wrapper
 
     hs_spi_master_axi_m
     #(
-        .AW (10),
-        .DW (32),
-        .SPI_W (4),
+        .AW (SPI_AXI_AW),
+        .DW (SPI_AXI_DW),
+        .SPI_W (SPI_W),
         .DUMMY_CYCLES (4)
     )
     hs_spi_m

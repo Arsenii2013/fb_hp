@@ -1,5 +1,5 @@
 `timescale 1ns/1ns
-`include "system.svh"
+`include "top.svh"
 
 module topTB(
 

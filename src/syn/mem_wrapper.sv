@@ -4,14 +4,15 @@
 
 module mem_wrapper 
 (
-    input logic aclk,
-    input logic aresetn,
-    axi4_lite_if.s axi
+    input logic         aclk,
+    input logic         aresetn,
+    axi4_lite_if.s      axi,
+    input logic [31:0]  offset
 );
     axi_memory mem(
         .s_axi_aclk(aclk),
         .s_axi_aresetn(aresetn),
-        .s_axi_awaddr(axi.awaddr[11:0]),
+        .s_axi_awaddr(axi.awaddr[11:0] + offset[11:0]),
         .s_axi_awprot(axi.awprot),
         .s_axi_awvalid(axi.awvalid),
         .s_axi_awready(axi.awready),
@@ -22,7 +23,7 @@ module mem_wrapper
         .s_axi_bresp(axi.bresp[1:0]),
         .s_axi_bvalid(axi.bvalid),
         .s_axi_bready(axi.bready),
-        .s_axi_araddr(axi.araddr[11:0]),
+        .s_axi_araddr(axi.araddr[11:0] + offset[11:0]),
         .s_axi_arprot(axi.arprot),
         .s_axi_arvalid(axi.arvalid),
         .s_axi_arready(axi.arready),

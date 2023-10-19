@@ -1,4 +1,5 @@
 `include "axi4_lite_if.svh"
+`include "top.svh"
 
 module PS_wrapper_(
     `ifdef SYNTHESIS
@@ -25,12 +26,17 @@ module PS_wrapper_(
     inout wire         FIXED_IO_ps_srstb,
     `endif //SYNTHESIS 
 
-    axi4_lite_if.m     GP0,
-    axi4_lite_if.s     HP0,
     output logic       peripheral_aresetn,
     output logic       peripheral_clock,
-    output logic       peripheral_reset
+    output logic       peripheral_reset,
+    axi4_lite_if.m                  GP0,
+    axi4_lite_if.s                  HP0,
+    input  logic [HP0_ADDR_W-1:0]   HP0_offset
    );
+
+    logic [HP0_ADDR_W-1:0]   HP0_araddr, HP0_awaddr;
+    assign HP0_araddr = HP0.araddr + HP0_offset;
+    assign HP0_awaddr = HP0.awaddr + HP0_offset;
    
     `ifdef SYNTHESIS
     PS PS_i   (
@@ -75,11 +81,11 @@ module PS_wrapper_(
         .GP0_wstrb(GP0.wstrb),
         .GP0_wvalid(GP0.wvalid),
 
-        .HP0_araddr(HP0.araddr),
+        .HP0_araddr(HP0_araddr),
         .HP0_arprot(HP0.arprot),
         .HP0_arready(HP0.arready),
         .HP0_arvalid(HP0.arvalid),
-        .HP0_awaddr(HP0.awaddr),
+        .HP0_awaddr(HP0_awaddr),
         .HP0_awprot(HP0.awprot),
         .HP0_awready(HP0.awready),
         .HP0_awvalid(HP0.awvalid),
@@ -104,8 +110,8 @@ module PS_wrapper_(
     `ifndef SYNTHESIS
     sys_clk_gen
     #(
-        .halfcycle (5000), // 100 MHZ
-        .offset    (2500)
+        .halfcycle (CLK_PRD / 2 * 1000), 
+        .offset    (CLK_PRD / 4 * 1000) // for simulate async with PCIE clock signal
     ) CLK_GEN (
         .sys_clk (peripheral_clock)
     );
@@ -114,7 +120,8 @@ module PS_wrapper_(
     PS_mem_i (
         .aclk(peripheral_clock),
         .aresetn(peripheral_aresetn),
-        .axi(HP0)
+        .axi(HP0),
+        .offset(HP0_offset)
     );
 
     initial begin
