@@ -214,8 +214,11 @@ module top(
     );
     assign spi_oclk = ~spi_aclk;
     assign spi_aresetn = PS_aresetn;
+    `else // SYNTHESIS
+    assign spi_aclk = PS_clk;
+    assign spi_oclk = ~spi_aclk;
+    assign spi_aresetn = PS_aresetn;
     `endif // SYNTHESIS
-
     qspi_wrapper 
     #(
         .SPI_W(SPI_W)
