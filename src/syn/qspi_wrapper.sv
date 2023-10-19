@@ -3,21 +3,23 @@
 `include "axi4_lite_if.svh"
 `include "top.svh"
 
-module qspi_wrapper
+module qspi_wrapper#(
+    parameter SPI_W        = 4
+)
 (
-    input  logic       aclk,
-    input  logic       aresetn,
-    axi4_lite_if.s     ps_bus,
-    axi4_lite_if.s     pcie_bus,
+    input  logic             aclk,
+    input  logic             aresetn,
+    axi4_lite_if.s           ps_bus,
+    axi4_lite_if.s           pcie_bus,
 
-    input  logic       spi_aclk,
-    input  logic       spi_oclk,
-    input  logic       spi_aresetn,
+    input  logic             spi_aclk,
+    input  logic             spi_oclk,
+    input  logic             spi_aresetn,
     
-    output logic       SCK,
-    output logic       CSn,
-    input  logic [3:0] MISO,
-    output logic [3:0] MOSI
+    output logic             SCK,
+    output logic             CSn,
+    input  logic [SPI_W-1:0] MISO,
+    output logic [SPI_W-1:0] MOSI
 
 );
 
@@ -120,7 +122,7 @@ module qspi_wrapper
     #(
         .AW (10),
         .DW (32),
-        .SPI_W (4),
+        .SPI_W (SPI_W),
         .DUMMY_CYCLES (4)
     )
     hs_spi_m

@@ -65,10 +65,10 @@ module top(
     `endif //SYNTHESIS 
 
     //-------------QSPI--------------\\
-    output logic        SCK,
-    output logic        CSn,
-    input  logic [3:0]  MISO,
-    output logic [3:0]  MOSI,
+    output logic              SCK,
+    output logic              CSn,
+    input  logic [SPI_W-1:0]  MISO,
+    output logic [SPI_W-1:0]  MOSI,
 
     //-------------GPIO--------------\\
     output PL_led
@@ -173,6 +173,8 @@ module top(
     //-------------MMR--------------\\
     localparam MMR_DEV_COUNT2 = 2 ** ($clog2(MMR_DEV_COUNT) + 1);
 
+    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) ___();
+    
     axi4_lite_if #(.AW(32), .DW(32)) mmr[MMR_DEV_COUNT2]();
     axi_crossbar
     #(
@@ -184,7 +186,7 @@ module top(
     (
         .aresetn(PS_aresetn),
         .aclk(PS_clk),
-        .m(bar0),
+        .m(bar1),
         .s(mmr)
     );
 
@@ -215,8 +217,10 @@ module top(
     assign spi_aresetn = PS_aresetn;
     `endif // SYNTHESIS
 
-    qspi_wrapper qspi_wrapper_m
-    (
+    qspi_wrapper 
+    #(
+        .SPI_W(SPI_W)
+    ) qspi_wrapper_i (
         .aclk(PS_clk),
         .aresetn(PS_aresetn),
         .ps_bus(GP0),

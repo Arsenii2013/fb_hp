@@ -36,4 +36,10 @@ localparam GP0_DATA_W      = 32;
 localparam HP0_ADDR_W      = 32;
 localparam HP0_DATA_W      = 32;
 
+//      High speed SPI axi wrapper
+localparam SPI_W           = 2;
+localparam SPI_AXI_AW      = 10;
+localparam SPI_AXI_DW      = 32;
+
+
 `endif //__TOP_SVH__
