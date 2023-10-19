@@ -173,9 +173,8 @@ module top(
     //-------------MMR--------------\\
     localparam MMR_DEV_COUNT2 = 2 ** ($clog2(MMR_DEV_COUNT) + 1);
 
-    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) ___();
     
-    axi4_lite_if #(.AW(32), .DW(32)) mmr[MMR_DEV_COUNT2]();
+    axi4_lite_if #(.AW(MMR_ADDR_W), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
     axi_crossbar
     #(
         .N(MMR_DEV_COUNT2),

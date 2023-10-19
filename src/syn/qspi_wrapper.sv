@@ -23,8 +23,8 @@ module qspi_wrapper#(
 
 );
 
-    axi4_lite_if #(.DW(32), .AW(32)) spi_bus_aclk();
-    axi4_lite_if #(.DW(32), .AW(32)) spi_bus_spi_aclk();
+    axi4_lite_if #(.DW(SPI_AXI_DW), .AW(SPI_AXI_AW)) spi_bus_aclk();
+    axi4_lite_if #(.DW(SPI_AXI_DW), .AW(SPI_AXI_AW)) spi_bus_spi_aclk();
 
 
     qspi_crossbar spi_crossbar_m(
@@ -120,8 +120,8 @@ module qspi_wrapper#(
 
     hs_spi_master_axi_m
     #(
-        .AW (10),
-        .DW (32),
+        .AW (SPI_AXI_AW),
+        .DW (SPI_AXI_DW),
         .SPI_W (SPI_W),
         .DUMMY_CYCLES (4)
     )
