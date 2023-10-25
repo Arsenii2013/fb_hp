@@ -215,9 +215,15 @@ module top(
     assign spi_oclk = ~spi_aclk;
     assign spi_aresetn = PS_aresetn;
     `else // SYNTHESIS
-    assign spi_aclk = PS_clk;
-    assign spi_oclk = ~spi_aclk;
+    
     assign spi_aresetn = PS_aresetn;
+    qspi_pll (
+        .clk_out1(spi_aclk),
+        .clk_out2(spi_oclk),
+        .resetn(spi_aresetn),
+        .locked(),
+        .clk_in1(PS_clk)
+    );
     `endif // SYNTHESIS
     qspi_wrapper 
     #(
