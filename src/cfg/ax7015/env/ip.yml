@@ -10,3 +10,4 @@ sources:
     - ../qspi/ip/axi2avmm.yml
     - ip/qspi_crossbar.yml
     - ip/qspi_clock_converter.yml
+    - ip/qspi_pll.yml

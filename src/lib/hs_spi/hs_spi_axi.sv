@@ -64,7 +64,7 @@ module hs_spi_master_axi_m
         .SPI_W(SPI_W),
         .DUMMY_CYCLES(DUMMY_CYCLES)
     )
-    qspi_master_m
+    hs_spi_master_m
     (
         .clk(aclk),
         .oclk(oclk),
