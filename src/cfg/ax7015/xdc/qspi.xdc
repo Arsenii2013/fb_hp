@@ -1,15 +1,15 @@
 set spi_Tsu  0.924
-set spi_Th   0.541
-set spi_Tco  6.182
+set spi_Th   0
+set spi_Tco  8.182
 
-set SCK_delay_max 2.056
-set SCK_delay_min 2.056
-set CSn_delay_max 2.009
-set CSn_delay_min 2.009
-set MOSI_delay_max 2.056
-set MOSI_delay_min 2.008
-set MISO_delay_max 2.295
-set MISO_delay_min 2.217
+set SCK_delay_max 1.5
+set SCK_delay_min 1.5
+set CSn_delay_max 1.5
+set CSn_delay_min 1.5
+set MOSI_delay_max 1.5
+set MOSI_delay_min 1.5
+set MISO_delay_max 1.5
+set MISO_delay_min 1.5
 
 set CSn_max_output_delay  [expr $CSn_delay_max  + $spi_Tsu - $SCK_delay_min]
 set CSn_min_output_delay  [expr $CSn_delay_min  - $spi_Th  - $SCK_delay_max]
