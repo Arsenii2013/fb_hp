@@ -1,0 +1,5 @@
+import : main
+
+sources:
+    - src/lib/gtpwizard/gtpwizard.sv
+    - src/lib/gtpwizard/gtpwizardTB.sv
