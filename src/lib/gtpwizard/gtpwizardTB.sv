@@ -10,8 +10,9 @@ module gtpwizardTB(
     logic reset_done;
     logic tx_clk;
     logic rx_clk;
-    logic [7:0] rx_data;
-    logic [7:0] tx_data;
+    logic [15:0] rx_data;
+    logic [15:0] tx_data;
+    logic [2 :0] is_k;
 
     logic rx_n;
     logic rx_p;
@@ -32,6 +33,7 @@ module gtpwizardTB(
 
         .rx_data(rx_data),
         .tx_data(tx_data),
+        .tx_is_k(is_k),
 
         .rx_n(rx_n),
         .rx_p(rx_p),
@@ -42,6 +44,7 @@ module gtpwizardTB(
     frame_gen frame_gen_i(
         .tx_data(tx_data),
         .tx_clk(tx_clk),
+        .is_k(is_k),
         .reset(!reset_done)
     );
 
@@ -73,16 +76,25 @@ endmodule;
 
 
 module frame_gen (
-    output logic  [7:0]  tx_data,
+    output logic  [15:0]  tx_data,
+    output logic  [2 :0]  is_k,
 
     input  logic         tx_clk,
     input  logic         reset 
 ); 
 
     localparam   WORDS_IN_BRAM = 8;
-    //                                           D0          D1           D2            K28.1       D3              D4         D5          K28.1
-    logic [7:0] bram [0:WORDS_IN_BRAM-1] = '{8'b00000000, 8'b00000001, 8'b00000010, 8'b00111100, 8'b00000011, 8'b00000100, 8'b00000101, 8'b00111100};
+    //                                           D24.2D20.2                 D0.2D20.1                D3.1D7.5                   K28.5K28.5
+    //logic [19:0] bram [0:WORDS_IN_BRAM-1] = '{20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010,
+    //                                          20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010};
+
+    //                                           D24.2D20.2               D0.2D20.1           D3.1D7.5              K28.5K28.5
+    logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100,
+                                              16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100};
+
     logic [$clog2(WORDS_IN_BRAM)-1:0] i = 0;
+
+    assign is_k = (tx_data == 16'b1011110010111100) ? 'b1 : 'b0;
 
     always_ff @( tx_clk ) begin 
         if(reset)

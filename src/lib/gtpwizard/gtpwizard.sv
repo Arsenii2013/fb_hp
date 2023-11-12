@@ -10,8 +10,9 @@ module gtpwizard(
     input  logic       reset,
     input  logic       rx_slide,
 
-    output logic [7:0] rx_data,
-    input  logic [7:0] tx_data,
+    output logic [15:0] rx_data,
+    input  logic [15:0] tx_data,
+    input  logic        tx_is_k,
 
     input  logic       rx_n,
     input  logic       rx_p,
@@ -29,7 +30,7 @@ module gtpwizard(
     gtwizard gtwizard_i(
         .soft_reset_tx_in               (reset),
         .soft_reset_rx_in               (reset),
-        .dont_reset_on_data_error_in    ('b0),
+        .dont_reset_on_data_error_in    ('b1),
         .q0_clk1_gtrefclk_pad_n_in      (refclk_n),
         .q0_clk1_gtrefclk_pad_p_in      (refclk_p),
         .gt0_tx_fsm_reset_done_out      (tx_reset_done),
@@ -59,7 +60,7 @@ module gtpwizard(
         .gt0_gtprxn_in                  (rx_n),
         .gt0_gtprxp_in                  (rx_p),
         //------------ Receive Ports - RX Byte and Word Alignment Ports ------------
-        .gt0_rxslide_in                 (rx_slide),
+        //.gt0_rxslide_in                 (rx_slide),
         //---------- Receive Ports - RX Decision Feedback Equalizer(DFE) -----------
         .gt0_dmonitorout_out            (),
         //------------------ Receive Ports - RX Equailizer Ports -------------------
@@ -68,10 +69,17 @@ module gtpwizard(
         //------------- Receive Ports - RX Fabric Output Control Ports -------------
         .gt0_rxoutclkfabric_out         (),
         //----------- Receive Ports - RX Initialization and Reset Ports ------------
-        .gt0_gtrxreset_in               ('b0),
+        .gt0_gtrxreset_in               (reset),
         .gt0_rxlpmreset_in              ('b0),
         //------------ Receive Ports -RX Initialization and Reset Ports ------------
         .gt0_rxresetdone_out            (),
+
+
+        .gt0_rxmcommaalignen_in         ('b1),
+        .gt0_rxpcommaalignen_in         ('b1),
+
+
+
         //------------------- TX Initialization and Reset Ports --------------------
         .gt0_gttxreset_in               ('b0),
         .gt0_txuserrdy_in               ('b1),
@@ -85,6 +93,8 @@ module gtpwizard(
         .gt0_txoutclkpcs_out            (),
         //----------- Transmit Ports - TX Initialization and Reset Ports -----------
         .gt0_txresetdone_out            (),
+        .gt0_txcharisk_in               (tx_is_k),
+        .gt0_tx8b10ben_in               ('b1),
 
         //____________________________COMMON PORTS________________________________
         .gt0_pll0reset_out(),
