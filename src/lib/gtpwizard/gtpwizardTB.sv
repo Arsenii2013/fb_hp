@@ -7,7 +7,8 @@ module gtpwizardTB(
     logic refclk;
     logic sysclk;
     logic reset;
-    logic reset_done;
+    logic tx_reset_done;
+    logic rx_reset_done;
     logic tx_clk;
     logic rx_clk;
     logic [15:0] rx_data;
@@ -26,7 +27,9 @@ module gtpwizardTB(
         .refclk_n(!refclk),
         .refclk_p(refclk),
         .sysclk(sysclk),
-        .reset_done(reset_done),
+        .soft_reset(reset),
+        .rx_reset_done(rx_reset_done),
+        .tx_reset_done(tx_reset_done),
         .tx_clk(tx_clk),
         .rx_clk(rx_clk),
         //.reset(reset),
@@ -46,7 +49,7 @@ module gtpwizardTB(
         .tx_data(tx_data),
         .tx_clk(tx_clk),
         .is_k(txcharisk),
-        .ready(reset_done)
+        .ready(tx_reset_done)
     );
 
     sys_clk_gen
@@ -69,6 +72,12 @@ module gtpwizardTB(
         reset = 'b1;
         #100;
         reset = 'b0;
+        @(posedge rx_reset_done);
+        #1000000;
+        reset = 'b1;
+        #10000;
+        reset = 'b0;
+        @(posedge rx_reset_done);
         #100000;
         $stop();
     end 

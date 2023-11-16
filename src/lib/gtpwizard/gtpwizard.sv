@@ -3,7 +3,9 @@ module gtpwizard(
     input  logic       refclk_n,
     input  logic       refclk_p,
     input  logic       sysclk,
-    output logic       reset_done,
+    input  logic       soft_reset,
+    output logic       tx_reset_done,
+    output logic       rx_reset_done,
     output logic       tx_clk,
     output logic       rx_clk,
     //input  logic       data_valid_in,
@@ -38,8 +40,8 @@ module gtpwizard(
     logic txfsmresetdone_r2;
 
     assign data_valid_in = rxresetdone;
-    assign soft_reset = 'b0;
-    assign reset_done = txfsmresetdone_r2;
+    assign tx_reset_done = txfsmresetdone_r2 && txresetdone;
+    assign rx_reset_done = rxfsmresetdone_r2 && rxresetdone_r3;
     assign rxmcommaalignen = rxresetdone;
     assign rxpcommaalignen = rxresetdone;
 
