@@ -70,8 +70,17 @@ module top(
     input  logic [SPI_W-1:0]  MISO,
     output logic [SPI_W-1:0]  MOSI,
 
+    //-------------MRF---------------\\
+    input  logic       mrf_refclk_n,
+    input  logic       mrf_refclk_p,
+
+    input  logic       mrf_rx_n,
+    input  logic       mrf_rx_p,
+    output logic       mrf_tx_n,
+    output logic       mrf_tx_p,
+
     //-------------GPIO--------------\\
-    output PL_led
+    output logic [4:0] led
 
     );
 
@@ -244,12 +253,90 @@ module top(
         .MOSI(MOSI)
     );
 
+
+    //-------------MRF---------------\\
+    logic        mrf_reset;
+    logic        mrf_tx_clk;
+    logic [15:0] mrf_tx_data;
+    logic [15:0] mrf_rx_data;
+    logic [1:0]  mrf_tx_is_k;
+    logic [1:0]  mrf_rx_is_k;
+    logic        tx_reset_done;
+    logic        rx_reset_done;
+
+    assign led[1] = tx_reset_done;
+    assign led[2] = rx_reset_done;
+    assign led[3] = mrf_rx_is_k[0] || mrf_rx_is_k[1];
+
+
+    gtpwizard
+    gtpwizard_i (
+        .refclk_n(mrf_refclk_n),
+        .refclk_p(mrf_refclk_p),
+        .sysclk(PS_clk), 
+        .soft_reset(mrf_reset),
+        .tx_reset_done(tx_reset_done),
+        .rx_reset_done(rx_reset_done),
+        .tx_clk(mrf_tx_clk),
+        .rx_clk(),
+        .tx_data(mrf_tx_data),
+        .rx_data(mrf_rx_data),
+        .txcharisk(mrf_tx_is_k),
+        .rxcharisk(mrf_rx_is_k),
+        .rx_n(mrf_rx_n),
+        .rx_p(mrf_rx_p),
+        .tx_n(mrf_tx_n),
+        .tx_p(mrf_tx_p),
+    );
+
+    frame_gen
+    frame_gen_i (
+        .tx_data(mrf_tx_data),
+        .is_k(mrf_tx_is_k),
+        .tx_clk(mrf_tx_clk),
+        .ready(tx_reset_done)
+    );
+
     //-------------GPIO--------------\\
     blink
     blink_i (
         .reset(PS_aresetn),
         .clk(REFCLK),
-        .led(PL_led)
+        .led(led[0])
     );
 
 endmodule
+
+module frame_gen (
+    output logic  [15:0]  tx_data,
+    output logic  [2 :0]  is_k,
+
+    input  logic         tx_clk,
+    input  logic         ready 
+); 
+
+    localparam   WORDS_IN_BRAM = 8;
+
+    //                                           D24.2D20.2               D0.2D20.1           D3.1D7.5              K28.5K28.5
+    logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100,
+                                              16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100};
+
+    logic [$clog2(WORDS_IN_BRAM):0] i = 0;
+
+    assign is_k = (tx_data == 16'b1011110010111100) ? 'b1 : 'b0;
+
+    always_ff @( tx_clk ) begin 
+        if(!ready) 
+        begin
+            tx_data <= 0;
+            i <= 0;
+        end
+        else
+        begin
+            tx_data <= bram[i[$clog2(WORDS_IN_BRAM):1]];
+            i <= i+1;
+        end
+
+    end
+
+endmodule;
