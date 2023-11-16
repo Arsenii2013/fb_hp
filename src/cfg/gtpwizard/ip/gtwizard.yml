@@ -4,6 +4,11 @@ type : gtwizard
 config:
     gt0_pll0_fbdiv : 4
     gt0_pll0_fbdiv_45 : 5
+    gt0_pll0_rxout_div : 2
+    gt0_pll0_txout_div : 2
+    gt0_pll1_rxout_div : 2
+    gt0_pll1_txout_div : 2
+    gt0_uselabtools : false
     gt0_usesharedlogic : 1
     gt0_val_align_comma_word : "Any_Byte_Boundary"
     gt0_val_clk_cor_seq_1_1 : 00000000
@@ -21,21 +26,11 @@ config:
     gt0_val_encoding : "8B/10B"
     gt0_val_port_rxbyteisaligned : true
     gt0_val_port_rxbyterealign : true
-    gt0_val_port_rxchariscomma : true
     gt0_val_port_rxcharisk : true
     gt0_val_port_rxcommadet : true
     gt0_val_port_rxmcommaalignen : true
     gt0_val_port_rxpcommaalignen : true
-    gt0_val_port_rxpcsreset : true
-    gt0_val_port_rxpmareset : true
-    gt0_val_port_rxpolarity : true
     gt0_val_port_rxslide : false
-    gt0_val_port_txchardispmode : true
-    gt0_val_port_txchardispval : true
-    gt0_val_port_txinhibit : true
-    gt0_val_port_txpcsreset : true
-    gt0_val_port_txpmareset : true
-    gt0_val_port_txpolarity : true
     gt0_val_rx_buffer_bypass_mode : "Auto"
     gt0_val_rx_cm_trim : 800
     gt0_val_rx_data_width : 16
@@ -43,37 +38,18 @@ config:
     gt0_val_rx_line_rate : 2
     gt0_val_rx_reference_clock : "100.000"
     gt0_val_rx_termination_voltage : "Programmable"
-    gt0_val_rxbuf_en : false
+    gt0_val_rxbuf_en : true
+    gt0_val_rxoutclk_source : false
     gt0_val_rxslide_mode : "OFF"
     gt0_val_rxusrclk : "RXOUTCLK"
-    gt0_val_tx_buffer_bypass_mode : "Manual"
     gt0_val_tx_data_width : 16
     gt0_val_tx_int_datawidth : 20
     gt0_val_tx_line_rate : 2
-    gt0_val_tx_reference_clock : "100.000"
-    gt0_val_txbuf_en : false
-    gt0_val_txdiffctrl : true
+    gt0_val_tx_reference_clock : 100.000"
     gt0_val_txoutclk_source : true
-    gt0_val_txpostcursor : true
-    gt0_val_txprecursor : true
     gt_val_rx_pll : "PLL0"
     gt_val_tx_pll : "PLL0"
     identical_val_rx_line_rate : 2
     identical_val_rx_reference_clock : "100.000"
     identical_val_tx_line_rate : 2
     identical_val_tx_reference_clock : "100.000"
-
-    gt0_val_port_rxpolarity : false
-    gt0_val_port_txinhibit : false
-    gt0_val_port_txpolarity : false
-    gt0_val_txdiffctrl : false
-    gt0_val_txpostcursor : false
-    gt0_val_txprecursor : false
-    gt0_val_align_comma_word : "Two_Byte_Boundaries"
-    gt0_val_port_rxpcsreset : false
-    gt0_val_port_rxpmareset : false
-    gt0_val_port_txpcsreset : false
-    gt0_val_port_txpmareset : false
-
-    gt0_val_port_txchardispmode : false
-    gt0_val_port_txchardispval : false

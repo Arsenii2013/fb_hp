@@ -73,7 +73,7 @@ module gtpwizard(
         //---------------- Receive Ports - FPGA RX Interface Ports -----------------
         .gt0_rxdata_out                 (rx_data),
         //---------------- Receive Ports - RX 8B/10B Decoder Ports -----------------
-        .gt0_rxchariscomma_out          (),
+        //.gt0_rxchariscomma_out          (),
         .gt0_rxcharisk_out              (rxcharisk),
         .gt0_rxdisperr_out              (),
         .gt0_rxnotintable_out           (),
@@ -81,8 +81,8 @@ module gtpwizard(
         .gt0_gtprxn_in                  (rx_n),
         .gt0_gtprxp_in                  (rx_p),
         //----------------- Receive Ports - RX Buffer Bypass Ports -----------------
-        .gt0_rxphmonitor_out            (gt0_rxphmonitor_i),
-        .gt0_rxphslipmonitor_out        (gt0_rxphslipmonitor_i),
+        //.gt0_rxphmonitor_out            (gt0_rxphmonitor_i),
+        //.gt0_rxphslipmonitor_out        (gt0_rxphslipmonitor_i),
         //------------ Receive Ports - RX Byte and Word Alignment Ports ------------
         .gt0_rxbyteisaligned_out        (),
         .gt0_rxbyterealign_out          (),
