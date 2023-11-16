@@ -54,8 +54,8 @@ module gtpwizardTB(
 
     sys_clk_gen
     #(
-        .halfcycle (5000),
-        .offset    (1000)
+        .halfcycle (4000),
+        .offset    (0)
     ) REFCLK_GEN (
         .sys_clk (refclk)
     );
