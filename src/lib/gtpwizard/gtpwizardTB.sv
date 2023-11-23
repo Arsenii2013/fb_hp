@@ -102,11 +102,11 @@ module frame_gen (
     logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100,
                                               16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100};
 
-    logic [$clog2(WORDS_IN_BRAM):0] i = 0;
+    logic [$clog2(WORDS_IN_BRAM) - 1:0] i = 0;
 
     assign is_k = (tx_data == 16'b1011110010111100) ? 'b1 : 'b0;
 
-    always_ff @( tx_clk ) begin 
+    always_ff @( posedge tx_clk ) begin 
         if(!ready) 
         begin
             tx_data <= 0;
@@ -114,7 +114,7 @@ module frame_gen (
         end
         else
         begin
-            tx_data <= bram[i[$clog2(WORDS_IN_BRAM):1]];
+            tx_data <= bram[i];
             i <= i+1;
         end
 

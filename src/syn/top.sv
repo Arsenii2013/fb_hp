@@ -4,7 +4,7 @@
 `include "top.svh"
 
 module top(
-    //-------------PCI-E-------------\\
+    /*//-------------PCI-E-------------\\
     `ifndef SYNTHESIS
     `ifdef PCIE_PIPE_STACK
     input  logic [11:0] common_commands_in,
@@ -37,7 +37,7 @@ module top(
     
     input  logic        REFCLK_n,
     input  logic        REFCLK_p,
-    input  logic        PERST,
+    input  logic        PERST,*/
 
     //-------Processing System-------\\
     `ifdef SYNTHESIS
@@ -80,7 +80,7 @@ module top(
     output logic       mrf_tx_p,
 
     //-------------GPIO--------------\\
-    output logic [4:0] led
+    output logic [3:0] led
 
     );
 
@@ -131,7 +131,7 @@ module top(
         .peripheral_reset()
     );
 
-    //-------------PCI-E-------------\\ 
+    /*//-------------PCI-E-------------\\ 
     axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
     axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
     axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();
@@ -211,7 +211,7 @@ module top(
         .aresetn(PS_aresetn),
         .bus(mmr[MMR_MEM]),
         .offset(HP0_offset)
-    );
+    );*/
     //-------------QSPI--------------\\
     `ifndef SYNTHESIS
     sys_clk_gen
@@ -234,6 +234,7 @@ module top(
         .clk_in1(PS_clk)
     );
     `endif // SYNTHESIS
+    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) plug();
     qspi_wrapper 
     #(
         .SPI_W(SPI_W)
@@ -241,7 +242,8 @@ module top(
         .aclk(PS_clk),
         .aresetn(PS_aresetn),
         .ps_bus(GP0),
-        .pcie_bus(mmr[MMR_QSPI]),
+        //.pcie_bus(mmr[MMR_QSPI]),
+        .pcie_bus(plug),
 
         .spi_aclk(spi_aclk),
         .spi_oclk(spi_oclk),
@@ -286,7 +288,7 @@ module top(
         .rx_n(mrf_rx_n),
         .rx_p(mrf_rx_p),
         .tx_n(mrf_tx_n),
-        .tx_p(mrf_tx_p),
+        .tx_p(mrf_tx_p)
     );
 
     frame_gen
@@ -325,7 +327,7 @@ module frame_gen (
 
     assign is_k = (tx_data == 16'b1011110010111100) ? 'b1 : 'b0;
 
-    always_ff @( tx_clk ) begin 
+    always_ff @( posedge tx_clk ) begin 
         if(!ready) 
         begin
             tx_data <= 0;
