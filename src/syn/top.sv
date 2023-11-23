@@ -71,6 +71,7 @@ module top(
     output logic [SPI_W-1:0]  MOSI,
 
     //-------------MRF---------------\\
+    `ifdef MGT_FULL_STACK
     input  logic       mrf_refclk_n,
     input  logic       mrf_refclk_p,
 
@@ -78,6 +79,7 @@ module top(
     input  logic       mrf_rx_p,
     output logic       mrf_tx_n,
     output logic       mrf_tx_p,
+    `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
     output logic [3:0] led
@@ -234,7 +236,9 @@ module top(
         .clk_in1(PS_clk)
     );
     `endif // SYNTHESIS
+
     axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) plug();
+
     qspi_wrapper 
     #(
         .SPI_W(SPI_W)
@@ -266,11 +270,12 @@ module top(
     logic        tx_reset_done;
     logic        rx_reset_done;
 
-    assign led[1] = tx_reset_done;
-    assign led[2] = rx_reset_done;
-    assign led[3] = mrf_rx_is_k[0] || mrf_rx_is_k[1];
+    assign mrf_reset = !PS_aresetn;
+    assign led[1]    = tx_reset_done;
+    assign led[2]    = rx_reset_done;
+    assign led[3]    = mrf_rx_is_k[0] || mrf_rx_is_k[1];
 
-
+    `ifdef MGT_FULL_STACK
     gtpwizard
     gtpwizard_i (
         .refclk_n(mrf_refclk_n),
@@ -290,6 +295,23 @@ module top(
         .tx_n(mrf_tx_n),
         .tx_p(mrf_tx_p)
     );
+    `endif // MGT_FULL_STACK
+
+    `ifndef MGT_FULL_STACK
+    gtp_model gtp_model_i(
+        .refclk(mrf_refclk_p),
+        .sysclk(PS_clk), 
+        .soft_reset(mrf_reset),
+        .tx_reset_done(tx_reset_done),
+        .rx_reset_done(rx_reset_done),
+        .tx_clk(mrf_tx_clk),
+        .rx_clk(),
+        .tx_data(mrf_tx_data),
+        .rx_data(mrf_rx_data),
+        .txcharisk(mrf_tx_is_k),
+        .rxcharisk(mrf_rx_is_k)
+    );
+    `endif // MGT_FULL_STACK
 
     frame_gen
     frame_gen_i (

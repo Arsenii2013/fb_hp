@@ -17,6 +17,14 @@ localparam BAR1_DATA_W     = PCIE_DATA_W;
 localparam BAR2_ADDR_W     = 20;
 localparam BAR2_DATA_W     = PCIE_DATA_W;
 
+
+//      MGT transciever
+//`define MGT_FULL_STACK
+
+`ifdef SYNTHESIS
+`define MGT_FULL_STACK
+`endif //SYNTHESIS
+
 //      Memory mapped registers
 localparam MMR_ADDR_W      = BAR0_ADDR_W;
 localparam MMR_DATA_W      = 32;

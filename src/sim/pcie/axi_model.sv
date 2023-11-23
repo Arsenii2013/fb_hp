@@ -285,4 +285,4 @@ task automatic pci_e_write(input [2:0] bar, input [32:0] addr, input [32:0] data
 endtask
 
 
-endmodule;
+endmodule
