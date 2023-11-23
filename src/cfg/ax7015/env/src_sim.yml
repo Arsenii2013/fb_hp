@@ -11,4 +11,4 @@ sources:
     - src/sim/pcie/sys_clk_gen.v
     - src/sim/pcie/xilinx_pcie_2_1_rport_7x.v
     - src/sim/pcie/axi_model.sv
-    - src/lib/gtpwizard/gtp_model.sv
+    - src/sim/gtpwizard/gtp_model.sv
