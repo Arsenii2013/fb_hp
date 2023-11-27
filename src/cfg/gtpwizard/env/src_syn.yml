@@ -1,4 +1,4 @@
 import : main
 
 sources:
-    - src/lib/gtpwizard/gtpwizard.sv
+    - src/syn/gtpwizard.sv

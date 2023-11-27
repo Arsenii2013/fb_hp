@@ -4,7 +4,7 @@
 `include "top.svh"
 
 module top(
-    //-------------PCI-E-------------\\
+    /*//-------------PCI-E-------------\\
     `ifndef SYNTHESIS
     `ifdef PCIE_PIPE_STACK
     input  logic [11:0] common_commands_in,
@@ -37,7 +37,7 @@ module top(
     
     input  logic        REFCLK_n,
     input  logic        REFCLK_p,
-    input  logic        PERST,
+    input  logic        PERST,*/
 
     //-------Processing System-------\\
     `ifdef SYNTHESIS
@@ -70,8 +70,19 @@ module top(
     input  logic [SPI_W-1:0]  MISO,
     output logic [SPI_W-1:0]  MOSI,
 
+    //-------------MRF---------------\\
+    `ifdef MGT_FULL_STACK
+    input  logic       mrf_refclk_n,
+    input  logic       mrf_refclk_p,
+
+    input  logic       mrf_rx_n,
+    input  logic       mrf_rx_p,
+    output logic       mrf_tx_n,
+    output logic       mrf_tx_p,
+    `endif // MGT_FULL_STACK
+
     //-------------GPIO--------------\\
-    output PL_led
+    output logic [3:0] led
 
     );
 
@@ -122,7 +133,7 @@ module top(
         .peripheral_reset()
     );
 
-    //-------------PCI-E-------------\\ 
+    /*//-------------PCI-E-------------\\ 
     axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
     axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
     axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();
@@ -202,7 +213,7 @@ module top(
         .aresetn(PS_aresetn),
         .bus(mmr[MMR_MEM]),
         .offset(HP0_offset)
-    );
+    );*/
     //-------------QSPI--------------\\
     `ifndef SYNTHESIS
     sys_clk_gen
@@ -225,6 +236,9 @@ module top(
         .clk_in1(PS_clk)
     );
     `endif // SYNTHESIS
+
+    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) plug();
+
     qspi_wrapper 
     #(
         .SPI_W(SPI_W)
@@ -232,7 +246,8 @@ module top(
         .aclk(PS_clk),
         .aresetn(PS_aresetn),
         .ps_bus(GP0),
-        .pcie_bus(mmr[MMR_QSPI]),
+        //.pcie_bus(mmr[MMR_QSPI]),
+        .pcie_bus(plug),
 
         .spi_aclk(spi_aclk),
         .spi_oclk(spi_oclk),
@@ -244,12 +259,156 @@ module top(
         .MOSI(MOSI)
     );
 
+
+    //-------------MRF---------------\\
+    logic        mrf_reset;
+    logic        mrf_tx_clk;
+    logic [15:0] mrf_tx_data;
+    logic [15:0] mrf_rx_data;
+    logic [1:0]  mrf_tx_is_k;
+    logic [1:0]  mrf_rx_is_k;
+    logic        tx_reset_done;
+    logic        rx_reset_done;
+    logic        rx_clk;
+    logic        tx_clk;
+    logic        gnd = 0;
+    
+    logic pll_reset;
+    logic pll_lock;
+    logic gt0_rxdisperr_out;
+    logic gt0_rxnotintable_out;
+    logic gt0_rxbyteisaligned_out;
+    logic gt0_rxbyterealign_out;
+    logic gt0_rxcommadet_out;
+
+    assign mrf_reset = ~PS_aresetn;
+    assign led[1]    = tx_reset_done;
+    assign led[2]    = rx_reset_done;
+    assign led[3]    = mrf_rx_is_k[0] || mrf_rx_is_k[1];
+
+    ila_0 ila_rx(
+        .clk(rx_clk),
+        .probe0(tx_reset_done),
+        .probe1(rx_reset_done),
+        .probe2(mrf_tx_data),
+        .probe3(mrf_rx_data),
+        .probe4(mrf_tx_is_k),
+        .probe5(mrf_rx_is_k),
+        .probe6(pll_reset),
+        .probe7(pll_lock),
+        .probe8(gt0_rxdisperr_out),
+        .probe9(gt0_rxnotintable_out),
+        .probe10(gt0_rxbyteisaligned_out),
+        .probe11(gt0_rxbyterealign_out),
+        .probe12(gt0_rxcommadet_out),
+        .probe13(gnd),
+        .probe14(gnd),
+        .probe15(gnd)
+    );
+    
+    /*ila_0 ila_tx(
+        .clk(mrf_tx_clk),
+        .probe0(tx_reset_done),
+        .probe1(rx_reset_done),
+        .probe2(mrf_tx_data),
+        .probe3(mrf_rx_data),
+        .probe4(mrf_tx_is_k),
+        .probe5(mrf_rx_is_k),
+        .probe6(pll_reset),
+        .probe7(pll_lock)
+    );*/
+
+    `ifdef MGT_FULL_STACK
+    gtpwizard
+    gtpwizard_i (
+        .refclk_n(mrf_refclk_n),
+        .refclk_p(mrf_refclk_p),
+        .sysclk(PS_clk), 
+        .soft_reset(mrf_reset),
+        .tx_reset_done(tx_reset_done),
+        .rx_reset_done(rx_reset_done),
+        .tx_clk(mrf_tx_clk),
+        .rx_clk(rx_clk),
+        .tx_data(mrf_tx_data),
+        .rx_data(mrf_rx_data),
+        .txcharisk(mrf_tx_is_k),
+        .rxcharisk(mrf_rx_is_k),
+        .rx_n(mrf_rx_n),
+        .rx_p(mrf_rx_p),
+        .tx_n(mrf_tx_n),
+        .tx_p(mrf_tx_p),
+        .pll_reset(pll_reset),
+        .pll_lock(pll_lock)
+    );
+    `endif // MGT_FULL_STACK
+
+    `ifndef MGT_FULL_STACK
+    gtp_model gtp_model_i(
+        .refclk(mrf_refclk_p),
+        .sysclk(PS_clk), 
+        .soft_reset(mrf_reset),
+        .tx_reset_done(tx_reset_done),
+        .rx_reset_done(rx_reset_done),
+        .tx_clk(mrf_tx_clk),
+        .rx_clk(),
+        .tx_data(mrf_tx_data),
+        .rx_data(mrf_rx_data),
+        .txcharisk(mrf_tx_is_k),
+        .rxcharisk(mrf_rx_is_k)
+    );
+    `endif // MGT_FULL_STACK
+
+    frame_gen
+    frame_gen_i (
+        .tx_data(mrf_tx_data),
+        .is_k(mrf_tx_is_k),
+        .tx_clk(mrf_tx_clk),
+        .ready(tx_reset_done)
+    );
+
     //-------------GPIO--------------\\
     blink
     blink_i (
-        .reset(PS_aresetn),
-        .clk(REFCLK),
-        .led(PL_led)
+        .reset(mrf_reset),
+        .clk(PS_clk),
+        .led(led[0])
     );
 
 endmodule
+
+module frame_gen (
+    output logic  [15:0]  tx_data,
+    output logic  [2 :0]  is_k,
+
+    input  logic         tx_clk,
+    input  logic         ready 
+); 
+
+    localparam   WORDS_IN_BRAM = 8;
+    //                                           D24.2D20.2                 D0.2D20.1                D3.1D7.5                   K28.5K28.5
+    //logic [19:0] bram [0:WORDS_IN_BRAM-1] = '{20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010,
+    //                                          20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010};
+
+    //                                           D24.2D20.2               D0.2D20.1           D3.1D7.5              K28.5K28.5
+    logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100,
+                                              16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100};
+
+    logic [$clog2(WORDS_IN_BRAM) - 1:0] i = 0;
+
+    assign is_k = (tx_data == 16'b1011110010111100) ? 'b1 : 'b0;
+
+    always_ff @( posedge tx_clk ) begin 
+        if(!ready) 
+        begin
+            tx_data <= 0;
+            i <= 0;
+        end
+        else
+        begin
+            tx_data <= bram[i];
+            i <= i+1;
+        end
+
+    end
+
+endmodule;

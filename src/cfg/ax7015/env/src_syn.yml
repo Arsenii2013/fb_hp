@@ -22,5 +22,6 @@ sources:
     - src/lib/avmm/avmm_iface.sv
     - src/lib/avmm/avmm_slave_stub.sv
     - src/syn/qspi_wrapper.sv
+    - src/syn/gtpwizard.sv
 
     
