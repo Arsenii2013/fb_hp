@@ -6,14 +6,14 @@ config:
     gt0_val_rx_refclk : REFCLK1_Q0
     gt0_val_tx_refclk : REFCLK1_Q0
     gt0_pll0_fbdiv : 4
-    gt0_pll0_fbdiv_45 : 5
+    gt0_pll0_fbdiv_45 : 4
     gt0_pll0_rxout_div : 2
     gt0_pll0_txout_div : 2
     gt0_pll1_rxout_div : 2
     gt0_pll1_txout_div : 2
     gt0_uselabtools : false
     gt0_usesharedlogic : 1
-    gt0_val_align_comma_word : "Any_Byte_Boundary"
+    gt0_val_align_comma_word : "Two_Byte_Boundary"
     gt0_val_clk_cor_seq_1_1 : 00000000
     gt0_val_clk_cor_seq_1_2 : 00000000
     gt0_val_clk_cor_seq_1_3 : 00000000

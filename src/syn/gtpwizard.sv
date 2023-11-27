@@ -19,7 +19,14 @@ module gtpwizard(
     input  logic       rx_n,
     input  logic       rx_p,
     output logic       tx_n,
-    output logic       tx_p
+    output logic       tx_p,
+     output logic pll_reset,
+     output logic pll_lock,
+     output logic gt0_rxdisperr_out,
+     output logic gt0_rxnotintable_out,
+     output logic gt0_rxbyteisaligned_out,
+     output logic gt0_rxbyterealign_out,
+     output logic gt0_rxcommadet_out
 );
     logic txfsmresetdone;
     logic rxfsmresetdone;
@@ -78,8 +85,8 @@ module gtpwizard(
         //---------------- Receive Ports - RX 8B/10B Decoder Ports -----------------
         //.gt0_rxchariscomma_out          (),
         .gt0_rxcharisk_out              (rxcharisk),
-        .gt0_rxdisperr_out              (),
-        .gt0_rxnotintable_out           (),
+        .gt0_rxdisperr_out              (gt0_rxdisperr_out),
+        .gt0_rxnotintable_out           (gt0_rxnotintable_out),
         //---------------------- Receive Ports - RX AFE Ports ----------------------
         .gt0_gtprxn_in                  (rx_n),
         .gt0_gtprxp_in                  (rx_p),
@@ -87,9 +94,9 @@ module gtpwizard(
         //.gt0_rxphmonitor_out            (gt0_rxphmonitor_i),
         //.gt0_rxphslipmonitor_out        (gt0_rxphslipmonitor_i),
         //------------ Receive Ports - RX Byte and Word Alignment Ports ------------
-        .gt0_rxbyteisaligned_out        (),
-        .gt0_rxbyterealign_out          (),
-        .gt0_rxcommadet_out             (),
+        .gt0_rxbyteisaligned_out        (gt0_rxbyteisaligned_out),
+        .gt0_rxbyterealign_out          (gt0_rxbyterealign_out),
+        .gt0_rxcommadet_out             (gt0_rxcommadet_out),
         .gt0_rxmcommaalignen_in         (rxmcommaalignen),
         .gt0_rxpcommaalignen_in         (rxpcommaalignen),
         //---------- Receive Ports - RX Decision Feedback Equalizer(DFE) -----------
@@ -137,10 +144,10 @@ module gtpwizard(
         //.gt0_txpolarity_in              ('b0),
 
         //____________________________COMMON PORTS________________________________
-        .gt0_pll0reset_out(),
+        .gt0_pll0reset_out(pll_reset),
         .gt0_pll0outclk_out(),
         .gt0_pll0outrefclk_out(),
-        .gt0_pll0lock_out(),
+        .gt0_pll0lock_out(pll_lock),
         .gt0_pll0refclklost_out(),    
         .gt0_pll1outclk_out(),
         .gt0_pll1outrefclk_out(),

@@ -27,6 +27,7 @@ module topTB(
     localparam SPI_W        = 4;
     
     logic             clock;
+    logic             mrf_clk;
     logic             reset_n;
     logic             reset;
 
@@ -36,6 +37,11 @@ module topTB(
     logic             cs_n;
     logic [SPI_W-1:0] mosi;
     logic [SPI_W-1:0] miso;
+
+    `ifdef MGT_FULL_STACK
+    logic tx_p;
+    logic tx_n;
+    `endif //MGT_FULL_STACK
     
     `ifdef PCIE_PIPE_STACK
     //------------------- EP ------------------------------------
@@ -100,6 +106,15 @@ module topTB(
         .pipe_tx_6_sigs     (xil_tx6_sigs_ep),
         .pipe_tx_7_sigs     (xil_tx7_sigs_ep),
         `endif //PCIE_FULL_STACK*/
+
+        `ifdef MGT_FULL_STACK
+        .mrf_refclk_n(~mrf_clk),
+        .mrf_refclk_p(mrf_clk),
+        .mrf_rx_n(tx_n),
+        .mrf_rx_p(tx_p),
+        .mrf_tx_n(tx_n),
+        .mrf_tx_p(tx_p),
+        `endif //MGT_FULL_STACK
 
         .SCK(sck),
         .CSn(cs_n),
@@ -201,6 +216,14 @@ module topTB(
         .offset    (0)
     ) CLK_GEN (
         .sys_clk (clock)
+    );
+
+    sys_clk_gen
+    #(
+        .halfcycle (4000),
+        .offset    (0)
+    ) MRF_CLK_GEN (
+        .sys_clk (mrf_clk)
     );
     
     integer i;

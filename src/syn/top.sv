@@ -269,11 +269,54 @@ module top(
     logic [1:0]  mrf_rx_is_k;
     logic        tx_reset_done;
     logic        rx_reset_done;
+    logic        rx_clk;
+    logic        tx_clk;
+    logic        gnd = 0;
+    
+    logic pll_reset;
+    logic pll_lock;
+    logic gt0_rxdisperr_out;
+    logic gt0_rxnotintable_out;
+    logic gt0_rxbyteisaligned_out;
+    logic gt0_rxbyterealign_out;
+    logic gt0_rxcommadet_out;
 
-    assign mrf_reset = !PS_aresetn;
+    assign mrf_reset = ~PS_aresetn;
     assign led[1]    = tx_reset_done;
     assign led[2]    = rx_reset_done;
     assign led[3]    = mrf_rx_is_k[0] || mrf_rx_is_k[1];
+
+    ila_0 ila_rx(
+        .clk(rx_clk),
+        .probe0(tx_reset_done),
+        .probe1(rx_reset_done),
+        .probe2(mrf_tx_data),
+        .probe3(mrf_rx_data),
+        .probe4(mrf_tx_is_k),
+        .probe5(mrf_rx_is_k),
+        .probe6(pll_reset),
+        .probe7(pll_lock),
+        .probe8(gt0_rxdisperr_out),
+        .probe9(gt0_rxnotintable_out),
+        .probe10(gt0_rxbyteisaligned_out),
+        .probe11(gt0_rxbyterealign_out),
+        .probe12(gt0_rxcommadet_out),
+        .probe13(gnd),
+        .probe14(gnd),
+        .probe15(gnd)
+    );
+    
+    /*ila_0 ila_tx(
+        .clk(mrf_tx_clk),
+        .probe0(tx_reset_done),
+        .probe1(rx_reset_done),
+        .probe2(mrf_tx_data),
+        .probe3(mrf_rx_data),
+        .probe4(mrf_tx_is_k),
+        .probe5(mrf_rx_is_k),
+        .probe6(pll_reset),
+        .probe7(pll_lock)
+    );*/
 
     `ifdef MGT_FULL_STACK
     gtpwizard
@@ -285,7 +328,7 @@ module top(
         .tx_reset_done(tx_reset_done),
         .rx_reset_done(rx_reset_done),
         .tx_clk(mrf_tx_clk),
-        .rx_clk(),
+        .rx_clk(rx_clk),
         .tx_data(mrf_tx_data),
         .rx_data(mrf_rx_data),
         .txcharisk(mrf_tx_is_k),
@@ -293,7 +336,9 @@ module top(
         .rx_n(mrf_rx_n),
         .rx_p(mrf_rx_p),
         .tx_n(mrf_tx_n),
-        .tx_p(mrf_tx_p)
+        .tx_p(mrf_tx_p),
+        .pll_reset(pll_reset),
+        .pll_lock(pll_lock)
     );
     `endif // MGT_FULL_STACK
 
@@ -324,8 +369,8 @@ module top(
     //-------------GPIO--------------\\
     blink
     blink_i (
-        .reset(PS_aresetn),
-        .clk(REFCLK),
+        .reset(mrf_reset),
+        .clk(PS_clk),
         .led(led[0])
     );
 

@@ -19,7 +19,7 @@ localparam BAR2_DATA_W     = PCIE_DATA_W;
 
 
 //      MGT transciever
-//`define MGT_FULL_STACK
+`define MGT_FULL_STACK
 
 `ifdef SYNTHESIS
 `define MGT_FULL_STACK

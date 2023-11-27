@@ -26,3 +26,6 @@ set_property PACKAGE_PIN W6 [get_ports {mrf_rx_p}]
 set_property PACKAGE_PIN U5 [get_ports {mrf_refclk_p}]
 set_property PACKAGE_PIN V5 [get_ports {mrf_refclk_n}]
 create_clock -add -name REFCLK -period 8.00 -waveform {0 4} [get_ports { mrf_refclk_p }];
+
+set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks gtpwizard_i/gtwizard_i/inst/gtwizard_init_i/gtwizard_i/gt0_gtwizard_i/gtpe2_i/RXOUTCLK]
+set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks gtpwizard_i/gtwizard_i/inst/gtwizard_init_i/gtwizard_i/gt0_gtwizard_i/gtpe2_i/TXOUTCLK]
