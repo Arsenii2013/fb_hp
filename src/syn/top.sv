@@ -75,10 +75,10 @@ module top(
     input  logic       REFCLK_SFP_n,
     input  logic       REFCLK_SFP_p,
 
-    input  logic       sfp_rx_n,
-    input  logic       sfp_rx_p,
-    output logic       sfp_tx_n,
-    output logic       sfp_tx_p,
+    //input  logic       sfp_rx_n,
+    //input  logic       sfp_rx_p,
+    //output logic       sfp_tx_n,
+    //output logic       sfp_tx_p,
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
@@ -303,7 +303,7 @@ module top(
         .MOSI(MOSI)
     );
 
-    //-------------sfp---------------\\
+    /*//-------------sfp---------------\\
     logic        sfp_reset;
     logic        sfp_tx_clk;
     logic [15:0] sfp_tx_data;
@@ -328,7 +328,7 @@ module top(
     assign led[1]    = tx_reset_done;
     assign led[2]    = rx_reset_done;
     assign led[3]    = sfp_rx_is_k[0] || sfp_rx_is_k[1];
-
+    */
     /*ila_0 ila_rx(
         .clk(rx_clk),
         .probe0(tx_reset_done),
@@ -360,7 +360,7 @@ module top(
         .probe6(pll_reset),
         .probe7(pll_lock)
     );*/
-
+    /*
     `ifdef MGT_FULL_STACK
     gtpwizard
     gtpwizard_i (
@@ -408,9 +408,11 @@ module top(
         .tx_clk(sfp_tx_clk),
         .ready(tx_reset_done)
     );
-
+*/
     //-------------GPIO--------------\\
-    blink
+    blink #(
+        .FREQ_HZ(1000000000)
+    )
     blink_i (
         .reset(sfp_reset),
         .clk(PS_clk),
