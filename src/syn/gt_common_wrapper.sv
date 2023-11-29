@@ -21,17 +21,16 @@ module gt_common_wrapper(
     output logic PLL1REFCLKLOST
 );
 
-    `ifndef SYNTHESIS
-        `define __SIM "True"
-    `endif //SYNTHESIS    
 
     GTPE2_COMMON #
     (
        
         //---------- Simulation Attributes -------------------------------------                                                     
         .SIM_PLL0REFCLK_SEL             (3'b001),                               //    pcie - 001, sfp - 010                                               
-        .SIM_PLL1REFCLK_SEL             (3'b001),                               //                                                   
-        .SIM_RESET_SPEEDUP              (__SIM),                        //                                                   
+        .SIM_PLL1REFCLK_SEL             (3'b001),                               //      
+        `ifndef SYNTHESIS                                             
+        .SIM_RESET_SPEEDUP              ("True"),                        //     
+        `endif //SYNTHESIS                                               
         .SIM_VERSION                    ("1.0"),                        //   pcie - 1.0, spf - 2.0                                                
                                                                                                                                      
         //---------- Clock Attributes ------------------------------------------                                                     

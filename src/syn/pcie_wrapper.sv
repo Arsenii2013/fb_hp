@@ -162,8 +162,15 @@ module pcie_wrapper_(
         .pcie_ext_pipe_tx_4(pipe_rx_4_sigs),
         .pcie_ext_pipe_tx_5(pipe_rx_5_sigs),
         .pcie_ext_pipe_tx_6(pipe_rx_6_sigs),
-        .pcie_ext_pipe_tx_7(pipe_rx_7_sigs)
+        .pcie_ext_pipe_tx_7(pipe_rx_7_sigs),
         `endif //PCIE_FULL_STACK 
+        `endif //SYNTHESIS 
+        
+        `ifdef SYNTHESIS
+        .pcie_7x_mgt_txp(pcie_7x_mgt_txp),
+        .pcie_7x_mgt_txn(pcie_7x_mgt_txn),
+        .pcie_7x_mgt_rxp(pcie_7x_mgt_rxp),
+        .pcie_7x_mgt_rxn(pcie_7x_mgt_rxn),
         `endif //SYNTHESIS 
 
         .pcie_qpll_drp_0_clk(pcie_qpll_drp_clk),
@@ -179,14 +186,7 @@ module pcie_wrapper_(
         .pcie_qpll_drp_0_qpllreset(pcie_qpll_drp_reset), // RESET
         .pcie_qpll_drp_0_reset(pcie_qpll_drp_reset),
         .pcie_qpll_drp_0_rst_n(pcie_qpll_drp_rst_n),
-        .pcie_qpll_drp_0_start(pcie_qpll_drp_start),
-        
-        `ifdef SYNTHESIS
-        .pcie_7x_mgt_txp(pcie_7x_mgt_txp),
-        .pcie_7x_mgt_txn(pcie_7x_mgt_txn),
-        .pcie_7x_mgt_rxp(pcie_7x_mgt_rxp),
-        .pcie_7x_mgt_rxn(pcie_7x_mgt_rxn)
-        `endif //SYNTHESIS 
+        .pcie_qpll_drp_0_start(pcie_qpll_drp_start)
     );
     
     axi4_lite_dw_translator bar0_t_i(

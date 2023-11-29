@@ -37,7 +37,7 @@ module top(
     
     input  logic        REFCLK_PCIE_n,
     input  logic        REFCLK_PCIE_p,
-    input  logic        PERST,
+    input  logic        PERST_PCIE,
 
     //-------Processing System-------\\
     `ifdef SYNTHESIS
@@ -106,7 +106,7 @@ module top(
     logic QPLL1LOCK;
 
 
-    gt_common_wrapper(
+    gt_common_wrapper gt_common_wrapper_i(
         .REFCLK0(REFCLK_PCIE),
         .REFCLK1(REFCLK_SFP),
 
@@ -216,7 +216,7 @@ module top(
         `endif //SYNTHESIS 
         
         .REFCLK(REFCLK),
-        .PERST(PERST),
+        .PERST(PERST_PCIE),
         
         .bar0(bar0),
         .bar1(bar1),
@@ -329,7 +329,7 @@ module top(
     assign led[2]    = rx_reset_done;
     assign led[3]    = sfp_rx_is_k[0] || sfp_rx_is_k[1];
 
-    ila_0 ila_rx(
+    /*ila_0 ila_rx(
         .clk(rx_clk),
         .probe0(tx_reset_done),
         .probe1(rx_reset_done),
@@ -347,7 +347,7 @@ module top(
         .probe13(gnd),
         .probe14(gnd),
         .probe15(gnd)
-    );
+    );*/
     
     /*ila_0 ila_tx(
         .clk(sfp_tx_clk),
