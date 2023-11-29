@@ -18,7 +18,7 @@ module gt_common_wrapper(
     output logic PLL0LOCK,
     output logic PLL1LOCK,
     output logic PLL0REFCLKLOST,
-    output logic PLL1REFCLKLOST,
+    output logic PLL1REFCLKLOST
 );
 
     `ifndef SYNTHESIS
@@ -75,12 +75,12 @@ module gt_common_wrapper(
         .PLL0LOCKEN                     ( 1'd1),                                //                       
         .PLL1LOCKEN                     ( 1'd1),                                //                       
         .PLL0REFCLKSEL                  ( 3'd1),                                // PCIE - REFCLK0                      
-        .PLL1REFCLKSEL                  ( 3'd10),                               // SFP  - REFCLK1                      
+        .PLL1REFCLKSEL                  ( 3'd2),                                // SFP  - REFCLK1                      
         .PLLRSVD1                       (16'd0),                                //                    
         .PLLRSVD2                       ( 5'd0),                                //                 
         
         .PLL0OUTCLK                     (PLL0OUTCLK),                           //                       
-        .PLL1OUTCLK                     (PLL1OUTCLK)                            //                       
+        .PLL1OUTCLK                     (PLL1OUTCLK),                           //                       
         .PLL0OUTREFCLK                  (PLL0OUTREFCLK),                        //                       
         .PLL1OUTREFCLK                  (PLL1OUTREFCLK),                        //                       
         .PLL0LOCK                       (PLL0LOCK),                             //                       
@@ -106,13 +106,13 @@ module gt_common_wrapper(
                                                                                                          
         .DRPDO                          (QPLL_DRPDO),                           //                       
         .DRPRDY                         (QPLL_DRPRDY),                          //   */   
-        .DRPADDR                        (tied_to_ground_vec_i[7:0]),
-        .DRPCLK                         (tied_to_ground_i),
-        .DRPDI                          (tied_to_ground_vec_i[15:0]),
+        .DRPADDR                        (8'b0),
+        .DRPCLK                         (1'b0),
+        .DRPDI                          (16'b0),
         .DRPDO                          (),
-        .DRPEN                          (tied_to_ground_i),
+        .DRPEN                          (1'b0),
         .DRPRDY                         (),
-        .DRPWE                          (tied_to_ground_i),                 
+        .DRPWE                          (1'b0),                 
                                                                                                          
         //---------- Band Gap --------------------------------------------------                         
         .BGBYPASSB                      ( 1'd1),                                //                    

@@ -27,11 +27,11 @@ module pcie_wrapper_(
         `endif //PCIE_FULL_STACK 
         `endif //SYNTHESIS      
 
-        output logic [1:0]  pcie_qpll_drp_qplld;
-        input  logic [1:0]  pcie_qpll_drp_qplllock;
-        input  logic [1:0]  pcie_qpll_drp_qplloutclk;
-        input  logic [1:0]  pcie_qpll_drp_qplloutrefclk;
-        output logic [1:0]  pcie_qpll_drp_qpllreset;
+        output logic [1:0]  pcie_qpll_drp_qplld,
+        input  logic [1:0]  pcie_qpll_drp_qplllock,
+        input  logic [1:0]  pcie_qpll_drp_qplloutclk,
+        input  logic [1:0]  pcie_qpll_drp_qplloutrefclk,
+        output logic [1:0]  pcie_qpll_drp_qpllreset,
         
         `ifdef SYNTHESIS
         input  logic [1:0]  pcie_7x_mgt_rxn,
