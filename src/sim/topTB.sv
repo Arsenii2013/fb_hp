@@ -86,7 +86,7 @@ module topTB(
     `endif //PCIE_FULL_STACK
         
     top DUT(
-        /*`ifdef PCIE_PIPE_STACK
+        `ifdef PCIE_PIPE_STACK
         .common_commands_in ( 4'b0  ),
         .pipe_rx_0_sigs     (xil_rx0_sigs_ep),
         .pipe_rx_1_sigs     (xil_rx1_sigs_ep),
@@ -105,7 +105,7 @@ module topTB(
         .pipe_tx_5_sigs     (xil_tx5_sigs_ep),
         .pipe_tx_6_sigs     (xil_tx6_sigs_ep),
         .pipe_tx_7_sigs     (xil_tx7_sigs_ep),
-        `endif //PCIE_FULL_STACK*/
+        `endif //PCIE_FULL_STACK
 
         `ifdef MGT_FULL_STACK
         .mrf_refclk_n(~mrf_clk),
@@ -121,9 +121,9 @@ module topTB(
         .MISO(miso),
         .MOSI(mosi)
         
-        /*.REFCLK_p(clock),
+        .REFCLK_p(clock),
         .REFCLK_n(~clock),
-        .PERST(reset_n)*/
+        .PERST(reset_n)
     );
     
     `ifdef PCIE_PIPE_STACK
