@@ -29,7 +29,7 @@ module gt_common_wrapper(
         .SIM_PLL0REFCLK_SEL             (3'b001),                               //    pcie - 001, sfp - 010                                               
         .SIM_PLL1REFCLK_SEL             (3'b001),                               //      
         `ifndef SYNTHESIS                                             
-        .SIM_RESET_SPEEDUP              ("True"),                        //     
+        .SIM_RESET_SPEEDUP              ("TRUE"),                        //     
         `endif //SYNTHESIS                                               
         .SIM_VERSION                    ("1.0"),                        //   pcie - 1.0, spf - 2.0                                                
                                                                                                                                      

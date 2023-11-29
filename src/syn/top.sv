@@ -122,7 +122,7 @@ module top(
         .PLL0OUTREFCLK(QPLL0OUTREFCLK),
         .PLL1OUTREFCLK(QPLL1OUTREFCLK),
         .PLL0LOCK(QPLL0LOCK),
-        .PLL1LOCK(QPLL0LOCK),
+        .PLL1LOCK(QPLL1LOCK),
         .PLL0REFCLKLOST(),
         .PLL1REFCLKLOST()
     );
@@ -290,8 +290,8 @@ module top(
         .aclk(PS_clk),
         .aresetn(PS_aresetn),
         .ps_bus(GP0),
-        //.pcie_bus(mmr[MMR_QSPI]),
-        .pcie_bus(plug),
+        .pcie_bus(mmr[MMR_QSPI]),
+        //.pcie_bus(plug),
 
         .spi_aclk(spi_aclk),
         .spi_oclk(spi_oclk),
