@@ -1,4 +1,4 @@
-# Create interface ports
+  # Create interface ports
   set pcie_ext_pipe [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:pcie_ext_pipe_rtl:1.0 pcie_ext_pipe ]
 
   set pcie_7x_mgt [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:pcie_7x_mgt_rtl:1.0 pcie_7x_mgt ]
@@ -42,6 +42,8 @@
    CONFIG.PROTOCOL {AXI4LITE} \
    ] $bar2
 
+  set pcie_qpll_drp_0 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:pcie_qpll_drp_rtl:1.0 pcie_qpll_drp_0 ]
+
 
   # Create ports
   set REFCLK [ create_bd_port -dir I -type clk -freq_hz 100000000 REFCLK ]
@@ -80,7 +82,9 @@
     CONFIG.PCIEBAR2AXIBAR_2 {0x200000} \
     CONFIG.S_AXI_DATA_WIDTH {64} \
     CONFIG.S_AXI_SUPPORTS_NARROW_BURST {false} \
+    CONFIG.en_ext_gt_common {true} \
     CONFIG.en_ext_pipe_interface {true} \
+    CONFIG.shared_logic_in_core {false} \
   ] $axi_pcie_0
 
 
@@ -122,6 +126,7 @@
   connect_bd_intf_net -intf_net axi_pcie_0_pcie_7x_mgt [get_bd_intf_ports pcie_7x_mgt] [get_bd_intf_pins axi_pcie_0/pcie_7x_mgt]
   connect_bd_intf_net -intf_net axi_protocol_convert_0_M_AXI [get_bd_intf_pins axi_protocol_convert_0/M_AXI] [get_bd_intf_pins axi_clock_converter_0/S_AXI]
   connect_bd_intf_net -intf_net pcie_ext_pipe_ep_0_1 [get_bd_intf_ports pcie_ext_pipe] [get_bd_intf_pins axi_pcie_0/pcie_ext_pipe_ep]
+  connect_bd_intf_net -intf_net pcie_qpll_drp_0_1 [get_bd_intf_ports pcie_qpll_drp_0] [get_bd_intf_pins axi_pcie_0/pcie_qpll_drp]
 
   # Create port connections
   connect_bd_net -net axi_pcie_0_axi_aclk_out [get_bd_pins axi_pcie_0/axi_aclk_out] [get_bd_pins proc_sys_reset_0/slowest_sync_clk] [get_bd_pins axi_protocol_convert_0/aclk] [get_bd_pins axi_clock_converter_0/s_axi_aclk]

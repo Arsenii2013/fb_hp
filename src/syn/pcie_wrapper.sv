@@ -26,22 +26,28 @@ module pcie_wrapper_(
         output logic [24:0] pipe_tx_7_sigs,
         `endif //PCIE_FULL_STACK 
         `endif //SYNTHESIS      
+
+        output logic [1:0]  pcie_qpll_drp_qplld;
+        input  logic [1:0]  pcie_qpll_drp_qplllock;
+        input  logic [1:0]  pcie_qpll_drp_qplloutclk;
+        input  logic [1:0]  pcie_qpll_drp_qplloutrefclk;
+        output logic [1:0]  pcie_qpll_drp_qpllreset;
         
         `ifdef SYNTHESIS
-        input  logic [1:0] pcie_7x_mgt_rxn,
-        input  logic [1:0] pcie_7x_mgt_rxp,
-        output logic [1:0] pcie_7x_mgt_txn,
-        output logic [1:0] pcie_7x_mgt_txp,
+        input  logic [1:0]  pcie_7x_mgt_rxn,
+        input  logic [1:0]  pcie_7x_mgt_rxp,
+        output logic [1:0]  pcie_7x_mgt_txn,
+        output logic [1:0]  pcie_7x_mgt_txp,
         `endif //SYNTHESIS      
         
-        axi4_lite_if.m    bar0,
-        axi4_lite_if.m    bar1,
-        axi4_lite_if.m    bar2,
+        axi4_lite_if.m      bar0,
+        axi4_lite_if.m      bar1,
+        axi4_lite_if.m      bar2,
         
-        input  logic    REFCLK,
-        input  logic    PERST,
-        input  logic    bar_clk,
-        input  logic    bar_aresetn
+        input  logic        REFCLK,
+        input  logic        PERST,
+        input  logic        bar_clk,
+        input  logic        bar_aresetn
     );
     
     `ifdef SYNTHESIS
@@ -53,6 +59,16 @@ module pcie_wrapper_(
         `define __NEED_PCI_IP
     `endif //PCIE_FULL_STACK 
     `endif //SYNTHESIS  
+
+    logic [1:0]  pcie_qpll_drp_clk;
+    logic [11:0] pcie_qpll_drp_crscode;
+    logic [1:0]  pcie_qpll_drp_done;
+    logic [17:0] pcie_qpll_drp_fsm;
+    logic [1:0]  pcie_qpll_drp_gen3;
+    logic [1:0]  pcie_qpll_drp_ovrd;
+    logic [1:0]  pcie_qpll_drp_reset;
+    logic [1:0]  pcie_qpll_drp_rst_n;
+    logic [1:0]  pcie_qpll_drp_start;
     
     
     `ifdef  __NEED_PCI_IP
@@ -149,6 +165,21 @@ module pcie_wrapper_(
         .pcie_ext_pipe_tx_7(pipe_rx_7_sigs)
         `endif //PCIE_FULL_STACK 
         `endif //SYNTHESIS 
+
+        .pcie_qpll_drp_0_clk(pcie_qpll_drp_clk),
+        .pcie_qpll_drp_0_crscode(pcie_qpll_drp_crscode),
+        .pcie_qpll_drp_0_done(pcie_qpll_drp_done),
+        .pcie_qpll_drp_0_fsm(pcie_qpll_drp_fsm),
+        .pcie_qpll_drp_0_gen3(pcie_qpll_drp_gen3),
+        .pcie_qpll_drp_0_ovrd(pcie_qpll_drp_ovrd),
+        .pcie_qpll_drp_0_qplld(pcie_qpll_drp_qplld), // PD
+        .pcie_qpll_drp_0_qplllock(pcie_qpll_drp_qplllock), // LOCK
+        .pcie_qpll_drp_0_qplloutclk(pcie_qpll_drp_qplloutclk), // OUTCLK
+        .pcie_qpll_drp_0_qplloutrefclk(pcie_qpll_drp_qplloutrefclk), // OUTREFCLK
+        .pcie_qpll_drp_0_qpllreset(pcie_qpll_drp_reset), // RESET
+        .pcie_qpll_drp_0_reset(pcie_qpll_drp_reset),
+        .pcie_qpll_drp_0_rst_n(pcie_qpll_drp_rst_n),
+        .pcie_qpll_drp_0_start(pcie_qpll_drp_start),
         
         `ifdef SYNTHESIS
         .pcie_7x_mgt_txp(pcie_7x_mgt_txp),

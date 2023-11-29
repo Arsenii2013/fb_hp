@@ -4,7 +4,7 @@
 `include "top.svh"
 
 module top(
-    /*//-------------PCI-E-------------\\
+    //-------------PCI-E-------------\\
     `ifndef SYNTHESIS
     `ifdef PCIE_PIPE_STACK
     input  logic [11:0] common_commands_in,
@@ -37,7 +37,7 @@ module top(
     
     input  logic        REFCLK_n,
     input  logic        REFCLK_p,
-    input  logic        PERST,*/
+    input  logic        PERST,
 
     //-------Processing System-------\\
     `ifdef SYNTHESIS
@@ -133,7 +133,7 @@ module top(
         .peripheral_reset()
     );
 
-    /*//-------------PCI-E-------------\\ 
+    //-------------PCI-E-------------\\ 
     axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
     axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
     axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();
