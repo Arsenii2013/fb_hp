@@ -75,10 +75,10 @@ module top(
     input  logic       REFCLK_SFP_n,
     input  logic       REFCLK_SFP_p,
 
-    //input  logic       sfp_rx_n,
-    //input  logic       sfp_rx_p,
-    //output logic       sfp_tx_n,
-    //output logic       sfp_tx_p,
+    input  logic       sfp_rx_n,
+    input  logic       sfp_rx_p,
+    output logic       sfp_tx_n,
+    output logic       sfp_tx_p,
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
@@ -86,6 +86,7 @@ module top(
 
     );
 
+    logic PS_clk;
     //---------GTP_COMMON------------\\
     logic REFCLK_PCIE;
     logic REFCLK_SFP;
@@ -104,14 +105,14 @@ module top(
     logic QPLL1RESET;
     logic QPLL0LOCK;
     logic QPLL1LOCK;
-
+    logic QPLL1REFCLKLOST;
 
     gt_common_wrapper gt_common_wrapper_i(
         .REFCLK0(REFCLK_PCIE),
         .REFCLK1(REFCLK_SFP),
 
-        .PLL0LOCKDETCLK(1'b0),
-        .PLL1LOCKDETCLK(1'b0),
+        .PLL0LOCKDETCLK(PS_clk),
+        .PLL1LOCKDETCLK(PS_clk),
         .PLL0PD(QPLL0PD),
         .PLL1PD(QPLL1PD),
         .PLL0RESET(QPLL0RESET),
@@ -124,12 +125,11 @@ module top(
         .PLL0LOCK(QPLL0LOCK),
         .PLL1LOCK(QPLL1LOCK),
         .PLL0REFCLKLOST(),
-        .PLL1REFCLKLOST()
+        .PLL1REFCLKLOST(QPLL1REFCLKLOST)
     );
      
     //-------Processing System-------\\
     logic PS_aresetn;
-    logic PS_clk;
     logic spi_aclk;
     logic spi_oclk;
     logic spi_aresetn;
@@ -303,7 +303,7 @@ module top(
         .MOSI(MOSI)
     );
 
-    /*//-------------sfp---------------\\
+    //-------------sfp---------------\\
     logic        sfp_reset;
     logic        sfp_tx_clk;
     logic [15:0] sfp_tx_data;
@@ -328,8 +328,8 @@ module top(
     assign led[1]    = tx_reset_done;
     assign led[2]    = rx_reset_done;
     assign led[3]    = sfp_rx_is_k[0] || sfp_rx_is_k[1];
-    */
-    /*ila_0 ila_rx(
+
+    ila_0 ila_rx(
         .clk(rx_clk),
         .probe0(tx_reset_done),
         .probe1(rx_reset_done),
@@ -337,17 +337,17 @@ module top(
         .probe3(sfp_rx_data),
         .probe4(sfp_tx_is_k),
         .probe5(sfp_rx_is_k),
-        .probe6(pll_reset),
-        .probe7(pll_lock),
-        .probe8(gt0_rxdisperr_out),
-        .probe9(gt0_rxnotintable_out),
-        .probe10(gt0_rxbyteisaligned_out),
-        .probe11(gt0_rxbyterealign_out),
-        .probe12(gt0_rxcommadet_out),
+        .probe6(gnd),
+        .probe7(gnd),
+        .probe8(gnd),
+        .probe9(gnd),
+        .probe10(gnd),
+        .probe11(gnd),
+        .probe12(gnd),
         .probe13(gnd),
         .probe14(gnd),
         .probe15(gnd)
-    );*/
+    );
     
     /*ila_0 ila_tx(
         .clk(sfp_tx_clk),
@@ -360,12 +360,11 @@ module top(
         .probe6(pll_reset),
         .probe7(pll_lock)
     );*/
-    /*
+    
     `ifdef MGT_FULL_STACK
     gtpwizard
     gtpwizard_i (
-        .refclk_n(REFCLK_SFP_n),
-        .refclk_p(REFCLK_SFP_p),
+        .refclk(REFCLK_SFP),
         .sysclk(PS_clk), 
         .soft_reset(sfp_reset),
         .tx_reset_done(tx_reset_done),
@@ -379,9 +378,16 @@ module top(
         .rx_n(sfp_rx_n),
         .rx_p(sfp_rx_p),
         .tx_n(sfp_tx_n),
-        .tx_p(sfp_tx_p),
-        .pll_reset(pll_reset),
-        .pll_lock(pll_lock)
+        .tx_p(sfp_tx_p),    
+        .qpll0outclk(QPLL0OUTCLK),
+        .qpll0outrefclk(QPLL0OUTREFCLK),
+        .qpll1reset(QPLL1RESET),
+        .qpll1pd(QPLL1PD),
+        .qpll1lock(QPLL1LOCK),
+        .qpll1refclklost(QPLL1REFCLKLOST),    
+        .qpll1outclk(QPLL1OUTCLK),
+        .qpll1outrefclk(QPLL1OUTREFCLK)
+
     );
     `endif // MGT_FULL_STACK
 
@@ -408,10 +414,10 @@ module top(
         .tx_clk(sfp_tx_clk),
         .ready(tx_reset_done)
     );
-*/
+
     //-------------GPIO--------------\\
     blink #(
-        .FREQ_HZ(1000000000)
+        .FREQ_HZ(100000000) // 1s
     )
     blink_i (
         .reset(sfp_reset),
