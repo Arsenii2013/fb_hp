@@ -23,5 +23,6 @@ sources:
     - src/lib/avmm/avmm_slave_stub.sv
     - src/syn/qspi_wrapper.sv
     - src/syn/gtpwizard.sv
+    - src/syn/gt_common_wrapper.sv
 
     

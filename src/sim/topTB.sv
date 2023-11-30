@@ -3,40 +3,12 @@
 
 module topTB(
 
-    );
-    parameter  REF_CLK_FREQ          = 0; // 0 = 100 MHZ, 1 = 125 MHZ, 2 = 250 MHZ
-    localparam REF_CLK_HALF_CYCLE    = (REF_CLK_FREQ == 0) ? 5000 :
-                                        (REF_CLK_FREQ == 1) ? 4000 :
-                                        (REF_CLK_FREQ == 2) ? 2000 : 0;
+    );    
 
-    // RP Parameters
-    parameter USER_CLK_FREQ_RP           = 4;
-    parameter USER_CLK2_DIV2_RP          = "TRUE";
-    parameter LINK_CAP_MAX_LINK_WIDTH_RP = 6'h8;
-    
-    // EP Parameters
-    parameter USER_CLK_FREQ_EP           = 2; 
-    parameter USER_CLK2_DIV2_EP          = "FALSE";
-    parameter LINK_CAP_MAX_LINK_WIDTH_EP = 6'h1;
-    
-    //defparam topTB.RP.rport.EXT_PIPE_SIM = "TRUE";
-
-    localparam SPI_AVMM_AW  = 10;
-    localparam SPI_AVMM_DW  = 32;
-    localparam MAX_BURST    = 1;
-    localparam SPI_W        = 4;
-    
-    logic             clock;
-    logic             mrf_clk;
+    logic             REFCLK_PCIE;
+    logic             REFCLK_SFP;
     logic             reset_n;
     logic             reset;
-
-    logic             clkout;
-
-    logic             sck;
-    logic             cs_n;
-    logic [SPI_W-1:0] mosi;
-    logic [SPI_W-1:0] miso;
 
     `ifdef MGT_FULL_STACK
     logic tx_p;
@@ -84,9 +56,14 @@ module topTB(
     assign xil_rx6_sigs_ep  = {3'b0,xil_tx6_sigs_rp[22:0]};
     assign xil_rx7_sigs_ep  = {3'b0,xil_tx7_sigs_rp[22:0]}; 
     `endif //PCIE_FULL_STACK
+
+    logic             sck;
+    logic             cs_n;
+    logic [SPI_W-1:0] mosi;
+    logic [SPI_W-1:0] miso;
         
     top DUT(
-        /*`ifdef PCIE_PIPE_STACK
+        `ifdef PCIE_PIPE_STACK
         .common_commands_in ( 4'b0  ),
         .pipe_rx_0_sigs     (xil_rx0_sigs_ep),
         .pipe_rx_1_sigs     (xil_rx1_sigs_ep),
@@ -105,35 +82,35 @@ module topTB(
         .pipe_tx_5_sigs     (xil_tx5_sigs_ep),
         .pipe_tx_6_sigs     (xil_tx6_sigs_ep),
         .pipe_tx_7_sigs     (xil_tx7_sigs_ep),
-        `endif //PCIE_FULL_STACK*/
+        `endif //PCIE_FULL_STACK
+        .REFCLK_PCIE_p(REFCLK_PCIE),
+        .REFCLK_PCIE_n(~REFCLK_PCIE),
+        .PERST_PCIE(reset_n),
 
         `ifdef MGT_FULL_STACK
-        .mrf_refclk_n(~mrf_clk),
-        .mrf_refclk_p(mrf_clk),
-        .mrf_rx_n(tx_n),
-        .mrf_rx_p(tx_p),
-        .mrf_tx_n(tx_n),
-        .mrf_tx_p(tx_p),
+        .REFCLK_SFP_n(~REFCLK_SFP),
+        .REFCLK_SFP_p(REFCLK_SFP),
+        .sfp_rx_n(tx_n),
+        .sfp_rx_p(tx_p),
+        .sfp_tx_n(tx_n),
+        .sfp_tx_p(tx_p),
         `endif //MGT_FULL_STACK
 
         .SCK(sck),
         .CSn(cs_n),
         .MISO(miso),
         .MOSI(mosi)
-        
-        /*.REFCLK_p(clock),
-        .REFCLK_n(~clock),
-        .PERST(reset_n)*/
     );
     
     `ifdef PCIE_PIPE_STACK
+    //defparam topTB.RP.rport.EXT_PIPE_SIM = "TRUE";
     xilinx_pcie_2_1_rport_7x
     #(
-        .REF_CLK_FREQ                   ( REF_CLK_FREQ               ),
+        .REF_CLK_FREQ                   ( 0                          ), // 0 = 100 MHZ, 1 = 125 MHZ, 2 = 250 MHZ
         .PL_FAST_TRAIN                  ( "TRUE"                     ),
         .ALLOW_X8_GEN2                  ( "TRUE"                     ),
         .C_DATA_WIDTH                   ( 128                        ),
-        .LINK_CAP_MAX_LINK_WIDTH        ( LINK_CAP_MAX_LINK_WIDTH_RP ),
+        .LINK_CAP_MAX_LINK_WIDTH        ( 6'h8                       ),
         .DEVICE_ID                      ( 16'h7100                   ),
         .LINK_CAP_MAX_LINK_SPEED        ( 4'h2                       ),
         .LINK_CTRL2_TARGET_LINK_SPEED   ( 4'h2                       ),
@@ -145,10 +122,10 @@ module topTB(
         .VC0_CPL_INFINITE               ( "TRUE"                     ),
         .VC0_TOTAL_CREDITS_PD           ( 437                        ),
         .VC0_TOTAL_CREDITS_CD           ( 461                        ),
-        .USER_CLK_FREQ                  ( USER_CLK_FREQ_RP           ),
-        .USER_CLK2_DIV2                 ( USER_CLK2_DIV2_RP          )
+        .USER_CLK_FREQ                  ( 4                          ),
+        .USER_CLK2_DIV2                 ( "TRUE"                     )
     ) RP (
-        .sys_clk(clock),
+        .sys_clk(REFCLK_PCIE),
         .sys_rst_n(reset_n),
         
         .common_commands_in ({11'b0,common_commands_out[0]} ), // pipe_clk from EP
@@ -173,6 +150,14 @@ module topTB(
     
     );
     `endif //PCIE_PIPE_STACK
+
+
+    localparam SPI_AVMM_AW  = 10;
+    localparam SPI_AVMM_DW  = 32;
+    localparam MAX_BURST    = 1;
+    localparam SPI_W        = 4;
+
+    logic             spi_slave_clk;
 
     avmm_if #(
         .AW        ( SPI_AVMM_AW ),
@@ -206,24 +191,24 @@ module topTB(
     avmm_slave
     (
         .clk       ( clkout      ),
-        .rst       ( reset         ),
+        .rst       ( reset       ),
         .bus       ( s_i         )
     );
         
     sys_clk_gen
     #(
-        .halfcycle (REF_CLK_HALF_CYCLE),
+        .halfcycle (5000), // 5000 ps = 100 MHz
         .offset    (0)
     ) CLK_GEN (
-        .sys_clk (clock)
+        .sys_clk (REFCLK_PCIE)
     );
 
     sys_clk_gen
     #(
-        .halfcycle (4000),
+        .halfcycle (4000), // 4000 ps = 125 MHz
         .offset    (0)
-    ) MRF_CLK_GEN (
-        .sys_clk (mrf_clk)
+    ) REFCLK_SFP_GEN (
+        .sys_clk (REFCLK_SFP)
     );
     
     integer i;
@@ -235,7 +220,7 @@ module topTB(
         
         for (i = 0; i < 500; i = i + 1) begin
         
-        @(posedge clock);
+        @(posedge REFCLK_PCIE);
         
         end
         

@@ -4,7 +4,7 @@
 `include "top.svh"
 
 module top(
-    /*//-------------PCI-E-------------\\
+    //-------------PCI-E-------------\\
     `ifndef SYNTHESIS
     `ifdef PCIE_PIPE_STACK
     input  logic [11:0] common_commands_in,
@@ -35,9 +35,9 @@ module top(
     output logic [1:0]  pcie_7x_mgt_txp,
     `endif //SYNTHESIS 
     
-    input  logic        REFCLK_n,
-    input  logic        REFCLK_p,
-    input  logic        PERST,*/
+    input  logic        REFCLK_PCIE_n,
+    input  logic        REFCLK_PCIE_p,
+    input  logic        PERST_PCIE,
 
     //-------Processing System-------\\
     `ifdef SYNTHESIS
@@ -70,15 +70,15 @@ module top(
     input  logic [SPI_W-1:0]  MISO,
     output logic [SPI_W-1:0]  MOSI,
 
-    //-------------MRF---------------\\
+    //-------------SFP---------------\\
     `ifdef MGT_FULL_STACK
-    input  logic       mrf_refclk_n,
-    input  logic       mrf_refclk_p,
+    input  logic       REFCLK_SFP_n,
+    input  logic       REFCLK_SFP_p,
 
-    input  logic       mrf_rx_n,
-    input  logic       mrf_rx_p,
-    output logic       mrf_tx_n,
-    output logic       mrf_tx_p,
+    input  logic       sfp_rx_n,
+    input  logic       sfp_rx_p,
+    output logic       sfp_tx_n,
+    output logic       sfp_tx_p,
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
@@ -86,15 +86,55 @@ module top(
 
     );
 
-    logic REFCLK;
-    logic PS_aresetn;
     logic PS_clk;
+    //---------GTP_COMMON------------\\
+    logic REFCLK_PCIE;
+    logic REFCLK_SFP;
+
+    IBUFDS_GTE2 REFCLK_PCIE_ibuf_i (.O(REFCLK_PCIE), .ODIV2(), .I(REFCLK_PCIE_p), .CEB(1'b0), .IB(REFCLK_PCIE_n));
+    IBUFDS_GTE2 REFCLK_SFP_ibuf_i (.O(REFCLK_SFP), .ODIV2(), .I(REFCLK_SFP_p), .CEB(1'b0), .IB(REFCLK_SFP_n));
+
+    logic QPLL0OUTCLK;
+    logic QPLL1OUTCLK;
+    logic QPLL0OUTREFCLK;
+    logic QPLL1OUTREFCLK;
+
+    logic QPLL0PD;
+    logic QPLL1PD;
+    logic QPLL0RESET;
+    logic QPLL1RESET;
+    logic QPLL0LOCK;
+    logic QPLL1LOCK;
+    logic QPLL1REFCLKLOST;
+
+    gt_common_wrapper gt_common_wrapper_i(
+        .REFCLK0(REFCLK_PCIE),
+        .REFCLK1(REFCLK_SFP),
+
+        .PLL0LOCKDETCLK(PS_clk),
+        .PLL1LOCKDETCLK(PS_clk),
+        .PLL0PD(QPLL0PD),
+        .PLL1PD(QPLL1PD),
+        .PLL0RESET(QPLL0RESET),
+        .PLL1RESET(QPLL1RESET),
+
+        .PLL0OUTCLK(QPLL0OUTCLK),
+        .PLL1OUTCLK(QPLL1OUTCLK),
+        .PLL0OUTREFCLK(QPLL0OUTREFCLK),
+        .PLL1OUTREFCLK(QPLL1OUTREFCLK),
+        .PLL0LOCK(QPLL0LOCK),
+        .PLL1LOCK(QPLL1LOCK),
+        .PLL0REFCLKLOST(),
+        .PLL1REFCLKLOST(QPLL1REFCLKLOST)
+    );
+     
+    //-------Processing System-------\\
+    logic PS_aresetn;
     logic spi_aclk;
     logic spi_oclk;
     logic spi_aresetn;
     logic [HP0_ADDR_W-1:0] HP0_offset;
-     
-    //-------Processing System-------\\
+
     axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
     axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
 
@@ -133,12 +173,10 @@ module top(
         .peripheral_reset()
     );
 
-    /*//-------------PCI-E-------------\\ 
+    //-------------PCI-E-------------\\ 
     axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
     axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
     axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();
-
-    IBUFDS_GTE2 REFCLK_ibuf_i (.O(REFCLK), .ODIV2(), .I(REFCLK_p), .CEB(1'b0), .IB(REFCLK_n));
     
     pcie_wrapper_ pcie_i(
         `ifndef SYNTHESIS
@@ -162,7 +200,13 @@ module top(
         .pipe_tx_6_sigs,
         .pipe_tx_7_sigs,
         `endif //PCIE_FULL_STACK 
-        `endif //SYNTHESIS      
+        `endif //SYNTHESIS   
+
+        .pcie_qpll_drp_qplld(QPLL0PD),
+        .pcie_qpll_drp_qplllock(QPLL0LOCK),
+        .pcie_qpll_drp_qplloutclk(QPLL0OUTCLK),
+        .pcie_qpll_drp_qplloutrefclk(QPLL0OUTREFCLK),
+        .pcie_qpll_drp_qpllreset(QPLL0RESET),
         
         `ifdef SYNTHESIS
         .pcie_7x_mgt_rxn,
@@ -172,7 +216,7 @@ module top(
         `endif //SYNTHESIS 
         
         .REFCLK(REFCLK),
-        .PERST(PERST),
+        .PERST(PERST_PCIE),
         
         .bar0(bar0),
         .bar1(bar1),
@@ -213,7 +257,7 @@ module top(
         .aresetn(PS_aresetn),
         .bus(mmr[MMR_MEM]),
         .offset(HP0_offset)
-    );*/
+    );
     //-------------QSPI--------------\\
     `ifndef SYNTHESIS
     sys_clk_gen
@@ -246,8 +290,8 @@ module top(
         .aclk(PS_clk),
         .aresetn(PS_aresetn),
         .ps_bus(GP0),
-        //.pcie_bus(mmr[MMR_QSPI]),
-        .pcie_bus(plug),
+        .pcie_bus(mmr[MMR_QSPI]),
+        //.pcie_bus(plug),
 
         .spi_aclk(spi_aclk),
         .spi_oclk(spi_oclk),
@@ -259,14 +303,13 @@ module top(
         .MOSI(MOSI)
     );
 
-
-    //-------------MRF---------------\\
-    logic        mrf_reset;
-    logic        mrf_tx_clk;
-    logic [15:0] mrf_tx_data;
-    logic [15:0] mrf_rx_data;
-    logic [1:0]  mrf_tx_is_k;
-    logic [1:0]  mrf_rx_is_k;
+    //-------------sfp---------------\\
+    logic        sfp_reset;
+    logic        sfp_tx_clk;
+    logic [15:0] sfp_tx_data;
+    logic [15:0] sfp_rx_data;
+    logic [1:0]  sfp_tx_is_k;
+    logic [1:0]  sfp_rx_is_k;
     logic        tx_reset_done;
     logic        rx_reset_done;
     logic        rx_clk;
@@ -281,95 +324,103 @@ module top(
     logic gt0_rxbyterealign_out;
     logic gt0_rxcommadet_out;
 
-    assign mrf_reset = ~PS_aresetn;
+    assign sfp_reset = ~PS_aresetn;
     assign led[1]    = tx_reset_done;
     assign led[2]    = rx_reset_done;
-    assign led[3]    = mrf_rx_is_k[0] || mrf_rx_is_k[1];
+    assign led[3]    = sfp_rx_is_k[0] || sfp_rx_is_k[1];
 
     ila_0 ila_rx(
         .clk(rx_clk),
         .probe0(tx_reset_done),
         .probe1(rx_reset_done),
-        .probe2(mrf_tx_data),
-        .probe3(mrf_rx_data),
-        .probe4(mrf_tx_is_k),
-        .probe5(mrf_rx_is_k),
-        .probe6(pll_reset),
-        .probe7(pll_lock),
-        .probe8(gt0_rxdisperr_out),
-        .probe9(gt0_rxnotintable_out),
-        .probe10(gt0_rxbyteisaligned_out),
-        .probe11(gt0_rxbyterealign_out),
-        .probe12(gt0_rxcommadet_out),
+        .probe2(sfp_tx_data),
+        .probe3(sfp_rx_data),
+        .probe4(sfp_tx_is_k),
+        .probe5(sfp_rx_is_k),
+        .probe6(gnd),
+        .probe7(gnd),
+        .probe8(gnd),
+        .probe9(gnd),
+        .probe10(gnd),
+        .probe11(gnd),
+        .probe12(gnd),
         .probe13(gnd),
         .probe14(gnd),
         .probe15(gnd)
     );
     
     /*ila_0 ila_tx(
-        .clk(mrf_tx_clk),
+        .clk(sfp_tx_clk),
         .probe0(tx_reset_done),
         .probe1(rx_reset_done),
-        .probe2(mrf_tx_data),
-        .probe3(mrf_rx_data),
-        .probe4(mrf_tx_is_k),
-        .probe5(mrf_rx_is_k),
+        .probe2(sfp_tx_data),
+        .probe3(sfp_rx_data),
+        .probe4(sfp_tx_is_k),
+        .probe5(sfp_rx_is_k),
         .probe6(pll_reset),
         .probe7(pll_lock)
     );*/
-
+    
     `ifdef MGT_FULL_STACK
     gtpwizard
     gtpwizard_i (
-        .refclk_n(mrf_refclk_n),
-        .refclk_p(mrf_refclk_p),
+        .refclk(REFCLK_SFP),
         .sysclk(PS_clk), 
-        .soft_reset(mrf_reset),
+        .soft_reset(sfp_reset),
         .tx_reset_done(tx_reset_done),
         .rx_reset_done(rx_reset_done),
-        .tx_clk(mrf_tx_clk),
+        .tx_clk(sfp_tx_clk),
         .rx_clk(rx_clk),
-        .tx_data(mrf_tx_data),
-        .rx_data(mrf_rx_data),
-        .txcharisk(mrf_tx_is_k),
-        .rxcharisk(mrf_rx_is_k),
-        .rx_n(mrf_rx_n),
-        .rx_p(mrf_rx_p),
-        .tx_n(mrf_tx_n),
-        .tx_p(mrf_tx_p),
-        .pll_reset(pll_reset),
-        .pll_lock(pll_lock)
+        .tx_data(sfp_tx_data),
+        .rx_data(sfp_rx_data),
+        .txcharisk(sfp_tx_is_k),
+        .rxcharisk(sfp_rx_is_k),
+        .rx_n(sfp_rx_n),
+        .rx_p(sfp_rx_p),
+        .tx_n(sfp_tx_n),
+        .tx_p(sfp_tx_p),    
+        .qpll0outclk(QPLL0OUTCLK),
+        .qpll0outrefclk(QPLL0OUTREFCLK),
+        .qpll1reset(QPLL1RESET),
+        .qpll1pd(QPLL1PD),
+        .qpll1lock(QPLL1LOCK),
+        .qpll1refclklost(QPLL1REFCLKLOST),    
+        .qpll1outclk(QPLL1OUTCLK),
+        .qpll1outrefclk(QPLL1OUTREFCLK)
+
     );
     `endif // MGT_FULL_STACK
 
     `ifndef MGT_FULL_STACK
     gtp_model gtp_model_i(
-        .refclk(mrf_refclk_p),
+        .refclk(sfp_refclk_p),
         .sysclk(PS_clk), 
-        .soft_reset(mrf_reset),
+        .soft_reset(sfp_reset),
         .tx_reset_done(tx_reset_done),
         .rx_reset_done(rx_reset_done),
-        .tx_clk(mrf_tx_clk),
+        .tx_clk(sfp_tx_clk),
         .rx_clk(),
-        .tx_data(mrf_tx_data),
-        .rx_data(mrf_rx_data),
-        .txcharisk(mrf_tx_is_k),
-        .rxcharisk(mrf_rx_is_k)
+        .tx_data(sfp_tx_data),
+        .rx_data(sfp_rx_data),
+        .txcharisk(sfp_tx_is_k),
+        .rxcharisk(sfp_rx_is_k)
     );
     `endif // MGT_FULL_STACK
 
     frame_gen
     frame_gen_i (
-        .tx_data(mrf_tx_data),
-        .is_k(mrf_tx_is_k),
-        .tx_clk(mrf_tx_clk),
+        .tx_data(sfp_tx_data),
+        .is_k(sfp_tx_is_k),
+        .tx_clk(sfp_tx_clk),
         .ready(tx_reset_done)
     );
 
     //-------------GPIO--------------\\
-    blink
+    blink #(
+        .FREQ_HZ(100000000) // 1s
+    )
     blink_i (
-        .reset(mrf_reset),
+        .reset(sfp_reset),
         .clk(PS_clk),
         .led(led[0])
     );
@@ -411,4 +462,4 @@ module frame_gen (
 
     end
 
-endmodule;
+endmodule
