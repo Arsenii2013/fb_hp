@@ -82,9 +82,11 @@ module top(
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
-    output logic [3:0] led
+    output logic [3:0] led,
+    output logic tx_dis
 
     );
+    assign tx_dis = 'b0;
 
     logic PS_clk;
     //---------GTP_COMMON------------\\
@@ -338,15 +340,7 @@ module top(
         .probe4(sfp_tx_is_k),
         .probe5(sfp_rx_is_k),
         .probe6(gnd),
-        .probe7(gnd),
-        .probe8(gnd),
-        .probe9(gnd),
-        .probe10(gnd),
-        .probe11(gnd),
-        .probe12(gnd),
-        .probe13(gnd),
-        .probe14(gnd),
-        .probe15(gnd)
+        .probe7(gnd)
     );
     
     /*ila_0 ila_tx(
