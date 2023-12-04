@@ -30,6 +30,7 @@ module gtpwizard(
     input  logic        qpll1outclk,
     input  logic        qpll1outrefclk
 );
+//Resetdone logic
     logic txfsmresetdone;
     logic rxfsmresetdone;
     //logic data_valid_in;
@@ -56,7 +57,7 @@ module gtpwizard(
     assign rxpcommaalignen = rxresetdone;
 
 
-
+//Reset logic
     logic commonreset;
     logic qpll1reset_iternal;
     logic cpll_reset;
@@ -76,7 +77,7 @@ module gtpwizard(
     );
 
     assign qpll1reset = commonreset | qpll1reset_iternal | cpll_reset;
-
+//Clock logic
     logic txoutclk;
     logic rxoutclk;
     logic gt0_txmmcm_lock_i;
@@ -108,7 +109,36 @@ module gtpwizard(
         .I                              (rxoutclk),
         .O                              (rx_clk)
     );
+//Beacon logic
+    logic       beacon_pulse_rx;
+    logic       beacon_pulse_rx_expand;
+    logic [1:0] beacon_cnt;
+    logic       beacon_pulse_tx;
 
+    assign beacon_pulse_rx        = rx_data[7:0] == 8'h7E;
+    assign beacon_pulse_rx_expand = beacon_cnt != 'b0;
+
+    always_ff @(posedge rx_clk) begin
+        if(beacon_pulse_rx) 
+            beacon_cnt <= 2'b11;
+        else
+            if(beacon_cnt != 2'b0)
+                beacon_cnt <= beacon_cnt-1;         
+    end
+
+    xpm_cdc_pulse XPM_CDC_PULSE_i(
+        .dest_clk(tx_clk),
+        .dest_pulse(beacon_pulse_tx),
+        .dest_rst('b0),
+        .src_clk(rx_clk),
+        .src_pulse(beacon_pulse_rx_expand),
+        .src_rst('b0)
+    );
+
+    logic [15:0] tx_data_i;
+    assign tx_data_i = {tx_data[15:8], beacon_pulse_tx ? 8'h7E : tx_data[7:0]};
+
+//Core instanse
     gtwizard gtwizard_i(
         .soft_reset_tx_in               (soft_reset),
         .soft_reset_rx_in               (soft_reset),
@@ -183,7 +213,7 @@ module gtpwizard(
         .gt0_gttxreset_in               ('b0),
         .gt0_txuserrdy_in               ('b1),
         //---------------- Transmit Ports - FPGA TX Interface Ports ----------------
-        .gt0_txdata_in                  (tx_data),
+        .gt0_txdata_in                  (tx_data_i),
         //---------------- Transmit Ports - TX 8B/10B Encoder Ports ----------------
         //.gt0_txchardispmode_in          (gt0_txchardispmode_i),
         //.gt0_txchardispval_in           (gt0_txchardispval_i),
@@ -215,7 +245,7 @@ module gtpwizard(
         .sysclk_in(sysclk)
 
     );
-
+//Resetdone logic
     always @(posedge  rx_clk or negedge rxresetdone)
     begin
         if (!rxresetdone)
