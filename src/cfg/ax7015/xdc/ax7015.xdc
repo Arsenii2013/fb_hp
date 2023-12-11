@@ -22,8 +22,10 @@ set_property PACKAGE_PIN AA3 [get_ports {pcie_7x_mgt_txp[1]}]
 
 set_property PACKAGE_PIN W2 [get_ports {sfp_tx_p}]
 set_property PACKAGE_PIN W6 [get_ports {sfp_rx_p}]
-set_property -dict { PACKAGE_PIN U1   IOSTANDARD LVCMOS33 } [get_ports { tx_dis }];
+set_property -dict { PACKAGE_PIN U1   IOSTANDARD LVCMOS33 } [get_ports { sfp_tx_dis }];
+set_property -dict { PACKAGE_PIN U2   IOSTANDARD LVCMOS33 } [get_ports { sfp_loss }];
 set_property LOC GTPE2_CHANNEL_X0Y3 [get_cells gtpwizard_i/gtwizard_i/inst/gtwizard_i/gt0_gtwizard_i/gtpe2_i]
+set_property RXSLIDE_MODE PMA [get_cells -hierarchical -filter {NAME =~ *gtpe2_i}]
 
 set_property LOC IBUFDS_GTE2_X0Y1 [get_cells REFCLK_SFP_ibuf_i]
 set_property PACKAGE_PIN U5 [get_ports {REFCLK_SFP_p}]

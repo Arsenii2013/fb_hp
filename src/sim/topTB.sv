@@ -11,8 +11,15 @@ module topTB(
     logic             reset;
 
     `ifdef MGT_FULL_STACK
+    logic loop = 1'b1;
+    logic sfp_loss = 1'b0;
     logic tx_p;
     logic tx_n;
+    logic rx_p;
+    logic rx_n;
+
+    assign rx_p = tx_p ? loop : 1'b0;
+    assign rx_n = tx_n ? loop : 1'b0;
     `endif //MGT_FULL_STACK
     
     `ifdef PCIE_PIPE_STACK
@@ -90,10 +97,12 @@ module topTB(
         `ifdef MGT_FULL_STACK
         .REFCLK_SFP_n(~REFCLK_SFP),
         .REFCLK_SFP_p(REFCLK_SFP),
-        .sfp_rx_n(tx_n),
-        .sfp_rx_p(tx_p),
+        .sfp_rx_n(rx_n),
+        .sfp_rx_p(rx_p),
         .sfp_tx_n(tx_n),
         .sfp_tx_p(tx_p),
+        .sfp_tx_dis(),
+        .sfp_loss(sfp_loss),
         `endif //MGT_FULL_STACK
 
         .SCK(sck),
@@ -233,8 +242,17 @@ module topTB(
     
     
     initial 
-    begin    
-        # 1000000;
+    begin   
+        @(posedge DUT.gtpwizard_i.rx_reset_done) 
+        # 10000;
+        loop = 'b0;
+        sfp_loss = 1'b1;
+        # 10005;
+        loop = 'b1;
+        sfp_loss = 1'b0;
+        //DUT.gtpwizard_i.test <= 'b1;
+        @(posedge DUT.gtpwizard_i.rx_reset_done) 
+        # 10000;
         $finish;
     end
     

@@ -31,9 +31,9 @@ config:
     gt0_val_port_rxbyterealign : true
     gt0_val_port_rxcharisk : true
     gt0_val_port_rxcommadet : true
-    gt0_val_port_rxmcommaalignen : true
-    gt0_val_port_rxpcommaalignen : true
-    gt0_val_port_rxslide : false
+    gt0_val_port_rxmcommaalignen : false
+    gt0_val_port_rxpcommaalignen : false
+    gt0_val_port_rxslide : true
     gt0_val_rx_buffer_bypass_mode : "Auto"
     gt0_val_rx_cm_trim : 800
     gt0_val_rx_data_width : 16
@@ -62,3 +62,8 @@ config:
     gt3_val_tx_refclk : REFCLK1_Q0
 
     gt0_usesharedlogic : 0
+
+    gt0_val_rx_buffer_bypass_mode : Auto
+    gt0_val_rxbuf_en : false
+    gt0_val_tx_buffer_bypass_mode : Manual
+    gt0_val_txbuf_en : false
