@@ -5,7 +5,7 @@
 localparam CLK_PRD         = 10;
 
 //      PCI Express
-`define PCIE_PIPE_STACK
+//`define PCIE_PIPE_STACK
 localparam PCIE_DATA_W     = 32;
 
 localparam BAR0_ADDR_W     = 16;

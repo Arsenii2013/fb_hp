@@ -79,14 +79,15 @@ module top(
     input  logic       sfp_rx_p,
     output logic       sfp_tx_n,
     output logic       sfp_tx_p,
+    output logic       sfp_tx_dis,
+    input  logic       sfp_loss,
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
-    output logic [3:0] led,
-    output logic tx_dis
+    output logic [3:0] led
 
     );
-    assign tx_dis = 'b0;
+    assign sfp_tx_dis = 'b0;
 
     logic PS_clk;
     //---------GTP_COMMON------------\\
@@ -305,7 +306,7 @@ module top(
         .MOSI(MOSI)
     );
 
-    //-------------sfp---------------\\
+    //-------------SFP---------------\\
     logic        sfp_reset;
     logic        sfp_tx_clk;
     logic [15:0] sfp_tx_data;
@@ -318,15 +319,15 @@ module top(
     logic        tx_clk;
     logic        gnd = 0;
     
-    logic pll_reset;
-    logic pll_lock;
-    logic gt0_rxdisperr_out;
-    logic gt0_rxnotintable_out;
-    logic gt0_rxbyteisaligned_out;
-    logic gt0_rxbyterealign_out;
-    logic gt0_rxcommadet_out;
+    logic        pll_reset;
+    logic        pll_lock;
+    logic        gt0_rxdisperr_out;
+    logic        gt0_rxnotintable_out;
+    logic        gt0_rxbyteisaligned_out;
+    logic        gt0_rxbyterealign_out;
+    logic        gt0_rxcommadet_out;
 
-    assign sfp_reset = ~PS_aresetn;
+    assign sfp_reset = ~PS_aresetn | sfp_loss;
     assign led[1]    = tx_reset_done;
     assign led[2]    = rx_reset_done;
     assign led[3]    = sfp_rx_is_k[0] || sfp_rx_is_k[1];

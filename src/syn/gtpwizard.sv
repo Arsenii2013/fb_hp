@@ -58,6 +58,7 @@ module gtpwizard(
 
 
 //Reset logic
+    logic wa_rst_req = 0;
     logic commonreset;
     logic qpll1reset_iternal;
     logic cpll_reset;
@@ -76,7 +77,7 @@ module gtpwizard(
         .refclk_in(refclk)
     );
 
-    assign qpll1reset = commonreset | qpll1reset_iternal | cpll_reset;
+    assign qpll1reset = commonreset | qpll1reset_iternal | cpll_reset | wa_rst_req;
 //Clock logic
     logic txoutclk;
     logic rxoutclk;
@@ -112,7 +113,7 @@ module gtpwizard(
 //Beacon logic
     logic       beacon_pulse_rx;
     logic       beacon_pulse_rx_expand;
-    logic [1:0] beacon_cnt;
+    logic [1:0] beacon_cnt = '0;
     logic       beacon_pulse_tx;
 
     assign beacon_pulse_rx        = rx_data[7:0] == 8'h7E;
@@ -138,10 +139,99 @@ module gtpwizard(
     logic [15:0] tx_data_i;
     assign tx_data_i = {tx_data[15:8], beacon_pulse_tx ? 8'h7E : tx_data[7:0]};
 
+//Alignment logic
+    localparam WA_DETECT_INTERVAL = 32;
+    localparam WA_RXSLIDE_MAX_CNT = 20;
+
+    localparam WA_WORD_CNT_W      = $clog2(WA_DETECT_INTERVAL);
+    localparam WA_SLIDE_CNT_W     = $clog2(WA_RXSLIDE_MAX_CNT);
+
+    typedef logic [ WA_WORD_CNT_W-1:0] word_cnt_t;
+    typedef logic [WA_SLIDE_CNT_W-1:0] slide_cnt_t;
+
+    typedef enum {
+        wafsmPATTERN_SEARCH,
+        wafsmCHECK,
+        wafsmALIGNED
+    } wafsm_state_t;
+
+    logic         detect     =  0;
+    word_cnt_t    word_cnt   = '0;
+
+    logic         rxslide;
+    slide_cnt_t   slide_cnt  = '0;
+
+    wafsm_state_t state = wafsmPATTERN_SEARCH;
+    wafsm_state_t next;
+
+    assign rxslide = state == wafsmCHECK && !detect;
+
+    logic test = 'b0;
+    always_ff @(posedge rx_clk) begin
+        if (!rx_reset_done) begin
+            state      <= wafsmPATTERN_SEARCH;
+            detect     <= 0;
+            word_cnt   <= '0;
+            slide_cnt  <= '0;
+            wa_rst_req <= 0;
+        end
+        else begin
+            state <= next;
+            case (state)
+                wafsmPATTERN_SEARCH: begin
+                    if (~rxcharisk[1] && rxcharisk[0] && rx_data[7:0] == 8'hBC)
+                        if (~test)
+                            detect <= 1;
+                    word_cnt <= word_cnt + word_cnt_t'(1);
+                    if (word_cnt == word_cnt_t'(WA_DETECT_INTERVAL - 1))
+                        word_cnt <= '0;
+                end
+                wafsmCHECK: begin
+                    if (detect) begin
+                        if (slide_cnt[0])
+                            wa_rst_req <= 1;
+                    end
+                    else begin
+                        slide_cnt <= slide_cnt + slide_cnt_t'(1);
+                        if (slide_cnt == slide_cnt_t'(WA_RXSLIDE_MAX_CNT - 1)) begin
+                            slide_cnt   <= '0;
+                            wa_rst_req <= 1;
+                        end
+                    end
+                end
+            endcase
+        end
+    end
+
+    always_comb begin
+        if (!rx_reset_done) begin
+            next = wafsmPATTERN_SEARCH;
+        end
+        else begin
+            case (state)
+                wafsmPATTERN_SEARCH: begin
+                    if (word_cnt == word_cnt_t'(WA_DETECT_INTERVAL - 1))
+                        next = wafsmCHECK;
+                    else
+                        next = wafsmPATTERN_SEARCH;
+                end
+                wafsmCHECK: begin
+                    if (detect)
+                        next = wafsmALIGNED;
+                    else
+                        next = wafsmPATTERN_SEARCH; 
+                end
+                wafsmALIGNED: begin
+                    next = wafsmALIGNED;
+                end
+            endcase
+        end
+    end
+
 //Core instanse
     gtwizard gtwizard_i(
-        .soft_reset_tx_in               (soft_reset),
-        .soft_reset_rx_in               (soft_reset),
+        .soft_reset_tx_in               (soft_reset | wa_rst_req),
+        .soft_reset_rx_in               (soft_reset | wa_rst_req),
         .dont_reset_on_data_error_in    ('b0),
         .gt0_tx_mmcm_lock_in            (gt0_txmmcm_lock_i),
         .gt0_tx_mmcm_reset_out          (gt0_txmmcm_reset_i),
@@ -182,13 +272,14 @@ module gtpwizard(
         .gt0_gtprxp_in                  (rx_p),
         //----------------- Receive Ports - RX Buffer Bypass Ports -----------------
         //.gt0_rxphmonitor_out            (gt0_rxphmonitor_i),
-        //.gt0_rxphslipmonitor_out        (gt0_rxphslipmonitor_i),
+        //.gt0_rxphslidemonitor_out        (gt0_rxphslidemonitor_i),
         //------------ Receive Ports - RX Byte and Word Alignment Ports ------------
         .gt0_rxbyteisaligned_out        (gt0_rxbyteisaligned_out),
         .gt0_rxbyterealign_out          (gt0_rxbyterealign_out),
-        .gt0_rxcommadet_out             (gt0_rxcommadet_out),
-        .gt0_rxmcommaalignen_in         (rxmcommaalignen),
-        .gt0_rxpcommaalignen_in         (rxpcommaalignen),
+        //.gt0_rxcommadet_out             (gt0_rxcommadet_out),
+        //.gt0_rxmcommaalignen_in         (rxmcommaalignen),
+        //.gt0_rxpcommaalignen_in         (rxpcommaalignen),
+        .gt0_rxslide_in                        (rxslide),
         //---------- Receive Ports - RX Decision Feedback Equalizer(DFE) -----------
         .gt0_dmonitorout_out            (),
         //------------------ Receive Ports - RX Equailizer Ports -------------------
