@@ -1,8 +1,8 @@
 `ifndef __SHARED_DATA_RXTX_SV__
 `define __SHARED_DATA_RXTX_SV__
 
-`include "../../top.svh"
-`include "../../lib/axi/axi4_lite_if.svh"
+`include "top.svh"
+`include "axi4_lite_if.svh"
 
 module stream_decoder_m ;
 ( 

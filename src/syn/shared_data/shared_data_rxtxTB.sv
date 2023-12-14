@@ -1,5 +1,5 @@
-`include "../../top.svh"
-`include "../../lib/axi/axi4_lite_if.svh"
+`include "top.svh"
+`include "axi4_lite_if.svh"
 
 module shared_data_rxtx_tb;
 //------------------------------------------------
