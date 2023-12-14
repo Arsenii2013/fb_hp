@@ -12,7 +12,7 @@ module shared_data_rxtx_tb;
 localparam CLK_PRD    = 10ns;
 localparam TX_CLK_PRD = 10.001ns;
 
-localparam BUF_SIZE  = SHARED_MEM_SEG_SIZE / (LLRF_DW / 8);
+localparam BUF_SIZE  = SHARED_MEM_SEG_SIZE / (FB_DW / 8);
 
 //------------------------------------------------
 //
@@ -26,20 +26,23 @@ logic               tx_rst = 1;
 
 logic               data_tx_ena = 0;
 logic               data_tx_req;
+logic               is_k;
+logic               tx_enable;
 
-xcvr_tx_data_word_t tx_data_out;
-xcvr_rx_data_word_t rx_data_in;
+//xcvr_tx_data_word_t tx_data_out;
+//xcvr_rx_data_word_t rx_data_in;
+logic [7:0]         rx_data_in;
 
 //------------------------------------------------
 axi4_lite_if #(
     .AW        ( SHARED_MEM_AW ),
-    .DW        ( LLRF_DW       )
+    .DW        ( FB_DW       )
 )
 shared_data_in_i();
 
 axi4_lite_if #(
     .AW        ( SHARED_MEM_AW ),
-    .DW        ( LLRF_DW       )
+    .DW        ( FB_DW       )
 )
 shared_data_out_i[DDSC_COUNT]();
 
@@ -47,7 +50,7 @@ shared_data_out_i[DDSC_COUNT]();
 //
 //      Tasks
 //
-task automatic send(input logic [LLRF_DW-1:0] data[BUF_SIZE], input int n);
+task automatic send(input logic [FB_DW-1:0] data[BUF_SIZE], input int n);
 /*    
     automatic int i = 0;
 
@@ -82,9 +85,9 @@ task automatic recv();
     shared_data_out_i[0].wready  <= 0;
     wait(shared_data_out_i[0].bready);
     @(posedge tx_clk)
-    shared_data_out_i[0].bwalid <= 1;
+    shared_data_out_i[0].bvalid <= 1;
     @(posedge tx_clk)
-    shared_data_out_i[0].bwalid <= 0;
+    shared_data_out_i[0].bvalid <= 0;
     
 
 endtask
@@ -101,18 +104,12 @@ always @(posedge tx_clk) data_tx_ena <= ~data_tx_ena;
 
 initial begin
 
-    logic [LLRF_DW-1:0] data[BUF_SIZE];
-
-    shared_data_in_i.write        = 0;
-    shared_data_in_i.read         = 0;
-    shared_data_in_i.burstcount   = 0;
-    shared_data_in_i.writedata    = 0;
-    shared_data_in_i.address      = 0;
-    shared_data_in_i.byteenable   = 0;
+    logic [FB_DW-1:0] data[BUF_SIZE];
     
     #100ns
     rst    = 0;
     tx_rst = 0;
+    tx_enable = 1;
 
     #100ns
     data[0] = 32'hDEAD_BEEF;
@@ -124,11 +121,6 @@ end
 
 initial begin
 
-    shared_data_out_i[0].waitrequest = 1;
-    shared_data_out_i[1].waitrequest = 0;
-    shared_data_out_i[2].waitrequest = 0;
-    shared_data_out_i[3].waitrequest = 0;
-
     recv();
     #100ns
     $stop();
@@ -138,8 +130,8 @@ end
 //
 //      Instances
 //
-assign rx_data_in.data  = tx_data_out.data;
-assign rx_data_in.iskey = tx_data_out.iskey;
+//assign rx_data_in.data  = tx_data_out.data;
+//assign rx_data_in.iskey = tx_data_out.iskey;
 //------------------------------------------------
 traffic_generator traffic_generator_i
 ( 
@@ -148,7 +140,7 @@ traffic_generator traffic_generator_i
 
     .tx_data           ( rx_data_in        ),
     .is_k              ( is_k              ),
-    .en                ( tx_enable         ),
+    .en                ( tx_enable         )
 
 );
 //------------------------------------------------
@@ -159,7 +151,8 @@ stream_decoder_m stream_decoder
 
     .shared_data_out_i ( shared_data_out_i ),
 
-    .rx_data_in        ( rx_data_in        )
+    .rx_data_in        ( rx_data_in        ),
+    .rx_isk_in         ( is_k              )
 );
 endmodule : shared_data_rxtx_tb
 
@@ -169,23 +162,33 @@ module traffic_generator(
     input  logic               en,
 
     output logic [7:0]         tx_data,
-    output logic               is_k,
+    output logic               is_k
 );
-    localparam   WORDS_IN_BRAM = 8;
+    localparam   WORDS_IN_BRAM = 32;
     //                                           D24.2D20.2                 D0.2D20.1                D3.1D7.5                   K28.5K28.5
     //logic [19:0] bram [0:WORDS_IN_BRAM-1] = '{20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010,
     //                                          20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010};
 
     //                                           D24.2D20.2               D0.2D20.1           D3.1D7.5              K28.5K28.5
-    logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100,
-                                              16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100};
+    logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{8'h5C, 
+                                              8'h04, 
+                                              8'hAD, 8'h74, 8'hAD, 8'h74,
+                                              8'h7A, 8'h34, 8'h74, 8'hAD, 
+                                              8'hAD, 8'h74, 8'hAD, 8'h74,
+                                              8'h7A, 8'h34, 8'h74, 8'hAD, 
+                                              8'h3C,
+                                              8'hFA, 
+                                              8'hDF, 
+                                              8'h00, 8'h00, 8'h00,
+                                              8'h00, 8'h00, 8'h00, 8'h00,
+                                              8'h00, 8'h00, 8'h00, 8'h00 };
 
     logic [$clog2(WORDS_IN_BRAM) - 1:0] i = 0;
 
-    assign is_k = (tx_data == 16'b1011110010111100) ? 'b1 : 'b0;
+    assign is_k = (tx_data == 8'h5C || tx_data == 8'hBC || tx_data == 8'h3C) ? 'b1 : 'b0;
 
-    always_ff @( posedge tx_clk ) begin 
-        if(!ready) 
+    always_ff @( posedge clk ) begin 
+        if(rst) 
         begin
             tx_data <= 0;
             i <= 0;

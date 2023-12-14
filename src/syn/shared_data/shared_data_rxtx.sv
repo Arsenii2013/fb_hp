@@ -4,7 +4,7 @@
 `include "top.svh"
 `include "axi4_lite_if.svh"
 
-module stream_decoder_m ;
+module stream_decoder_m 
 ( 
     input  logic               clk,
     input  logic               rst,
@@ -12,7 +12,7 @@ module stream_decoder_m ;
     input  logic [7:0]         rx_data_in,
     input  logic               rx_isk_in,
 
-    axi4_lite.m                shared_data_out_i[DDSC_COUNT]
+    axi4_lite_if.m                shared_data_out_i[DDSC_COUNT]
 );
 
 //------------------------------------------------
@@ -22,7 +22,7 @@ module stream_decoder_m ;
 //
 //      Parameters
 //
-localparam DATA_WORD_SZ = FB_WD / 8;
+localparam DATA_WORD_SZ = FB_DW / 8;
 localparam CHKSUM_SZ    = 2;
 localparam MAX_SZ       = DATA_WORD_SZ > CHKSUM_SZ ? DATA_WORD_SZ : CHKSUM_SZ;
 localparam BYTES_CNT_W  = $clog2(MAX_SZ);
@@ -86,8 +86,8 @@ logic         data_received;
 //
 //      Logic
 //
-assign start = rx_isk_in && rx_data_in.data == rx_data_in;
-assign stop  = rx_isk_in && rx_data_in.data == rx_data_in;
+assign start = rx_isk_in && rx_data_in == DATA_TRANSFER_START;
+assign stop  = rx_isk_in && rx_data_in == DATA_TRANSFER_STOP;
 
 always_ff @(posedge clk) begin
     if (rst) begin
@@ -194,9 +194,9 @@ generate
         assign shared_data_out_i[i].wvalid  = sdfsm_state[i] == sdfsmWRITE_SLAVE;
         assign shared_data_out_i[i].bready  = (sdfsm_state[i] == sdfsmWRITE_SLAVE) || (sdfsm_state[i] == sdfsmWAIT_SLAVE);
 
-        assign AW_handsnake[i]              =  shared_data_out_i[i].awvalid && shared_data_out_i[i].awready
-        assign W_handsnake[i]               =  shared_data_out_i[i].wvalid  && shared_data_out_i[i].wready
-        assign B_handsnake[i]               =  shared_data_out_i[i].bvalid  && shared_data_out_i[i].bready
+        assign AW_handsnake[i]              =  shared_data_out_i[i].awvalid && shared_data_out_i[i].awready;
+        assign W_handsnake[i]               =  shared_data_out_i[i].wvalid  && shared_data_out_i[i].wready;
+        assign B_handsnake[i]               =  shared_data_out_i[i].bvalid  && shared_data_out_i[i].bready;
 
         always_ff @(posedge clk) begin
             if (rst) begin
@@ -207,7 +207,7 @@ generate
                     sdfsmIDLE: begin
                         cnt[i] <= 0;
                         if (data_received)
-                            sdfsm_state[i] <= sdfsmWRITE_SLAVES;
+                            sdfsm_state[i] <= sdfsmWRITE_SLAVE;
                     end
                     sdfsmWRITE_SLAVE: begin
                         if (AW_handsnake[i] && W_handsnake[i]) begin
