@@ -18,7 +18,15 @@ module gt_common_wrapper(
     output logic PLL0LOCK,
     output logic PLL1LOCK,
     output logic PLL0REFCLKLOST,
-    output logic PLL1REFCLKLOST
+    output logic PLL1REFCLKLOST, 
+
+    input  logic        DRP_CLK,
+    output logic [15:0] DRP_DO,
+    output logic        DRP_RDY,
+    input  logic [ 7:0] DRP_ADDR,
+    input  logic        DRP_EN,  
+    input  logic [15:0] DRP_DI,   
+    input  logic        DRP_WE
 );
 
 
@@ -97,21 +105,22 @@ module gt_common_wrapper(
         .PLL1RESET                      (PLL1RESET),                            //                       
                                                                                                    
         //---------- DRP -------------------------------------------------------                         
-        /*.DRPCLK                         (QPLL_DRPCLK),                          //                       
-        .DRPADDR                        (QPLL_DRPADDR),                         //                       
-        .DRPEN                          (QPLL_DRPEN),                           //                       
-        .DRPDI                          (QPLL_DRPDI),                           //                       
-        .DRPWE                          (QPLL_DRPWE),                           //                       
+        .DRPCLK                         (DRP_CLK),                          //                       
+        .DRPADDR                        (DRP_ADDR),                         //                       
+        .DRPEN                          (DRP_EN),                           //                       
+        .DRPDI                          (DRP_DI),                           //                       
+        .DRPWE                          (DRP_WE),                           //                       
                                                                                                          
-        .DRPDO                          (QPLL_DRPDO),                           //                       
-        .DRPRDY                         (QPLL_DRPRDY),                          //   */   
-        .DRPADDR                        (8'b0),
+        .DRPDO                          (DRP_DO),                           //                       
+        .DRPRDY                         (DRP_RDY),                          //      
+
+        /*.DRPADDR                        (8'b0),
         .DRPCLK                         (1'b0),
         .DRPDI                          (16'b0),
         .DRPDO                          (),
         .DRPEN                          (1'b0),
         .DRPRDY                         (),
-        .DRPWE                          (1'b0),                 
+        .DRPWE                          (1'b0),                 */
                                                                                                          
         //---------- Band Gap --------------------------------------------------                         
         .BGBYPASSB                      ( 1'd1),                                //                    

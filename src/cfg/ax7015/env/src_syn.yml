@@ -24,5 +24,6 @@ sources:
     - src/syn/qspi_wrapper.sv
     - src/syn/gtpwizard.sv
     - src/syn/gt_common_wrapper.sv
+    - src/syn/qpll_drp.sv
 
     
