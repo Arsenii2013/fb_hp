@@ -110,6 +110,14 @@ module top(
     logic QPLL1LOCK;
     logic QPLL1REFCLKLOST;
 
+    logic        DRP_CLK;
+    logic [15:0] DRP_DO;
+    logic        DRP_RDY;
+    logic [ 7:0] DRP_ADDR;
+    logic        DRP_EN;
+    logic [15:0] DRP_DI;   
+    logic        DRP_WE;
+
     gt_common_wrapper gt_common_wrapper_i(
         .REFCLK0(REFCLK_PCIE),
         .REFCLK1(REFCLK_SFP),
@@ -128,7 +136,15 @@ module top(
         .PLL0LOCK(QPLL0LOCK),
         .PLL1LOCK(QPLL1LOCK),
         .PLL0REFCLKLOST(),
-        .PLL1REFCLKLOST(QPLL1REFCLKLOST)
+        .PLL1REFCLKLOST(QPLL1REFCLKLOST),
+
+        .DRP_CLK(DRP_CLK),
+        .DRP_DO(DRP_DO),
+        .DRP_RDY(DRP_RDY),
+        .DRP_ADDR(DRP_ADDR),
+        .DRP_EN(DRP_EN),
+        .DRP_DI(DRP_DI),
+        .DRP_WE(DRP_WE)
     );
      
     //-------Processing System-------\\
@@ -210,6 +226,14 @@ module top(
         .pcie_qpll_drp_qplloutclk(QPLL0OUTCLK),
         .pcie_qpll_drp_qplloutrefclk(QPLL0OUTREFCLK),
         .pcie_qpll_drp_qpllreset(QPLL0RESET),
+
+        .DRP_CLK(DRP_CLK),
+        .DRP_DO(DRP_DO),
+        .DRP_RDY(DRP_RDY),
+        .DRP_ADDR(DRP_ADDR),
+        .DRP_EN(DRP_EN),
+        .DRP_DI(DRP_DI),
+        .DRP_WE(DRP_WE),
         
         `ifdef SYNTHESIS
         .pcie_7x_mgt_rxn,
@@ -218,7 +242,7 @@ module top(
         .pcie_7x_mgt_txp,
         `endif //SYNTHESIS 
         
-        .REFCLK(REFCLK),
+        .REFCLK(REFCLK_PCIE),
         .PERST(PERST_PCIE),
         
         .bar0(bar0),
@@ -332,7 +356,7 @@ module top(
     assign led[2]    = rx_reset_done;
     assign led[3]    = sfp_rx_is_k[0] || sfp_rx_is_k[1];
 
-    ila_0 ila_rx(
+    /*ila_0 ila_rx(
         .clk(rx_clk),
         .probe0(tx_reset_done),
         .probe1(rx_reset_done),
@@ -415,7 +439,7 @@ module top(
         .FREQ_HZ(100000000) // 1s
     )
     blink_i (
-        .reset(sfp_reset),
+        .reset(~PS_aresetn),
         .clk(PS_clk),
         .led(led[0])
     );

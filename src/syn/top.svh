@@ -2,10 +2,14 @@
 `ifndef __TOP_SVH__
 `define __TOP_SVH__
 
+//      Common
 localparam CLK_PRD         = 10;
+localparam SYNC_PRD_DEF    = 1000;
+localparam FB_DW           = 32;
+
 
 //      PCI Express
-//`define PCIE_PIPE_STACK
+`define PCIE_PIPE_STACK
 localparam PCIE_DATA_W     = 32;
 
 localparam BAR0_ADDR_W     = 16;
@@ -49,5 +53,11 @@ localparam SPI_W           = 2;
 localparam SPI_AXI_AW      = 10;
 localparam SPI_AXI_DW      = 32;
 
+//      Shared Memory parameters
+localparam SHARED_MEM_SIZE     = 2048;
+localparam SHARED_MEM_SEG_SIZE = 16;
+localparam SHARED_MEM_AW       = $clog2(SHARED_MEM_SIZE);
+localparam SHARED_MEM_SEG_AW   = $clog2(SHARED_MEM_SIZE/SHARED_MEM_SEG_SIZE);
+localparam DDSC_COUNT      = 4;
 
 `endif //__TOP_SVH__

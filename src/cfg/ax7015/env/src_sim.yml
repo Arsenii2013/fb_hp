@@ -12,3 +12,4 @@ sources:
     - src/sim/pcie/xilinx_pcie_2_1_rport_7x.v
     - src/sim/pcie/axi_model.sv
     - src/sim/gtpwizard/gtp_model.sv
+    - src/syn/qpll_drp.sv

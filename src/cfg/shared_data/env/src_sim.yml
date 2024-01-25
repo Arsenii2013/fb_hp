@@ -1,0 +1,7 @@
+import : main
+
+sources:
+    - src/syn/shared_data/shared_data_rxtx.sv
+    - src/syn/shared_data/shared_data_rxtxTB.sv
+    - src/lib/axi/axi4_lite_if.svh
+    - src/syn/top.svh
