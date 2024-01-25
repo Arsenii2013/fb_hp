@@ -267,7 +267,7 @@ module top(
     (
         .aresetn(PS_aresetn),
         .aclk(PS_clk),
-        .m(bar1),
+        .m(bar0),
         .s(mmr)
     );
 
