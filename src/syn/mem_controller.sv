@@ -15,7 +15,7 @@ module mem_controller #
     );
         
     localparam DW	= OW;
-    localparam AW	= 4;
+    localparam AW	= 5;
     // AXI4LITE signals
     reg [AW-1 : 0] 	axi_awaddr;
     reg  	axi_awready;
@@ -34,7 +34,7 @@ module mem_controller #
     // ADDR_LSB = 2 for 32 bits (n downto 2)
     // ADDR_LSB = 3 for 64 bits (n downto 3)
     localparam integer ADDR_LSB = (DW/32) + 1;
-    localparam integer OPT_MEM_ADDR_BITS = 1;
+    localparam integer OPT_MEM_ADDR_BITS = 2;
     //----------------------------------------------
     //-- Signals for user logic register space example
     //------------------------------------------------
@@ -43,6 +43,10 @@ module mem_controller #
     reg [DW-1:0]	slv_reg1;
     reg [DW-1:0]	slv_reg2;
     reg [DW-1:0]	slv_reg3;
+    reg [DW-1:0]	slv_reg4;
+    reg [DW-1:0]	slv_reg5;
+    reg [DW-1:0]	slv_reg6;
+    reg [DW-1:0]	slv_reg7;
     wire	 slv_reg_rden;
     wire	 slv_reg_wren;
     reg [DW-1:0]	 reg_data_out;
@@ -164,39 +168,50 @@ module mem_controller #
         if (slv_reg_wren)
             begin
             case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )
-                2'h0:
+                3'h0:
                 for ( byte_index = 0; byte_index <= (DW/8)-1; byte_index = byte_index+1 )
                     if ( bus.wstrb[byte_index] == 1 ) begin
                     // Respective byte enables are asserted as per write strobes 
                     // Slave register 0
                     slv_reg0[(byte_index*8) +: 8] <= bus.wdata[(byte_index*8) +: 8];
                     end  
-                2'h1:
+                3'h1:
                 for ( byte_index = 0; byte_index <= (DW/8)-1; byte_index = byte_index+1 )
                     if ( bus.wstrb[byte_index] == 1 ) begin
                     // Respective byte enables are asserted as per write strobes 
                     // Slave register 1
                     slv_reg1[(byte_index*8) +: 8] <= bus.wdata[(byte_index*8) +: 8];
                     end  
-                2'h2:
+                3'h2:
                 for ( byte_index = 0; byte_index <= (DW/8)-1; byte_index = byte_index+1 )
                     if ( bus.wstrb[byte_index] == 1 ) begin
                     // Respective byte enables are asserted as per write strobes 
                     // Slave register 2
                     slv_reg2[(byte_index*8) +: 8] <= bus.wdata[(byte_index*8) +: 8];
                     end  
-                2'h3:
+                3'h3:
                 for ( byte_index = 0; byte_index <= (DW/8)-1; byte_index = byte_index+1 )
                     if ( bus.wstrb[byte_index] == 1 ) begin
                     // Respective byte enables are asserted as per write strobes 
                     // Slave register 3
                     slv_reg3[(byte_index*8) +: 8] <= bus.wdata[(byte_index*8) +: 8];
                     end  
+                3'h4:
+                for ( byte_index = 0; byte_index <= (DW/8)-1; byte_index = byte_index+1 )
+                    if ( bus.wstrb[byte_index] == 1 ) begin
+                    // Respective byte enables are asserted as per write strobes 
+                    // Slave register 3
+                    slv_reg4[(byte_index*8) +: 8] <= bus.wdata[(byte_index*8) +: 8];
+                    end 
                 default : begin
                             slv_reg0 <= slv_reg0;
                             slv_reg1 <= slv_reg1;
                             slv_reg2 <= slv_reg2;
                             slv_reg3 <= slv_reg3;
+                            slv_reg4 <= slv_reg4;
+                            slv_reg5 <= slv_reg5;
+                            slv_reg6 <= slv_reg6;
+                            slv_reg7 <= slv_reg7;
                         end
             endcase
             end
@@ -305,11 +320,12 @@ module mem_controller #
     begin
             // Address decoding for reading registers
             case ( axi_araddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )
-            2'h0   : reg_data_out <= slv_reg0;
-            2'h1   : reg_data_out <= slv_reg1;
-            2'h2   : reg_data_out <= slv_reg2;
-            2'h3   : reg_data_out <= slv_reg3;
-            default : reg_data_out <= 0;
+            3'h0   : reg_data_out <= slv_reg0;
+            3'h1   : reg_data_out <= slv_reg1;
+            3'h2   : reg_data_out <= slv_reg2;
+            3'h3   : reg_data_out <= slv_reg3;
+            3'h4   : reg_data_out <= slv_reg4;
+            default : reg_data_out <= 'hDEAD;
             endcase
     end
 
@@ -333,7 +349,7 @@ module mem_controller #
     end    
 
     // Add user logic here
-    assign offset = slv_reg3;
+    assign offset = slv_reg4;
     // User logic ends
 
 endmodule

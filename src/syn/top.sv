@@ -146,6 +146,17 @@ module top(
         .DRP_DI(DRP_DI),
         .DRP_WE(DRP_WE)
     );
+    //-----------Interfaces----------\\
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
+    axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
+
+    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
+    axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
+    axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();    
+    
+    //localparam MMR_DEV_COUNT2 = 2 ** ($clog2(MMR_DEV_COUNT) + 1);
+    localparam MMR_DEV_COUNT2 = 64;
+    axi4_lite_if #(.AW(MMR_DEV_ADDR_W), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
      
     //-------Processing System-------\\
     logic PS_aresetn;
@@ -153,9 +164,6 @@ module top(
     logic spi_oclk;
     logic spi_aresetn;
     logic [HP0_ADDR_W-1:0] HP0_offset;
-
-    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
-    axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
 
     PS_wrapper_ 
     PS_wrapper_i (
@@ -184,7 +192,7 @@ module top(
         `endif // SYNTHESIS
 
         .GP0(GP0),
-        .HP0(HP0),
+        .HP0(bar2),
         .HP0_offset(HP0_offset),
         
         .peripheral_clock(PS_clk),
@@ -192,11 +200,7 @@ module top(
         .peripheral_reset()
     );
 
-    //-------------PCI-E-------------\\ 
-    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
-    axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
-    axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();
-    
+    //-------------PCI-E-------------\\     
     pcie_wrapper_ pcie_i(
         `ifndef SYNTHESIS
         `ifdef PCIE_PIPE_STACK
@@ -247,16 +251,12 @@ module top(
         
         .bar0(bar0),
         .bar1(bar1),
-        .bar2(HP0),
+        .bar2(bar2),
         .bar_clk(PS_clk),
         .bar_aresetn(PS_aresetn)
     );
 
     //-------------MMR--------------\\
-    localparam MMR_DEV_COUNT2 = 2 ** ($clog2(MMR_DEV_COUNT) + 1);
-
-    
-    axi4_lite_if #(.AW(MMR_ADDR_W), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
     axi_crossbar
     #(
         .N(MMR_DEV_COUNT2),
