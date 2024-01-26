@@ -1,3 +1,4 @@
 
 sources:
     - ip/axi2avmm.yml
+    - ip/axi_memory.yml

@@ -133,6 +133,14 @@ end
 //assign rx_data_in.data  = tx_data_out.data;
 //assign rx_data_in.iskey = tx_data_out.iskey;
 //------------------------------------------------
+mem_wrapper
+mem_i (
+    .aclk(clk),
+    .aresetn(!rst),
+    .axi(shared_data_out_i[1]),
+    .offset(0)
+);
+
 traffic_generator traffic_generator_i
 ( 
     .clk               ( clk               ),
@@ -170,20 +178,19 @@ module traffic_generator(
     //                                          20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010};
 
     //                                           D24.2D20.2               D0.2D20.1           D3.1D7.5              K28.5K28.5
-    logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{8'h5C, 
-                                              8'h04, 
-                                              8'hAD, 8'h74, 8'hAD, 8'h74,
-                                              8'h7A, 8'h34, 8'h74, 8'hAD, 
-                                              8'hAD, 8'h74, 8'hAD, 8'h74,
-                                              8'h7A, 8'h34, 8'h74, 8'hAD, 
-                                              8'h3C,
-                                              8'hFA, 
-                                              8'hDF, 
-                                              8'h00, 8'h00, 8'h00,
-                                              8'h00, 8'h00, 8'h00, 8'h00,
-                                              8'h00, 8'h00, 8'h00, 8'h00 };
+    logic [15:0] bram [0:WORDS_IN_BRAM*2-1] = '{ 8'h00, 8'h5C, 8'h00,
+                                              8'h04, 8'h00,
+                                              8'hAD, 8'h00, 8'h74, 8'h00, 8'hAD, 8'h00, 8'h74, 8'h00,
+                                              8'h7A, 8'h00, 8'h34, 8'h00, 8'h74, 8'h00, 8'hAD, 8'h00,
+                                              8'hAD, 8'h00, 8'h74, 8'h00, 8'hAD, 8'h00, 8'h74, 8'h00,
+                                              8'h7A, 8'h00, 8'h34, 8'h00, 8'h74, 8'h00, 8'hAD, 8'h00,
+                                              8'h3C, 8'h00,
+                                              8'hF7, 8'h00, 8'hd9, 8'h00,
+                                              8'h00, 8'h00, 8'h00, 8'h00, 8'h00, 8'h00, 8'h00,
+                                              8'h00, 8'h00, 8'h00, 8'h00, 8'h00, 8'h00, 8'h00,
+                                              8'h00, 8'h00, 8'h00, 8'h00, 8'h00, 8'h00, 8'h00};
 
-    logic [$clog2(WORDS_IN_BRAM) - 1:0] i = 0;
+    logic [$clog2(WORDS_IN_BRAM*2) - 1:0] i = 0;
 
     assign is_k = (tx_data == 8'h5C || tx_data == 8'hBC || tx_data == 8'h3C) ? 'b1 : 'b0;
 

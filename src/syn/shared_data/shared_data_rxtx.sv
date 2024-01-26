@@ -12,7 +12,7 @@ module stream_decoder_m
     input  logic [7:0]         rx_data_in,
     input  logic               rx_isk_in,
 
-    axi4_lite_if.m                shared_data_out_i[DDSC_COUNT]
+    axi4_lite_if.m             shared_data_out_i[DDSC_COUNT]
 );
 
 //------------------------------------------------
@@ -178,14 +178,14 @@ assign data_received = rxfsm_state == rxfsmCHECK && chksum == chksum_recv && rx_
 
 genvar i;
 generate
-    for (i=0; i<DDSC_COUNT; i=i+1) begin : shared_data_avmm_master
+    for (i=0; i<DDSC_COUNT; i=i+1) begin : shared_data_axi_master
         assign shared_data_out_i[i].araddr  = 'b0;
         assign shared_data_out_i[i].arprot  = 'b1;
         assign shared_data_out_i[i].arvalid = 'b0;
-        assign shared_data_out_i[i].rvalid  = 'b0;
+        //assign shared_data_out_i[i].rvalid  = 'b0;
         assign shared_data_out_i[i].rready  = 'b0;
         assign shared_data_out_i[i].awprot  = 'b0;
-        assign shared_data_out_i[i].wstrb   = 'b1;
+        assign shared_data_out_i[i].wstrb   = '1;
 
         assign shared_data_out_i[i].awaddr  = (addr * SHARED_MEM_SEG_SIZE) | (addr_t'(cnt[i]) * DATA_WORD_SZ);
         assign shared_data_out_i[i].wdata   = data[cnt[i]];
