@@ -22,6 +22,15 @@ begin
     pci_e_write(0, 'h810, 'h00000000); // MMR_MEM offset 0 byte
     pci_e_read (2, 'h100, recv_data);   // HP0
 
+    //bar 1 test
+
+    pci_e_write(1, 'h0, 'hbeef); 
+    pci_e_read (1, 'h0, recv_data); 
+    pci_e_read (1, 'h7FC, recv_data); 
+
+    pci_e_write(1, 'h7FC, 'hdeadbeef); 
+    pci_e_read (1, 'h7FC, recv_data); 
+
     // QSPI read write test
     pci_e_write(0, 'hC00, 'h0000DEAD);
     pci_e_write(0, 'hC04, 'h0000BEEF);

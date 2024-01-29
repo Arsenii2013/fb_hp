@@ -12,7 +12,7 @@ module stream_decoder_m
     input  logic [7:0]         rx_data_in,
     input  logic               rx_isk_in,
 
-    axi4_lite_if.m             shared_data_out_i[DDSC_COUNT]
+    axi4_lite_if.m             shared_data_out_i[SHARED_MEM_COUNT]
 );
 
 //------------------------------------------------
@@ -167,18 +167,18 @@ typedef enum {
 } sdfsm_state_t;
 
 
-logic         AW_handsnake[DDSC_COUNT];
-logic         W_handsnake[DDSC_COUNT];
-logic         B_handsnake[DDSC_COUNT];
-cnt_t         cnt[DDSC_COUNT];
-sdfsm_state_t sdfsm_state[DDSC_COUNT] = '{default: sdfsmIDLE};
+logic         AW_handsnake[SHARED_MEM_COUNT];
+logic         W_handsnake[SHARED_MEM_COUNT];
+logic         B_handsnake[SHARED_MEM_COUNT];
+cnt_t         cnt[SHARED_MEM_COUNT];
+sdfsm_state_t sdfsm_state[SHARED_MEM_COUNT] = '{default: sdfsmIDLE};
 
 
 assign data_received = rxfsm_state == rxfsmCHECK && chksum == chksum_recv && rx_count != 0 && rx_addr != 8'hFF;
 
 genvar i;
 generate
-    for (i=0; i<DDSC_COUNT; i=i+1) begin : shared_data_axi_master
+    for (i=0; i<SHARED_MEM_COUNT; i=i+1) begin : shared_data_axi_master
         assign shared_data_out_i[i].araddr  = 'b0;
         assign shared_data_out_i[i].arprot  = 'b1;
         assign shared_data_out_i[i].arvalid = 'b0;

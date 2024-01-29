@@ -25,5 +25,7 @@ sources:
     - src/syn/gtpwizard.sv
     - src/syn/gt_common_wrapper.sv
     - src/syn/qpll_drp.sv
+    - src/syn/shared_data/shared_data_rxtx.sv
+    - src/syn/shared_data_wrapper.sv
 
     

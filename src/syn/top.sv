@@ -408,9 +408,7 @@ module top(
         .qpll1outrefclk(QPLL1OUTREFCLK)
 
     );
-    `endif // MGT_FULL_STACK
-
-    `ifndef MGT_FULL_STACK
+    `else 
     gtp_model gtp_model_i(
         .refclk(sfp_refclk_p),
         .sysclk(PS_clk), 
@@ -426,12 +424,28 @@ module top(
     );
     `endif // MGT_FULL_STACK
 
+    `ifndef SYNTHESIS
     frame_gen
     frame_gen_i (
         .tx_data(sfp_tx_data),
         .is_k(sfp_tx_is_k),
         .tx_clk(sfp_tx_clk),
         .ready(tx_reset_done)
+    );
+    `else 
+        assign sfp_tx_data = '0;
+        assign sfp_tx_is_k = '0;
+    `endif // SYNTHESIS
+
+
+    shared_data_rx_wrapper
+    shared_data_rx_wrapper_i(
+        .clk(PS_clk),
+        .rst(sfp_reset),
+        .aresetn(PS_aresetn),
+        .rx_data_in(sfp_rx_data[7:0]),
+        .rx_isk_in(sfp_rx_is_k[0]),
+        .axi_pci(bar1)
     );
 
     //-------------GPIO--------------\\
@@ -454,31 +468,113 @@ module frame_gen (
     input  logic         ready 
 ); 
 
-    localparam   WORDS_IN_BRAM = 8;
-    //                                           D24.2D20.2                 D0.2D20.1                D3.1D7.5                   K28.5K28.5
-    //logic [19:0] bram [0:WORDS_IN_BRAM-1] = '{20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010,
-    //                                          20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010};
+    localparam   WORDS_IN_BRAM = 32;
+    logic [$clog2(WORDS_IN_BRAM*2) - 1:0] i = 0;
+    logic [7:0] bram [0:WORDS_IN_BRAM-1] = 
+    '{ 
+        8'h5C, // start
+        8'h04, // addr = 4 segment
+        8'hAD, 8'h74, 8'hAD, 8'h74, // 0-3 byte data 
+        8'h7A, 8'h34, 8'h74, 8'hAD, // 4-7 byte data
+        8'hAD, 8'h74, 8'hAD, 8'h74, // 8-11 byte data
+        8'h7A, 8'h34, 8'h74, 8'hAD, // 12-15 byte data
+        8'h3C, // stop
+        8'hF7, 8'hd9, // checksum
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00, 
+        8'h00
+    };
+    
+    logic [7:0] MSB, LSB;
+    logic isk_msb, isk_lsb;
 
-    //                                           D24.2D20.2               D0.2D20.1           D3.1D7.5              K28.5K28.5
-    logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100,
-                                              16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100};
+    assign tx_data = {MSB, LSB};    
+    assign is_k    = {isk_msb, isk_lsb};
 
-    logic [$clog2(WORDS_IN_BRAM) - 1:0] i = 0;
+    always_comb begin : Event
+        isk_msb = MSB == 8'hBC;
 
-    assign is_k = (tx_data == 16'b1011110010111100) ? 'b1 : 'b0;
+        if(!ready)
+            MSB = '0;
+        else if(i % 4 == 0)
+            MSB = 8'hBC; // K28.5
+        else if(i % 7 == 0)
+            MSB = 8'h7E; // beacon
+        else
+            MSB = '0;
+    end
+
+    always_comb begin : Data
+        isk_lsb = (LSB == 8'h5C) || (LSB == 8'h3C);
+
+        if(!ready)
+            LSB = 0;
+        else if(i % 2 == 0)
+            LSB = '0; // distributed bus
+        else
+            LSB = bram[i / 2]; // segmented data buffer
+    end
 
     always_ff @( posedge tx_clk ) begin 
         if(!ready) 
         begin
-            tx_data <= 0;
             i <= 0;
         end
         else
         begin
-            tx_data <= bram[i];
             i <= i+1;
         end
 
     end
 
 endmodule
+
+/*
+logic [15:0] bram [0:WORDS_IN_BRAM*2-1] = 
+    '{  8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h005C, // event - D00.0, data - start = K28.2
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0004, // event - D00.0, data - addr  = 4 segment
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0074, // event - D00.0, data - 74
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0074, // event - D00.0, data - 74
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h007A, // event - D00.0, data - 7A
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0034, // event - D00.0, data - 34
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h0074, // event - D00.0, data - 74
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0074, // event - D00.0, data - 74
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h007A, // event - D00.0, data - 7A
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+
+    8'h7A, 
+    8'h00, 
+    8'h34, 
+    8'h00, 
+    8'h74, 
+    8'h00, 
+    8'hAD, 
+    8'h00,
+    8'h3C,
+    8'hF7, 8'hd9,
+    8'h00,
+    8'h00,
+    8'h00};
+    */

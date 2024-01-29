@@ -44,7 +44,7 @@ axi4_lite_if #(
     .AW        ( SHARED_MEM_AW ),
     .DW        ( FB_DW       )
 )
-shared_data_out_i[DDSC_COUNT]();
+shared_data_out_i[SHARED_MEM_COUNT]();
 
 //------------------------------------------------
 //
