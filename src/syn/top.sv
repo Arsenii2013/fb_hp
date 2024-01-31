@@ -356,30 +356,7 @@ module top(
     assign led[2]    = rx_reset_done;
     assign led[3]    = sfp_rx_is_k[0] || sfp_rx_is_k[1];
 
-    /*ila_0 ila_rx(
-        .clk(rx_clk),
-        .probe0(tx_reset_done),
-        .probe1(rx_reset_done),
-        .probe2(sfp_tx_data),
-        .probe3(sfp_rx_data),
-        .probe4(sfp_tx_is_k),
-        .probe5(sfp_rx_is_k),
-        .probe6(gnd),
-        .probe7(gnd)
-    );
-    
-    /*ila_0 ila_tx(
-        .clk(sfp_tx_clk),
-        .probe0(tx_reset_done),
-        .probe1(rx_reset_done),
-        .probe2(sfp_tx_data),
-        .probe3(sfp_rx_data),
-        .probe4(sfp_tx_is_k),
-        .probe5(sfp_rx_is_k),
-        .probe6(pll_reset),
-        .probe7(pll_lock)
-    );*/
-    
+   
     `ifdef MGT_FULL_STACK
     gtpwizard
     gtpwizard_i (
@@ -423,6 +400,30 @@ module top(
         .rxcharisk(sfp_rx_is_k)
     );
     `endif // MGT_FULL_STACK
+
+    /*ila_0 ila_rx(
+        .clk(rx_clk),
+        .probe0(tx_reset_done),
+        .probe1(rx_reset_done),
+        .probe2(sfp_tx_data),
+        .probe3(sfp_rx_data),
+        .probe4(sfp_tx_is_k),
+        .probe5(sfp_rx_is_k),
+        .probe6(gnd),
+        .probe7(gnd)
+    );*/
+    
+    ila_0 ila_tx(
+        .clk(sfp_tx_clk),
+        .probe0(tx_reset_done),
+        .probe1(rx_reset_done),
+        .probe2(gtpwizard_i.tx_data_i),
+        .probe3(sfp_rx_data),
+        .probe4(sfp_tx_is_k),
+        .probe5(sfp_rx_is_k),
+        .probe6(pll_reset),
+        .probe7(pll_lock)
+    );
 
     `ifndef SYNTHESIS
     frame_gen
@@ -491,31 +492,35 @@ module frame_gen (
     logic [7:0] MSB, LSB;
     logic isk_msb, isk_lsb;
 
+    //assign tx_data = {MSB, LSB};    
+   // assign is_k    = {isk_msb, isk_lsb};
+
+
     assign tx_data = {MSB, LSB};    
     assign is_k    = {isk_msb, isk_lsb};
+    assign isk_msb = (MSB == 8'h5C) || (MSB == 8'h3C); 
+    assign isk_lsb = LSB == 8'hBC;
 
     always_comb begin : Event
-        isk_msb = MSB == 8'hBC;
-
+        LSB = '0;
         if(!ready)
-            MSB = '0;
+            LSB = '0;
         else if(i % 4 == 0)
-            MSB = 8'hBC; // K28.5
+            LSB = 8'hBC; // K28.5
         else if(i % 7 == 0)
-            MSB = 8'h7E; // beacon
+            LSB = 8'h7E; // beacon
         else
-            MSB = '0;
+            LSB = '0;
     end
 
     always_comb begin : Data
-        isk_lsb = (LSB == 8'h5C) || (LSB == 8'h3C);
-
+        MSB = 0;
         if(!ready)
-            LSB = 0;
+            MSB = 0;
         else if(i % 2 == 0)
-            LSB = '0; // distributed bus
+            MSB = '0; // distributed bus
         else
-            LSB = bram[i / 2]; // segmented data buffer
+            MSB = bram[i / 2]; // segmented data buffer
     end
 
     always_ff @( posedge tx_clk ) begin 

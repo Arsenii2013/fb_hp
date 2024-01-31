@@ -169,6 +169,8 @@ typedef enum {
 
 logic         AW_handsnake[SHARED_MEM_COUNT];
 logic         W_handsnake[SHARED_MEM_COUNT];
+logic         AW_handsnake_ff[SHARED_MEM_COUNT];
+logic         W_handsnake_ff[SHARED_MEM_COUNT];
 logic         B_handsnake[SHARED_MEM_COUNT];
 cnt_t         cnt[SHARED_MEM_COUNT];
 sdfsm_state_t sdfsm_state[SHARED_MEM_COUNT] = '{default: sdfsmIDLE};
@@ -200,7 +202,9 @@ generate
 
         always_ff @(posedge clk) begin
             if (rst) begin
-                sdfsm_state[i] <= sdfsmIDLE; 
+                sdfsm_state[i]  <= sdfsmIDLE; 
+                AW_handsnake_ff[i] <= 'b0;
+                W_handsnake_ff[i]  <= 'b0;
             end
             else begin
                 case (sdfsm_state[i])
@@ -210,12 +214,19 @@ generate
                             sdfsm_state[i] <= sdfsmWRITE_SLAVE;
                     end
                     sdfsmWRITE_SLAVE: begin
-                        if (AW_handsnake[i] && W_handsnake[i]) begin
+                        if(AW_handsnake[i])
+                            AW_handsnake_ff[i] <= 'b1;
+                        if(W_handsnake[i])
+                            W_handsnake_ff[i]  <= 'b1;
+
+                        if ((AW_handsnake[i] || AW_handsnake_ff[i]) && (W_handsnake[i] || W_handsnake_ff[i])) begin
                             sdfsm_state[i] <= sdfsmWAIT_SLAVE;
                         end
                     end
                     sdfsmWAIT_SLAVE: begin
                         if (B_handsnake[i]) begin
+                            AW_handsnake_ff[i] <= 'b0;
+                            W_handsnake_ff[i]  <= 'b0;
                             cnt[i] <= cnt[i] + 1;
                             if (count_t'(cnt[i]) == count - 1)
                                 sdfsm_state[i] <= sdfsmIDLE;
