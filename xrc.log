@@ -1,0 +1,14 @@
+Thu Feb  1 13:05:00 2024: Server was asked to start on port: '44467'
+Thu Feb  1 13:05:00 2024: Server is using token UUID: '7d18a404-2974-40ec-82cd-2e9239f6c5ba'
+Thu Feb  1 13:05:00 2024: Attempting to start server on port '44467'
+Thu Feb  1 13:05:00 2024: XRC main fifo: created main fifo '/tmp/xrcmain7d18a404-2974-40ec-82cd-2e9239f6c5ba', fd read = 11
+Thu Feb  1 13:05:00 2024: Running Rule Check Server
+Thu Feb  1 13:05:00 2024: Version 1.6.1
+Thu Feb  1 13:05:01 2024: Rule Check Server: Accepted socket connection from client
+Thu Feb  1 13:05:01 2024: EXCHANGE_TOKEN received, server token: 7d18a404-2974-40ec-82cd-2e9239f6c5ba, passed token: 7d18a404-2974-40ec-82cd-2e9239f6c5ba
+Thu Feb  1 13:31:49 2024: STOP_SERVER received, server token: 7d18a404-2974-40ec-82cd-2e9239f6c5ba, passed token: 7d18a404-2974-40ec-82cd-2e9239f6c5ba
+Thu Feb  1 13:31:49 2024: Socket received request to stop server.
+Thu Feb  1 13:31:49 2024: SERVER: destructor for server bound to port 44467
+Thu Feb  1 13:31:49 2024: XRC main fifo: Good unlink of /tmp/xrcmain7d18a404-2974-40ec-82cd-2e9239f6c5ba
+Thu Feb  1 13:31:49 2024: Server exiting with status 0.
+Thu Feb  1 13:31:49 2024: Closing log file.

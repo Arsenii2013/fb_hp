@@ -108,6 +108,7 @@ module top(
     logic QPLL1RESET;
     logic QPLL0LOCK;
     logic QPLL1LOCK;
+    logic QPLL0REFCLKLOST;
     logic QPLL1REFCLKLOST;
 
     logic        DRP_CLK;
@@ -135,17 +136,38 @@ module top(
         .PLL1OUTREFCLK(QPLL1OUTREFCLK),
         .PLL0LOCK(QPLL0LOCK),
         .PLL1LOCK(QPLL1LOCK),
-        .PLL0REFCLKLOST(),
-        .PLL1REFCLKLOST(QPLL1REFCLKLOST),
+        .PLL0REFCLKLOST(QPLL0REFCLKLOST),
+        .PLL1REFCLKLOST(QPLL1REFCLKLOST)//,
 
-        .DRP_CLK(DRP_CLK),
-        .DRP_DO(DRP_DO),
-        .DRP_RDY(DRP_RDY),
-        .DRP_ADDR(DRP_ADDR),
-        .DRP_EN(DRP_EN),
-        .DRP_DI(DRP_DI),
-        .DRP_WE(DRP_WE)
+        //.DRP_CLK(DRP_CLK),
+        //.DRP_DO(DRP_DO),
+        //.DRP_RDY(DRP_RDY),
+        //.DRP_ADDR(DRP_ADDR),
+        //.DRP_EN(DRP_EN),
+        //.DRP_DI(DRP_DI),
+        //.DRP_WE(DRP_WE)
     );
+
+
+    /*ila_0 ila_tx(
+        .clk(DRP_CLK),
+        .probe0(DRP_DO),
+        .probe1(DRP_RDY),
+        .probe2(DRP_ADDR),
+        .probe3(DRP_EN),
+        .probe4(DRP_DI),
+        .probe5(DRP_WE),
+        .probe6(QPLL0PD),
+        .probe7(QPLL1PD),
+        .probe8(QPLL0RESET),
+        .probe9(QPLL1RESET),
+        .probe10(QPLL0LOCK),
+        .probe11(QPLL1LOCK),
+        .probe12(QPLL0REFCLKLOST),
+        .probe13(QPLL1REFCLKLOST)
+    );*/
+
+
     //-----------Interfaces----------\\
     axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
     axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
@@ -413,7 +435,7 @@ module top(
         .probe7(gnd)
     );*/
     
-    ila_0 ila_tx(
+    /*ila_0 ila_tx(
         .clk(sfp_tx_clk),
         .probe0(tx_reset_done),
         .probe1(rx_reset_done),
@@ -423,7 +445,26 @@ module top(
         .probe5(sfp_rx_is_k),
         .probe6(pll_reset),
         .probe7(pll_lock)
-    );
+    );*/
+
+
+    /*ila_0 ila_tx(
+        .clk(pcie_i.pcie_qpll_drp_clk),
+        .probe0(!pcie_i.pcie_qpll_drp_rst_n),
+        .probe1(pcie_i.pcie_qpll_drp_ovrd),
+        .probe2(&pcie_i.pcie_qpll_drp_gen3),
+        .probe3(pcie_i.pcie_qpll_drp_qplllock),
+        .probe4(pcie_i.pcie_qpll_drp_start),
+        .probe5(pcie_i.DRP_DO),
+        .probe6(pcie_i.DRP_RDY),
+        .probe7(pcie_i.DRP_ADDR),
+        .probe8(pcie_i.DRP_EN),
+        .probe9(pcie_i.DRP_DI),
+        .probe10(pcie_i.pcie_qpll_drp_done),
+        .probe11(pcie_i.pcie_qpll_drp_reset),
+        .probe12(pcie_i.pcie_qpll_drp_crscode),
+        .probe13(pcie_i.pcie_qpll_drp_fsm)
+    );*/
 
     `ifndef SYNTHESIS
     frame_gen
