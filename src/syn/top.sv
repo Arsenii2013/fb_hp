@@ -465,7 +465,7 @@ module top(
         .probe13(pcie_i.pcie_qpll_drp_fsm)
     );*/
 
-    `ifndef SYNTHESIS
+    //`ifndef SYNTHESIS
     frame_gen
     frame_gen_i (
         .tx_data(sfp_tx_data),
@@ -473,10 +473,10 @@ module top(
         .tx_clk(sfp_tx_clk),
         .ready(tx_reset_done)
     );
-    `else 
-        assign sfp_tx_data = '0;
-        assign sfp_tx_is_k = '0;
-    `endif // SYNTHESIS
+    //`else 
+    //    assign sfp_tx_data = '0;
+    //    assign sfp_tx_is_k = '0;
+    //`endif // SYNTHESIS
 
 
     shared_data_rx_wrapper
@@ -512,7 +512,7 @@ module frame_gen (
 
     localparam   WORDS_IN_BRAM = 32;
     logic [$clog2(WORDS_IN_BRAM*2) - 1:0] i = 0;
-    logic [7:0] bram [0:WORDS_IN_BRAM-1] = 
+    /*logic [7:0] bram [0:WORDS_IN_BRAM-1] = 
     '{ 
         8'h5C, // start
         8'h04, // addr = 4 segment
@@ -528,6 +528,24 @@ module frame_gen (
         8'h00, 8'h00,
         8'h00, 8'h00, 
         8'h00
+    };*/
+
+    logic [7:0] bram [0:WORDS_IN_BRAM-1] = 
+    '{ 
+        8'h5C, // start
+        8'hFF, // addr = 4 segment
+        8'h00, 8'h8B, 8'hFC, 8'h7B, // 0-3 byte data 
+        8'h00, 8'h00, 8'h00, 8'h07, // 4-7 byte data
+        8'h00, 8'h00, 8'h00, 8'h00, // 8-11 byte data
+        8'h00, 8'h00, 8'h00, 8'h07, // 12-15 byte data
+        8'h3C, // stop
+        8'hFC, 8'hF0, // checksum
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00, 
+        8'h00
     };
     
     logic [7:0] MSB, LSB;
@@ -537,8 +555,8 @@ module frame_gen (
    // assign is_k    = {isk_msb, isk_lsb};
 
 
-    assign tx_data = {MSB, LSB};    
-    assign is_k    = {isk_msb, isk_lsb};
+    assign tx_data = {LSB, MSB};    
+    assign is_k    = {isk_lsb, isk_msb};
     assign isk_msb = (MSB == 8'h5C) || (MSB == 8'h3C); 
     assign isk_lsb = LSB == 8'hBC;
 
@@ -548,20 +566,24 @@ module frame_gen (
             LSB = '0;
         else if(i % 4 == 0)
             LSB = 8'hBC; // K28.5
+        `ifndef SYNTHESIS
         else if(i % 7 == 0)
             LSB = 8'h7E; // beacon
+        `endif //SYNTHESIS
         else
             LSB = '0;
     end
 
     always_comb begin : Data
         MSB = 0;
+        `ifndef SYNTHESIS
         if(!ready)
             MSB = 0;
         else if(i % 2 == 0)
             MSB = '0; // distributed bus
         else
             MSB = bram[i / 2]; // segmented data buffer
+        `endif //SYNTHESIS
     end
 
     always_ff @( posedge tx_clk ) begin 
