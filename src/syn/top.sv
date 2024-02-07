@@ -355,14 +355,13 @@ module top(
     //-------------SFP---------------\\
     logic        sfp_reset;
     logic        sfp_tx_clk;
+    logic        sfp_rx_clk;
     logic [15:0] sfp_tx_data;
     logic [15:0] sfp_rx_data;
     logic [1:0]  sfp_tx_is_k;
     logic [1:0]  sfp_rx_is_k;
     logic        tx_reset_done;
     logic        rx_reset_done;
-    logic        rx_clk;
-    logic        tx_clk;
     logic        gnd = 0;
     
     logic        pll_reset;
@@ -388,7 +387,7 @@ module top(
         .tx_reset_done(tx_reset_done),
         .rx_reset_done(rx_reset_done),
         .tx_clk(sfp_tx_clk),
-        .rx_clk(rx_clk),
+        .rx_clk(sfp_rx_clk),
         .tx_data(sfp_tx_data),
         .rx_data(sfp_rx_data),
         .txcharisk(sfp_tx_is_k),
@@ -415,7 +414,7 @@ module top(
         .tx_reset_done(tx_reset_done),
         .rx_reset_done(rx_reset_done),
         .tx_clk(sfp_tx_clk),
-        .rx_clk(),
+        .rx_clk(sfp_rx_clk),
         .tx_data(sfp_tx_data),
         .rx_data(sfp_rx_data),
         .txcharisk(sfp_tx_is_k),
@@ -482,11 +481,12 @@ module top(
 
     shared_data_rx_wrapper
     shared_data_rx_wrapper_i(
-        .clk(PS_clk),
+        .clk(sfp_rx_clk),
         .rst(sfp_reset),
         .aresetn(PS_aresetn),
-        .rx_data_in(sfp_rx_data[7:0]),
-        .rx_isk_in(sfp_rx_is_k[0]),
+        .rx_data_in(sfp_rx_data[15:8]),
+        .rx_isk_in(sfp_rx_is_k[1]),
+        .pci_clk(PS_clk),
         .axi_pci(bar1)
     );
 
