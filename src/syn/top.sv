@@ -422,18 +422,6 @@ module top(
     );
     `endif // MGT_FULL_STACK
 
-    /*ila_0 ila_rx(
-        .clk(rx_clk),
-        .probe0(tx_reset_done),
-        .probe1(rx_reset_done),
-        .probe2(sfp_tx_data),
-        .probe3(sfp_rx_data),
-        .probe4(sfp_tx_is_k),
-        .probe5(sfp_rx_is_k),
-        .probe6(gnd),
-        .probe7(gnd)
-    );*/
-    
     /*ila_0 ila_tx(
         .clk(sfp_tx_clk),
         .probe0(tx_reset_done),
@@ -489,6 +477,35 @@ module top(
         .pci_clk(PS_clk),
         .axi_pci(bar1)
     );
+
+    `ifdef SYNTHESIS
+    ila_0 ila_rx(
+        .clk(PS_clk),
+        .probe0(shared_data_rx_wrapper_i.axi_mem.awaddr),
+        .probe1(shared_data_rx_wrapper_i.axi_mem.awprot),
+        .probe2(shared_data_rx_wrapper_i.axi_mem.awvalid),
+        .probe3(shared_data_rx_wrapper_i.axi_mem.awready),
+        .probe4(shared_data_rx_wrapper_i.axi_mem.wdata),
+        .probe5(shared_data_rx_wrapper_i.axi_mem.wstrb),
+        .probe6(shared_data_rx_wrapper_i.axi_mem.wvalid),
+        .probe7(shared_data_rx_wrapper_i.axi_mem.wready),
+        .probe8(shared_data_rx_wrapper_i.axi_mem.bresp),
+        .probe9(shared_data_rx_wrapper_i.axi_mem.bvalid),
+        .probe10(shared_data_rx_wrapper_i.axi_mem.bready),
+        .probe11(shared_data_rx_wrapper_i.axi_mem.araddr),
+        .probe12(shared_data_rx_wrapper_i.axi_mem.arprot),
+        .probe13(shared_data_rx_wrapper_i.axi_mem.arvalid),
+        .probe14(shared_data_rx_wrapper_i.axi_mem.arready),
+        .probe15(shared_data_rx_wrapper_i.axi_mem.rdata),
+        .probe16(shared_data_rx_wrapper_i.axi_mem.rresp),
+        .probe17(shared_data_rx_wrapper_i.axi_mem.rvalid),
+        .probe18(shared_data_rx_wrapper_i.axi_mem.rready),
+        .probe19(sfp_rx_data),
+        .probe20(shared_data_rx_wrapper_i.stream_decoder_i.rxfsm_state),
+        .probe21(shared_data_rx_wrapper_i.stream_decoder_i.rxfsm_next),
+        .probe22(shared_data_rx_wrapper_i.stream_decoder_i.sdfsm_state[0])
+    );
+    `endif
 
     //-------------GPIO--------------\\
     blink #(
