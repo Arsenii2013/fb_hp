@@ -12,7 +12,7 @@ module mmcm_wrapper(
         output        psdone,
 
         // Status and control signals
-        input         resen,
+        input         resetn,
         output        locked
     );
     logic clk_in1_clk_wiz;

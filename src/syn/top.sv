@@ -84,7 +84,10 @@ module top(
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
-    output logic [3:0] led
+    output logic [3:0] led,
+
+    output logic       clk_0,
+    output logic       clk_ps
 
     );
     assign sfp_tx_dis = 'b0;
@@ -478,6 +481,19 @@ module top(
         .axi_pci(bar1)
     );
 
+    mmcm_wrapper mmcm_wrapper_i(
+        .clk_in1(PS_clk),
+        .clk_in2(sfp_rx_clk),
+        .clk_in_sel(rx_reset_done),
+        .clk_out1(clk_ps),
+        .psclk(),
+        .psen(),
+        .psincdec(),
+        .psdone(),
+        .resetn(PS_aresetn),
+        .locked()
+    );
+
     `ifdef SYNTHESIS
     ila_0 ila_rx(
         .clk(PS_clk),
@@ -616,50 +632,3 @@ module frame_gen (
     end
 
 endmodule
-
-/*
-logic [15:0] bram [0:WORDS_IN_BRAM*2-1] = 
-    '{  8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h005C, // event - D00.0, data - start = K28.2
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0004, // event - D00.0, data - addr  = 4 segment
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0074, // event - D00.0, data - 74
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0074, // event - D00.0, data - 74
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h007A, // event - D00.0, data - 7A
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0034, // event - D00.0, data - 34
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h0074, // event - D00.0, data - 74
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0074, // event - D00.0, data - 74
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h007A, // event - D00.0, data - 7A
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-
-    8'h7A, 
-    8'h00, 
-    8'h34, 
-    8'h00, 
-    8'h74, 
-    8'h00, 
-    8'hAD, 
-    8'h00,
-    8'h3C,
-    8'hF7, 8'hd9,
-    8'h00,
-    8'h00,
-    8'h00};
-    */
