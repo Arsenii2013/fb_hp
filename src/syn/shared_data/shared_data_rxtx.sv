@@ -12,7 +12,7 @@ module stream_decoder_m
     input  logic [7:0]         rx_data_in,
     input  logic               rx_isk_in,
 
-    axi4_lite_if.m                shared_data_out_i[DDSC_COUNT]
+    axi4_lite_if.m             shared_data_out_i[SHARED_MEM_COUNT]
 );
 
 //------------------------------------------------
@@ -167,25 +167,27 @@ typedef enum {
 } sdfsm_state_t;
 
 
-logic         AW_handsnake[DDSC_COUNT];
-logic         W_handsnake[DDSC_COUNT];
-logic         B_handsnake[DDSC_COUNT];
-cnt_t         cnt[DDSC_COUNT];
-sdfsm_state_t sdfsm_state[DDSC_COUNT] = '{default: sdfsmIDLE};
+logic         AW_handsnake[SHARED_MEM_COUNT];
+logic         W_handsnake[SHARED_MEM_COUNT];
+logic         AW_handsnake_ff[SHARED_MEM_COUNT];
+logic         W_handsnake_ff[SHARED_MEM_COUNT];
+logic         B_handsnake[SHARED_MEM_COUNT];
+cnt_t         cnt[SHARED_MEM_COUNT];
+sdfsm_state_t sdfsm_state[SHARED_MEM_COUNT] = '{default: sdfsmIDLE};
 
 
 assign data_received = rxfsm_state == rxfsmCHECK && chksum == chksum_recv && rx_count != 0 && rx_addr != 8'hFF;
 
 genvar i;
 generate
-    for (i=0; i<DDSC_COUNT; i=i+1) begin : shared_data_avmm_master
+    for (i=0; i<SHARED_MEM_COUNT; i=i+1) begin : shared_data_axi_master
         assign shared_data_out_i[i].araddr  = 'b0;
         assign shared_data_out_i[i].arprot  = 'b1;
         assign shared_data_out_i[i].arvalid = 'b0;
-        assign shared_data_out_i[i].rvalid  = 'b0;
+        //assign shared_data_out_i[i].rvalid  = 'b0;
         assign shared_data_out_i[i].rready  = 'b0;
         assign shared_data_out_i[i].awprot  = 'b0;
-        assign shared_data_out_i[i].wstrb   = 'b1;
+        assign shared_data_out_i[i].wstrb   = '1;
 
         assign shared_data_out_i[i].awaddr  = (addr * SHARED_MEM_SEG_SIZE) | (addr_t'(cnt[i]) * DATA_WORD_SZ);
         assign shared_data_out_i[i].wdata   = data[cnt[i]];
@@ -200,7 +202,9 @@ generate
 
         always_ff @(posedge clk) begin
             if (rst) begin
-                sdfsm_state[i] <= sdfsmIDLE; 
+                sdfsm_state[i]  <= sdfsmIDLE; 
+                AW_handsnake_ff[i] <= 'b0;
+                W_handsnake_ff[i]  <= 'b0;
             end
             else begin
                 case (sdfsm_state[i])
@@ -210,12 +214,19 @@ generate
                             sdfsm_state[i] <= sdfsmWRITE_SLAVE;
                     end
                     sdfsmWRITE_SLAVE: begin
-                        if (AW_handsnake[i] && W_handsnake[i]) begin
+                        if(AW_handsnake[i])
+                            AW_handsnake_ff[i] <= 'b1;
+                        if(W_handsnake[i])
+                            W_handsnake_ff[i]  <= 'b1;
+
+                        if ((AW_handsnake[i] || AW_handsnake_ff[i]) && (W_handsnake[i] || W_handsnake_ff[i])) begin
                             sdfsm_state[i] <= sdfsmWAIT_SLAVE;
                         end
                     end
                     sdfsmWAIT_SLAVE: begin
                         if (B_handsnake[i]) begin
+                            AW_handsnake_ff[i] <= 'b0;
+                            W_handsnake_ff[i]  <= 'b0;
                             cnt[i] <= cnt[i] + 1;
                             if (count_t'(cnt[i]) == count - 1)
                                 sdfsm_state[i] <= sdfsmIDLE;

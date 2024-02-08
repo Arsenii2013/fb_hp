@@ -108,6 +108,7 @@ module top(
     logic QPLL1RESET;
     logic QPLL0LOCK;
     logic QPLL1LOCK;
+    logic QPLL0REFCLKLOST;
     logic QPLL1REFCLKLOST;
 
     logic        DRP_CLK;
@@ -135,17 +136,38 @@ module top(
         .PLL1OUTREFCLK(QPLL1OUTREFCLK),
         .PLL0LOCK(QPLL0LOCK),
         .PLL1LOCK(QPLL1LOCK),
-        .PLL0REFCLKLOST(),
-        .PLL1REFCLKLOST(QPLL1REFCLKLOST),
+        .PLL0REFCLKLOST(QPLL0REFCLKLOST),
+        .PLL1REFCLKLOST(QPLL1REFCLKLOST)//,
 
-        .DRP_CLK(DRP_CLK),
-        .DRP_DO(DRP_DO),
-        .DRP_RDY(DRP_RDY),
-        .DRP_ADDR(DRP_ADDR),
-        .DRP_EN(DRP_EN),
-        .DRP_DI(DRP_DI),
-        .DRP_WE(DRP_WE)
+        //.DRP_CLK(DRP_CLK),
+        //.DRP_DO(DRP_DO),
+        //.DRP_RDY(DRP_RDY),
+        //.DRP_ADDR(DRP_ADDR),
+        //.DRP_EN(DRP_EN),
+        //.DRP_DI(DRP_DI),
+        //.DRP_WE(DRP_WE)
     );
+
+
+    /*ila_0 ila_tx(
+        .clk(DRP_CLK),
+        .probe0(DRP_DO),
+        .probe1(DRP_RDY),
+        .probe2(DRP_ADDR),
+        .probe3(DRP_EN),
+        .probe4(DRP_DI),
+        .probe5(DRP_WE),
+        .probe6(QPLL0PD),
+        .probe7(QPLL1PD),
+        .probe8(QPLL0RESET),
+        .probe9(QPLL1RESET),
+        .probe10(QPLL0LOCK),
+        .probe11(QPLL1LOCK),
+        .probe12(QPLL0REFCLKLOST),
+        .probe13(QPLL1REFCLKLOST)
+    );*/
+
+
     //-----------Interfaces----------\\
     axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
     axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
@@ -333,14 +355,13 @@ module top(
     //-------------SFP---------------\\
     logic        sfp_reset;
     logic        sfp_tx_clk;
+    logic        sfp_rx_clk;
     logic [15:0] sfp_tx_data;
     logic [15:0] sfp_rx_data;
     logic [1:0]  sfp_tx_is_k;
     logic [1:0]  sfp_rx_is_k;
     logic        tx_reset_done;
     logic        rx_reset_done;
-    logic        rx_clk;
-    logic        tx_clk;
     logic        gnd = 0;
     
     logic        pll_reset;
@@ -356,30 +377,7 @@ module top(
     assign led[2]    = rx_reset_done;
     assign led[3]    = sfp_rx_is_k[0] || sfp_rx_is_k[1];
 
-    /*ila_0 ila_rx(
-        .clk(rx_clk),
-        .probe0(tx_reset_done),
-        .probe1(rx_reset_done),
-        .probe2(sfp_tx_data),
-        .probe3(sfp_rx_data),
-        .probe4(sfp_tx_is_k),
-        .probe5(sfp_rx_is_k),
-        .probe6(gnd),
-        .probe7(gnd)
-    );
-    
-    /*ila_0 ila_tx(
-        .clk(sfp_tx_clk),
-        .probe0(tx_reset_done),
-        .probe1(rx_reset_done),
-        .probe2(sfp_tx_data),
-        .probe3(sfp_rx_data),
-        .probe4(sfp_tx_is_k),
-        .probe5(sfp_rx_is_k),
-        .probe6(pll_reset),
-        .probe7(pll_lock)
-    );*/
-    
+   
     `ifdef MGT_FULL_STACK
     gtpwizard
     gtpwizard_i (
@@ -389,7 +387,7 @@ module top(
         .tx_reset_done(tx_reset_done),
         .rx_reset_done(rx_reset_done),
         .tx_clk(sfp_tx_clk),
-        .rx_clk(rx_clk),
+        .rx_clk(sfp_rx_clk),
         .tx_data(sfp_tx_data),
         .rx_data(sfp_rx_data),
         .txcharisk(sfp_tx_is_k),
@@ -408,9 +406,7 @@ module top(
         .qpll1outrefclk(QPLL1OUTREFCLK)
 
     );
-    `endif // MGT_FULL_STACK
-
-    `ifndef MGT_FULL_STACK
+    `else 
     gtp_model gtp_model_i(
         .refclk(sfp_refclk_p),
         .sysclk(PS_clk), 
@@ -418,7 +414,7 @@ module top(
         .tx_reset_done(tx_reset_done),
         .rx_reset_done(rx_reset_done),
         .tx_clk(sfp_tx_clk),
-        .rx_clk(),
+        .rx_clk(sfp_rx_clk),
         .tx_data(sfp_tx_data),
         .rx_data(sfp_rx_data),
         .txcharisk(sfp_tx_is_k),
@@ -426,6 +422,38 @@ module top(
     );
     `endif // MGT_FULL_STACK
 
+    /*ila_0 ila_tx(
+        .clk(sfp_tx_clk),
+        .probe0(tx_reset_done),
+        .probe1(rx_reset_done),
+        .probe2(gtpwizard_i.tx_data_i),
+        .probe3(sfp_rx_data),
+        .probe4(sfp_tx_is_k),
+        .probe5(sfp_rx_is_k),
+        .probe6(pll_reset),
+        .probe7(pll_lock)
+    );*/
+
+
+    /*ila_0 ila_tx(
+        .clk(pcie_i.pcie_qpll_drp_clk),
+        .probe0(!pcie_i.pcie_qpll_drp_rst_n),
+        .probe1(pcie_i.pcie_qpll_drp_ovrd),
+        .probe2(&pcie_i.pcie_qpll_drp_gen3),
+        .probe3(pcie_i.pcie_qpll_drp_qplllock),
+        .probe4(pcie_i.pcie_qpll_drp_start),
+        .probe5(pcie_i.DRP_DO),
+        .probe6(pcie_i.DRP_RDY),
+        .probe7(pcie_i.DRP_ADDR),
+        .probe8(pcie_i.DRP_EN),
+        .probe9(pcie_i.DRP_DI),
+        .probe10(pcie_i.pcie_qpll_drp_done),
+        .probe11(pcie_i.pcie_qpll_drp_reset),
+        .probe12(pcie_i.pcie_qpll_drp_crscode),
+        .probe13(pcie_i.pcie_qpll_drp_fsm)
+    );*/
+
+    //`ifndef SYNTHESIS
     frame_gen
     frame_gen_i (
         .tx_data(sfp_tx_data),
@@ -433,6 +461,51 @@ module top(
         .tx_clk(sfp_tx_clk),
         .ready(tx_reset_done)
     );
+    //`else 
+    //    assign sfp_tx_data = '0;
+    //    assign sfp_tx_is_k = '0;
+    //`endif // SYNTHESIS
+
+
+    shared_data_rx_wrapper
+    shared_data_rx_wrapper_i(
+        .clk(sfp_rx_clk),
+        .rst(sfp_reset),
+        .aresetn(PS_aresetn),
+        .rx_data_in(sfp_rx_data[15:8]),
+        .rx_isk_in(sfp_rx_is_k[1]),
+        .pci_clk(PS_clk),
+        .axi_pci(bar1)
+    );
+
+    `ifdef SYNTHESIS
+    ila_0 ila_rx(
+        .clk(PS_clk),
+        .probe0(shared_data_rx_wrapper_i.axi_mem.awaddr),
+        .probe1(shared_data_rx_wrapper_i.axi_mem.awprot),
+        .probe2(shared_data_rx_wrapper_i.axi_mem.awvalid),
+        .probe3(shared_data_rx_wrapper_i.axi_mem.awready),
+        .probe4(shared_data_rx_wrapper_i.axi_mem.wdata),
+        .probe5(shared_data_rx_wrapper_i.axi_mem.wstrb),
+        .probe6(shared_data_rx_wrapper_i.axi_mem.wvalid),
+        .probe7(shared_data_rx_wrapper_i.axi_mem.wready),
+        .probe8(shared_data_rx_wrapper_i.axi_mem.bresp),
+        .probe9(shared_data_rx_wrapper_i.axi_mem.bvalid),
+        .probe10(shared_data_rx_wrapper_i.axi_mem.bready),
+        .probe11(shared_data_rx_wrapper_i.axi_mem.araddr),
+        .probe12(shared_data_rx_wrapper_i.axi_mem.arprot),
+        .probe13(shared_data_rx_wrapper_i.axi_mem.arvalid),
+        .probe14(shared_data_rx_wrapper_i.axi_mem.arready),
+        .probe15(shared_data_rx_wrapper_i.axi_mem.rdata),
+        .probe16(shared_data_rx_wrapper_i.axi_mem.rresp),
+        .probe17(shared_data_rx_wrapper_i.axi_mem.rvalid),
+        .probe18(shared_data_rx_wrapper_i.axi_mem.rready),
+        .probe19(sfp_rx_data),
+        .probe20(shared_data_rx_wrapper_i.stream_decoder_i.rxfsm_state),
+        .probe21(shared_data_rx_wrapper_i.stream_decoder_i.rxfsm_next),
+        .probe22(shared_data_rx_wrapper_i.stream_decoder_i.sdfsm_state[0])
+    );
+    `endif
 
     //-------------GPIO--------------\\
     blink #(
@@ -454,31 +527,139 @@ module frame_gen (
     input  logic         ready 
 ); 
 
-    localparam   WORDS_IN_BRAM = 8;
-    //                                           D24.2D20.2                 D0.2D20.1                D3.1D7.5                   K28.5K28.5
-    //logic [19:0] bram [0:WORDS_IN_BRAM-1] = '{20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010,
-    //                                          20'b11001101010010110101, 20'b10011101010010111001, 20'b11000110011110001010, 20'b00111110100011111010};
+    localparam   WORDS_IN_BRAM = 32;
+    logic [$clog2(WORDS_IN_BRAM*2) - 1:0] i = 0;
+    /*logic [7:0] bram [0:WORDS_IN_BRAM-1] = 
+    '{ 
+        8'h5C, // start
+        8'h04, // addr = 4 segment
+        8'hAD, 8'h74, 8'hAD, 8'h74, // 0-3 byte data 
+        8'h7A, 8'h34, 8'h74, 8'hAD, // 4-7 byte data
+        8'hAD, 8'h74, 8'hAD, 8'h74, // 8-11 byte data
+        8'h7A, 8'h34, 8'h74, 8'hAD, // 12-15 byte data
+        8'h3C, // stop
+        8'hF7, 8'hd9, // checksum
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00, 
+        8'h00
+    };*/
 
-    //                                           D24.2D20.2               D0.2D20.1           D3.1D7.5              K28.5K28.5
-    logic [15:0] bram [0:WORDS_IN_BRAM-1] = '{16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100,
-                                              16'b0101100001010100, 16'b0100000000110100, 16'b0010001110100111, 16'b1011110010111100};
+    logic [7:0] bram [0:WORDS_IN_BRAM-1] = 
+    '{ 
+        8'h5C, // start
+        8'hFF, // addr = 4 segment
+        8'h00, 8'h8B, 8'hFC, 8'h7B, // 0-3 byte data 
+        8'h00, 8'h00, 8'h00, 8'h07, // 4-7 byte data
+        8'h00, 8'h00, 8'h00, 8'h00, // 8-11 byte data
+        8'h00, 8'h00, 8'h00, 8'h07, // 12-15 byte data
+        8'h3C, // stop
+        8'hFC, 8'hF0, // checksum
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00, 
+        8'h00
+    };
+    
+    logic [7:0] MSB, LSB;
+    logic isk_msb, isk_lsb;
 
-    logic [$clog2(WORDS_IN_BRAM) - 1:0] i = 0;
+    //assign tx_data = {MSB, LSB};    
+   // assign is_k    = {isk_msb, isk_lsb};
 
-    assign is_k = (tx_data == 16'b1011110010111100) ? 'b1 : 'b0;
+
+    assign tx_data = {LSB, MSB};    
+    assign is_k    = {isk_lsb, isk_msb};
+    assign isk_msb = (MSB == 8'h5C) || (MSB == 8'h3C); 
+    assign isk_lsb = LSB == 8'hBC;
+
+    always_comb begin : Event
+        LSB = '0;
+        if(!ready)
+            LSB = '0;
+        else if(i % 4 == 0)
+            LSB = 8'hBC; // K28.5
+        `ifndef SYNTHESIS
+        else if(i % 7 == 0)
+            LSB = 8'h7E; // beacon
+        `endif //SYNTHESIS
+        else
+            LSB = '0;
+    end
+
+    always_comb begin : Data
+        MSB = 0;
+        `ifndef SYNTHESIS
+        if(!ready)
+            MSB = 0;
+        else if(i % 2 == 0)
+            MSB = '0; // distributed bus
+        else
+            MSB = bram[i / 2]; // segmented data buffer
+        `endif //SYNTHESIS
+    end
 
     always_ff @( posedge tx_clk ) begin 
         if(!ready) 
         begin
-            tx_data <= 0;
             i <= 0;
         end
         else
         begin
-            tx_data <= bram[i];
             i <= i+1;
         end
 
     end
 
 endmodule
+
+/*
+logic [15:0] bram [0:WORDS_IN_BRAM*2-1] = 
+    '{  8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h005C, // event - D00.0, data - start = K28.2
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0004, // event - D00.0, data - addr  = 4 segment
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0074, // event - D00.0, data - 74
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0074, // event - D00.0, data - 74
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h007A, // event - D00.0, data - 7A
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0034, // event - D00.0, data - 34
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h0074, // event - D00.0, data - 74
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h0074, // event - D00.0, data - 74
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+        8'h00AD, // event - D00.0, data - AD
+        8'h0000, // event - D00.0, data - dustributed bus = D00.0
+        8'h007A, // event - D00.0, data - 7A
+        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
+
+    8'h7A, 
+    8'h00, 
+    8'h34, 
+    8'h00, 
+    8'h74, 
+    8'h00, 
+    8'hAD, 
+    8'h00,
+    8'h3C,
+    8'hF7, 8'hd9,
+    8'h00,
+    8'h00,
+    8'h00};
+    */

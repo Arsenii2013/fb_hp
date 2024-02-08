@@ -58,6 +58,6 @@ localparam SHARED_MEM_SIZE     = 2048;
 localparam SHARED_MEM_SEG_SIZE = 16;
 localparam SHARED_MEM_AW       = $clog2(SHARED_MEM_SIZE);
 localparam SHARED_MEM_SEG_AW   = $clog2(SHARED_MEM_SIZE/SHARED_MEM_SEG_SIZE);
-localparam DDSC_COUNT      = 4;
+localparam SHARED_MEM_COUNT    = 1;
 
 `endif //__TOP_SVH__
