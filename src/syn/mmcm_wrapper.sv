@@ -96,3 +96,65 @@ module mmcm_wrapper(
         .I   (clk_out1_clk_wiz));
 
 endmodule
+
+
+module mmcm_controller
+    #(
+        parameter PERIOD_NS = 10;
+    )
+    (
+        input  logic aresetn,
+        input  logic clk,
+
+        input  logic incdec,
+
+        input  logic psen,
+        input  logic psincdec,
+        output logic psdone
+    );
+    localparam CYCLES = 1000000000 / PERIOD_NS; // clk in one second
+    localparam CNT_W  = $clog2(CYCLES);
+
+    typedef enum {
+        IDLE,
+        WRITE,
+        WAIT
+    } state_t;
+
+    state_t state, next_state;
+
+    logic [CNT_W-1:0] cnt;
+
+
+    assign psincdec = incdec;
+    assign psen     = state == WRITE;
+
+    always_ff @(posedge clk) begin
+    if (!aresetn) begin
+        state <= IDLE;
+        cnt <= '0;
+    end
+    else begin
+        state <= next_state;
+        if(state == IDLE)
+            cnt <= cnt + 1;
+        else 
+            cnt <= '0;
+    end
+
+    always_comb begin
+    if (!aresetn) begin
+        next_state = IDLE;
+    end
+    else begin
+        case (state)
+            IDLE:   next_state = cnt == CYCLES ? WRITE : IDLE;
+            WRITE:  next_state = WAIT;
+            WAIT:   next_state = psdone ? IDLE : WAIT;
+        endcase        
+    end
+end
+end
+
+
+endmodule

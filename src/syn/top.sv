@@ -480,16 +480,33 @@ module top(
         .pci_clk(PS_clk),
         .axi_pci(bar1)
     );
+    
+    logic psen;
+    logic psincdec;
+    logic psdone;
+
+    mmcm_controller #(
+        .PERIOD_NS(10000000)
+    )
+    mmcm_controller_i
+    (
+        .aresetn(PS_aresetn),
+        .clk(PS_clk),
+        .incdec(1),
+        .psen(psen),
+        .psincdec(psincdec),
+        .psdone(psdone)
+    );
 
     mmcm_wrapper mmcm_wrapper_i(
         .clk_in1(PS_clk),
         .clk_in2(sfp_rx_clk),
         .clk_in_sel(rx_reset_done),
         .clk_out1(clk_ps),
-        .psclk(),
-        .psen(),
-        .psincdec(),
-        .psdone(),
+        .psclk(PS_clk),
+        .psen(psen),
+        .psincdec(psincdec),
+        .psdone(psdone),
         .resetn(PS_aresetn),
         .locked()
     );
