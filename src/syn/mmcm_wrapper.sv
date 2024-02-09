@@ -35,7 +35,7 @@ module mmcm_wrapper(
     MMCME2_ADV
     #(.BANDWIDTH            ("OPTIMIZED"),
         .CLKOUT4_CASCADE      ("FALSE"),
-        .COMPENSATION         ("ZHOLD"),
+        .COMPENSATION         ("EXTERNAL"),
         .STARTUP_WAIT         ("FALSE"),
         .DIVCLK_DIVIDE        (1),
         .CLKFBOUT_MULT_F      (10.000),
@@ -46,7 +46,8 @@ module mmcm_wrapper(
         .CLKOUT0_DUTY_CYCLE   (0.500),
         .CLKOUT0_USE_FINE_PS  ("TRUE"),
         .CLKIN1_PERIOD        (10.000),
-        .CLKIN2_PERIOD        (10.000))
+        .CLKIN2_PERIOD        (10.000)
+    )
     mmcm_adv_inst
     (
         .CLKFBOUT            (clkfbout),
@@ -83,7 +84,7 @@ module mmcm_wrapper(
         .PWRDWN              (1'b0),
         .RST                 (reset_high)
     );
-    assign reset_high = ~resen; 
+    assign reset_high = ~resetn; 
 
     assign locked = locked_int;
 
@@ -100,7 +101,7 @@ endmodule
 
 module mmcm_controller
     #(
-        parameter PERIOD_NS = 10;
+        parameter PERIOD_NS = 10
     )
     (
         input  logic aresetn,
@@ -108,9 +109,9 @@ module mmcm_controller
 
         input  logic incdec,
 
-        input  logic psen,
-        input  logic psincdec,
-        output logic psdone
+        output logic psen,
+        output logic psincdec,
+        input  logic psdone
     );
     localparam CYCLES = 1000000000 / PERIOD_NS; // clk in one second
     localparam CNT_W  = $clog2(CYCLES);
@@ -141,6 +142,7 @@ module mmcm_controller
         else 
             cnt <= '0;
     end
+    end 
 
     always_comb begin
     if (!aresetn) begin
@@ -153,8 +155,7 @@ module mmcm_controller
             WAIT:   next_state = psdone ? IDLE : WAIT;
         endcase        
     end
-end
-end
+    end
 
 
 endmodule

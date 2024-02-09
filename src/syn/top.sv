@@ -484,13 +484,21 @@ module top(
     logic psen;
     logic psincdec;
     logic psdone;
+    logic mmcm_locked;
+
+    int i = 0;
+
+    always_ff @(posedge PS_clk) begin
+        if(i < 100000)
+            i <= i + 1;
+    end 
 
     mmcm_controller #(
         .PERIOD_NS(10000000)
     )
     mmcm_controller_i
     (
-        .aresetn(PS_aresetn),
+        .aresetn(i >= 4000),
         .clk(PS_clk),
         .incdec(1),
         .psen(psen),
@@ -499,16 +507,16 @@ module top(
     );
 
     mmcm_wrapper mmcm_wrapper_i(
-        .clk_in1(PS_clk),
-        .clk_in2(sfp_rx_clk),
+        .clk_in1(sfp_rx_clk),
+        .clk_in2(PS_clk),
         .clk_in_sel(rx_reset_done),
         .clk_out1(clk_ps),
         .psclk(PS_clk),
         .psen(psen),
         .psincdec(psincdec),
         .psdone(psdone),
-        .resetn(PS_aresetn),
-        .locked()
+        .resetn(i >= 3000),
+        .locked(mmcm_locked)
     );
 
     `ifdef SYNTHESIS
