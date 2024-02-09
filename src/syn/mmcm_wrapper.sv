@@ -35,7 +35,7 @@ module mmcm_wrapper(
     MMCME2_ADV
     #(.BANDWIDTH            ("OPTIMIZED"),
         .CLKOUT4_CASCADE      ("FALSE"),
-        .COMPENSATION         ("EXTERNAL"),
+        .COMPENSATION         ("ZHOLD"),
         .STARTUP_WAIT         ("FALSE"),
         .DIVCLK_DIVIDE        (1),
         .CLKFBOUT_MULT_F      (10.000),

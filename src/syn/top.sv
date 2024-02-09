@@ -507,9 +507,9 @@ module top(
     );
 
     mmcm_wrapper mmcm_wrapper_i(
-        .clk_in1(sfp_rx_clk),
-        .clk_in2(PS_clk),
-        .clk_in_sel(rx_reset_done),
+        .clk_in1(PS_clk),
+        .clk_in2(sfp_rx_clk),
+        .clk_in_sel(0),
         .clk_out1(clk_ps),
         .psclk(PS_clk),
         .psen(psen),
@@ -519,7 +519,7 @@ module top(
         .locked(mmcm_locked)
     );
 
-    `ifdef SYNTHESIS
+    /*`ifdef SYNTHESIS
     ila_0 ila_rx(
         .clk(PS_clk),
         .probe0(shared_data_rx_wrapper_i.axi_mem.awaddr),
@@ -546,7 +546,7 @@ module top(
         .probe21(shared_data_rx_wrapper_i.stream_decoder_i.rxfsm_next),
         .probe22(shared_data_rx_wrapper_i.stream_decoder_i.sdfsm_state[0])
     );
-    `endif
+    `endif*/
 
     //-------------GPIO--------------\\
     blink #(
