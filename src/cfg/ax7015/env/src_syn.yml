@@ -27,5 +27,6 @@ sources:
     - src/syn/qpll_drp.sv
     - src/syn/shared_data/shared_data_rxtx.sv
     - src/syn/shared_data_wrapper.sv
+    - src/syn/mmcm_wrapper.sv
 
     

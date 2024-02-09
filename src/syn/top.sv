@@ -84,7 +84,10 @@ module top(
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
-    output logic [3:0] led
+    output logic [3:0] led,
+
+    output logic       clk_0,
+    output logic       clk_ps
 
     );
     assign sfp_tx_dis = 'b0;
@@ -477,8 +480,46 @@ module top(
         .pci_clk(PS_clk),
         .axi_pci(bar1)
     );
+    
+    logic psen;
+    logic psincdec;
+    logic psdone;
+    logic mmcm_locked;
 
-    `ifdef SYNTHESIS
+    int i = 0;
+
+    always_ff @(posedge PS_clk) begin
+        if(i < 100000)
+            i <= i + 1;
+    end 
+
+    mmcm_controller #(
+        .PERIOD_NS(10000000)
+    )
+    mmcm_controller_i
+    (
+        .aresetn(i >= 4000),
+        .clk(PS_clk),
+        .incdec(1),
+        .psen(psen),
+        .psincdec(psincdec),
+        .psdone(psdone)
+    );
+
+    mmcm_wrapper mmcm_wrapper_i(
+        .clk_in1(PS_clk),
+        .clk_in2(sfp_rx_clk),
+        .clk_in_sel(0),
+        .clk_out1(clk_ps),
+        .psclk(PS_clk),
+        .psen(psen),
+        .psincdec(psincdec),
+        .psdone(psdone),
+        .resetn(i >= 3000),
+        .locked(mmcm_locked)
+    );
+
+    /*`ifdef SYNTHESIS
     ila_0 ila_rx(
         .clk(PS_clk),
         .probe0(shared_data_rx_wrapper_i.axi_mem.awaddr),
@@ -505,7 +546,7 @@ module top(
         .probe21(shared_data_rx_wrapper_i.stream_decoder_i.rxfsm_next),
         .probe22(shared_data_rx_wrapper_i.stream_decoder_i.sdfsm_state[0])
     );
-    `endif
+    `endif*/
 
     //-------------GPIO--------------\\
     blink #(
@@ -616,50 +657,3 @@ module frame_gen (
     end
 
 endmodule
-
-/*
-logic [15:0] bram [0:WORDS_IN_BRAM*2-1] = 
-    '{  8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h005C, // event - D00.0, data - start = K28.2
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0004, // event - D00.0, data - addr  = 4 segment
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0074, // event - D00.0, data - 74
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0074, // event - D00.0, data - 74
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h007A, // event - D00.0, data - 7A
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0034, // event - D00.0, data - 34
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h0074, // event - D00.0, data - 74
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h0074, // event - D00.0, data - 74
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-        8'h00AD, // event - D00.0, data - AD
-        8'h0000, // event - D00.0, data - dustributed bus = D00.0
-        8'h007A, // event - D00.0, data - 7A
-        8'hBC00, // event - K28.5, data - dustributed bus = D00.0
-
-    8'h7A, 
-    8'h00, 
-    8'h34, 
-    8'h00, 
-    8'h74, 
-    8'h00, 
-    8'hAD, 
-    8'h00,
-    8'h3C,
-    8'hF7, 8'hd9,
-    8'h00,
-    8'h00,
-    8'h00};
-    */

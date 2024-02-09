@@ -34,3 +34,8 @@ create_clock -add -name REFCLK -period 8.00 -waveform {0 4} [get_ports { REFCLK_
 
 #set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks gtpwizard_i/gtwizard_i/inst/gtwizard_init_i/gtwizard_i/gt0_gtwizard_i/gtpe2_i/RXOUTCLK]
 #set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks gtpwizard_i/gtwizard_i/inst/gtwizard_init_i/gtwizard_i/gt0_gtwizard_i/gtpe2_i/TXOUTCLK]
+
+
+set_property -dict { PACKAGE_PIN R4   IOSTANDARD LVCMOS33 } [get_ports { clk_0 }];
+set_property -dict { PACKAGE_PIN M7   IOSTANDARD LVCMOS33 } [get_ports { clk_ps }];
+
