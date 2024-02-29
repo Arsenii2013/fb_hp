@@ -7,5 +7,6 @@ sources:
     - src/syn/top.svh
     - src/syn/mem_wrapper.sv
     - src/syn/fifo/fifo_wrapper.sv
-    - src/syn/fifo/mmcm_wrapper.svs
-    - src/syn/fifo/fifoTB.sv
+    - src/syn/fifo/mmcm_wrapper.sv
+    - src/syn/fifo/average.sv
+    - src/sim/evrTB.sv

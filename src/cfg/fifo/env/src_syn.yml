@@ -1,6 +1,0 @@
-import : main
-
-sources:
-    - src/syn/mmcm_wrapper.sv
-    - src/syn/fifo/fifo_wrapper.sv
-    - src/lib/axi/axi4_lite_if.svh
