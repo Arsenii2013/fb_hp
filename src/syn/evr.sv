@@ -37,16 +37,137 @@ module evr
         .src_clk(rx_clk),
         .src_in(ready)
     );
-//MMR logic 
     logic [         31:0] parser_delay;
     logic [          2:0] parser_status;
     logic [         31:0] parser_topoid;
 
     logic                 adjust_dc_ena;
     logic [         31:0] adjust_delay_req;
+    logic                 adjust_delay_req_upd;
     logic [          1:0] adjust_status;
-    logic [         31:0] adjust_delay;
+    logic [         31:0] adjust_delay_comp;
 
+    logic [         31:0] target_delay;
+
+//MMR logic 
+    typedef logic [MMR_DEV_ADDR_W-1:0] addr_t;
+    typedef logic [    MMR_DATA_W-1:0] data_t;
+
+    typedef enum addr_t {
+        SR            = addr_t'(8'h00),
+        CR            = addr_t'(8'h04),
+        CR_S          = addr_t'(8'h08),
+        CR_C          = addr_t'(8'h0C),
+        LINK_TOPO_ID  = addr_t'(8'h10),
+        LINK_DELAY    = addr_t'(8'h14),
+        TGT_DELAY     = addr_t'(8'h18),
+        COMP_DELAY    = addr_t'(8'h1C)
+    } evr_regs;
+
+    typedef struct packed {
+        logic [1:0] dc_status;
+        logic [2:0] link_delay_st;
+        logic       link_up;
+    } sr_t;
+
+    typedef struct packed {
+        logic       dc_ena;
+    } cr_t;
+
+    sr_t sr;
+    cr_t cr;
+    logic [MMR_DEV_ADDR_W-1:0] addr;
+    logic [MMR_DATA_W-1:0] data;
+    logic read;
+    logic write_addr;
+    logic write_data;
+
+    assign sr.link_up       = ready_sync;
+    assign sr.dc_status     = adjust_status;
+    assign sr.link_delay_st = parser_status;
+    assign adjust_dc_ena    = cr.dc_ena;
+    assign adjust_delay_req = target_delay - parser_delay;
+
+    always_ff @(posedge app_clk) begin
+        if (app_rst) begin
+            mmr.arready        <= 0;
+            mmr.rvalid         <= 0;
+            mmr.awready        <= 0;
+            mmr.wready         <= 0;
+            mmr.bvalid         <= 0;
+            cr.dc_ena          <= 0;
+            adjust_delay_req_upd <= 0;
+        end
+        else begin
+            if (~ready_sync)
+                cr.dc_ena <= 0;
+                mmr.rresp <= '0;
+        
+            adjust_delay_req_upd <= 0;
+
+            if(mmr.arvalid) begin
+                addr <= mmr.araddr;
+                read <= 1;
+                mmr.arready <= 1;
+            end else begin
+                mmr.arready <= 0;
+            end
+
+            if(read && mmr.rready) begin
+                read <= 0;
+                mmr.rvalid <= 1;
+                case (addr)
+                    SR            : mmr.rdata <= data_t'(sr);
+                    CR            : mmr.rdata <= data_t'(cr);
+                    LINK_TOPO_ID  : mmr.rdata <= data_t'(parser_topoid);
+                    LINK_DELAY    : mmr.rdata <= data_t'(parser_delay);
+                    TGT_DELAY     : mmr.rdata <= data_t'(target_delay);
+                    COMP_DELAY    : mmr.rdata <= data_t'(adjust_delay_comp);
+                    default       : mmr.rdata <= '0;
+                endcase 
+            end else begin
+                mmr.rvalid <= 0;
+            end
+
+
+            if(mmr.awvalid) begin
+                addr <= mmr.awaddr;
+                write_addr <= 1;
+                mmr.awready <= 1;
+            end else begin
+                mmr.awready <= 0;
+            end
+
+            if(mmr.wvalid) begin
+                data <= mmr.wdata;
+                write_data <= 1;
+                mmr.wready <= 1;
+            end else begin
+                mmr.wready <= 0;
+            end
+
+            if(write_addr && write_data && mmr.bready) begin
+                write_addr <= 0;
+                write_data <= 0;
+                mmr.bvalid <= 1;
+                case (addr)
+                    CR        : cr <= cr_t'(data);
+                    CR_S      : cr <= cr | cr_t'(data);
+                    CR_C      : cr <= cr & ~(cr_t'(data));
+                    TGT_DELAY : begin
+                        if (data > parser_delay) begin
+                            target_delay <= data;
+                            adjust_delay_req_upd <= 1;
+                        end
+                    end
+                    default;
+                endcase
+            end else begin
+                mmr.bvalid <= 0;
+            end
+            
+        end
+    end
 
 //Beacon logic
     logic       beacon_pulse_rx;
@@ -217,7 +338,7 @@ module evr
         .delay_req_upd(adjust_delay_req_upd),
         .delay_req(adjust_delay_req),
         .status(adjust_status),
-        .delay(adjust_delay)
+        .delay(adjust_delay_comp)
     );
 
 
