@@ -273,20 +273,63 @@ module evr
         .status(parser_status),
         .topoid(parser_topoid)
     );
-
 //MMMC implies FIFO phase shift and clock multyplexing
+    logic pll_ph_inc;
+    logic pll_ph_dec;
+    logic psclk;
+    logic psen;
+    logic psincdec;
+    logic psdone;
+    logic psinprocess;
+    logic mmcm_resetn;
+    
+    assign psclk = app_clk;
+
     mmcm_wrapper mmcm_wrapper_i(
         .clk_in1(rx_clk),
         .clk_in2(refclk),
-        .clk_in_sel(ready),
+        .clk_in_sel(aligned),
         .clk_out1(app_clk),
-        .psclk(),
-        .psen(),
-        .psincdec(),
-        .psdone(),
-        .resetn(1),
+        .psclk(psclk),
+        .psen(psen),
+        .psincdec(psincdec),
+        .psdone(psdone),
+        .resetn(mmcm_resetn),
         .locked(mmcm_locked)
     );
+
+//Phase shift
+    logic clk_in_sel_prev;
+    always_ff @(posedge rx_clk) begin
+        clk_in_sel_prev <= aligned;
+    end
+    assign mmcm_resetn = !(aligned ^ clk_in_sel_prev);
+
+
+    always_ff @(posedge psclk) begin
+        if (ready_sync) begin
+            if (pll_ph_inc) begin
+                psen        <= 1;
+                psincdec    <= 1;
+                psinprocess <= 1;
+            end
+            else if (pll_ph_dec) begin
+                psen        <= 1;
+                psincdec    <= 0;
+                psinprocess <= 1;
+            end
+            else 
+                psen <= 0;
+
+            if (psdone) begin
+                psinprocess <= 0;
+            end
+        end
+        else 
+            psen <= 0;
+            psinprocess <= 0;
+    end
+
 
 //FIFO lenght adjust
     logic fifo_dec;
@@ -331,8 +374,8 @@ module evr
 
         .fifo_inc(fifo_inc),
         .fifo_dec(fifo_dec_appclk),
-        .pll_ph_inc(),
-        .pll_ph_dec(),
+        .pll_ph_inc(pll_ph_inc),
+        .pll_ph_dec(pll_ph_dec),
 
         .ena(adjust_dc_ena),
         .delay_req_upd(adjust_delay_req_upd),
