@@ -32,7 +32,11 @@ module mmcm_wrapper(
     logic        locked_int;
     logic        reset_high;
 
+    `ifdef SYNTHESIS // костыль, потому что у mmcm2 в симуляции не работает fine phase shift
     MMCME2_ADV
+    `else            // а у mmcm3, работает
+    MMCME3_ADV
+    `endif
     #(.BANDWIDTH            ("OPTIMIZED"),
         .CLKOUT4_CASCADE      ("FALSE"),
         .COMPENSATION         ("ZHOLD"),
