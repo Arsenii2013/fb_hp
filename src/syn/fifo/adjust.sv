@@ -258,7 +258,7 @@ logic [1:0] beacon1_cnt = '0;
 
 assign beacon1_expand = beacon1_cnt != 'b0;
 
-always_ff @(posedge fifo_wclk) begin
+always_ff @(posedge fifo_rclk) begin
     if(beacon_1) 
         beacon1_cnt <= 2'b11;
     else
@@ -270,7 +270,7 @@ xpm_cdc_pulse beacon_1_sunchronizer_i(
     .dest_clk(refclk),
     .dest_pulse(beacon_1_sync),
     .dest_rst('b0),
-    .src_clk(fifo_wclk),
+    .src_clk(fifo_rclk),
     .src_pulse(beacon1_expand),
     .src_rst('b0)
 );
