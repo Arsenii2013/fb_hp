@@ -1,5 +1,5 @@
 
-`timescale 1ns/1ns
+`timescale 1ns/1ps
 `include "top.svh"
 `include "axi4_lite_if.svh"
 
@@ -29,17 +29,17 @@ module evrTB();
     end
     initial begin
         refclk = 0;
-        #1;
+        #1ps;
         forever #5 refclk = ~refclk;
     end
     initial begin
         tx_clk = 0;
-        #2;
+        #2ps;
         forever #5 tx_clk = ~tx_clk;
     end
     initial begin
         rx_clk = 0;
-        #3;
+        #3ps;
         forever #5 rx_clk = ~rx_clk;
     end
     initial begin
@@ -56,6 +56,7 @@ module evrTB();
         for(int i =0; i < 1000; i++) begin
             @(posedge sysclk);
         end
+        @(posedge rx_clk);
         aligned = 1;
     end 
 
@@ -99,6 +100,20 @@ module evrTB();
         .ready(aligned)
     );
 
+    axi_master axi_master_i(
+        .axi(mmr),
+        .aresetn(!app_rst),
+        .aclk(app_clk)
+    );
+
+    initial begin
+        @(posedge aligned);
+        #1000;
+        axi_master_i.write(32'h04, 32'h01); // DC enable
+        wait(DUT.parser_delay != '0);
+        axi_master_i.write(32'h18, DUT.parser_delay + 32'h00080500); //  tgt delay = 8 clock cycles + 195 ps
+    end
+
 endmodule
 
 
@@ -117,12 +132,12 @@ module frame_gen (
     '{ 
         8'h5C, // start
         8'hFF, // addr = 4 segment
-        8'h00, 8'h8B, 8'hFC, 8'h7B, // 0-3 byte data 
+        8'h00, 8'h08, 8'h00, 8'h00, // 0-3 byte data 
         8'h00, 8'h00, 8'h00, 8'h07, // 4-7 byte data
         8'h00, 8'h00, 8'h00, 8'h00, // 8-11 byte data
         8'h00, 8'h00, 8'h00, 8'h07, // 12-15 byte data
         8'h3C, // stop
-        8'hFC, 8'hF0, // checksum
+        8'hFE, 8'hEA, // checksum
         8'h00, 8'h00,
         8'h00, 8'h00,
         8'h00, 8'h00,
@@ -176,5 +191,81 @@ module frame_gen (
         end
 
     end
+
+endmodule
+
+module axi_master(
+    axi4_lite_if.m  axi,
+    input  logic    aclk,
+    input  logic    aresetn
+);
+    task automatic read(input [32:0] addr, output [32:0] data);
+        begin
+
+        logic [3:0] rresp;
+        
+        @(posedge aclk)
+        axi.araddr  <= addr;
+        axi.arvalid <= 1;
+        axi.rready  <= 1;
+
+        for(;;) begin
+            @(posedge aclk)
+            if(axi.arready)
+                break;
+        end
+        axi.arvalid <= 0;
+
+        for(;;) begin
+            @(posedge aclk)
+            if(axi.rvalid)
+                break;
+        end
+        data        = axi.rdata;
+        rresp       = axi.rresp;
+        axi.rready  <= 0;
+
+        if(rresp != 'b000)
+            $display("RRESP isnt equal 0! RRESP = %x", rresp);
+
+        $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
+        end
+    endtask
+
+    task automatic write(input [32:0] addr, input [32:0] data);
+        begin
+
+        logic [3:0] wresp;
+        
+        @(posedge aclk)
+        axi.awaddr  <= addr;
+        axi.wdata   <= data;
+        axi.awvalid <= 1;
+        axi.wvalid  <= 1;
+        axi.wstrb   <= 'hFFFF;
+        axi.bready  <= 1;
+
+        for(;;) begin
+            @(posedge aclk)
+            if(axi.awready && axi.wready)
+                break;
+        end
+        axi.awvalid <= 0;
+        axi.wvalid  <= 0;
+
+        for(;;) begin
+            @(posedge aclk)
+            if(axi.bvalid)
+                break;
+        end
+        wresp       = axi.bresp;
+        axi.rready  <= 0;
+
+        if(wresp != 'b000)
+            $display("BRESP isnt equal 0! BRESP = %x", wresp);
+
+        $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
+        end
+    endtask
 
 endmodule
