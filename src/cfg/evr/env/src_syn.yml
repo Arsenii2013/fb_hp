@@ -1,0 +1,11 @@
+import : main
+
+sources:
+    - src/syn/evr/dc/mmcm_wrapper.sv
+    - src/syn/evr/dc/fifo_wrapper.sv
+    - src/syn/evr/dc/meashure.sv
+    - src/syn/evr/dc/adjust.sv
+    - src/syn/evr/dc/average.sv
+    - src/syn/evr/dc/parser.sv
+    - src/syn/evr/evr.sv
+    - src/lib/axi/axi4_lite_if.svh

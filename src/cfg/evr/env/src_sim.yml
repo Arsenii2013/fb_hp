@@ -1,0 +1,12 @@
+import : main
+
+sources:
+    - src/syn/evr/shared_data/shared_data_rxtx.sv
+    - src/syn/evr/shared_data/shared_data_rxtxTB.sv
+    - src/lib/axi/axi4_lite_if.svh
+    - src/syn/top.svh
+    - src/syn/mem_wrapper.sv
+    - src/syn/evr/dc/fifo_wrapper.sv
+    - src/syn/evr/dc/mmcm_wrapper.sv
+    - src/syn/evr/dc/average.sv
+    - src/syn/evr/evrTB.sv
