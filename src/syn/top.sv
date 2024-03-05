@@ -224,7 +224,7 @@ module top(
 
         .GP0(GP0),
         //.HP0(bar2),
-        .HP0(), //add sync from app_clk to PS_clk
+        .HP0(HP0), //add sync from app_clk to PS_clk
         .HP0_offset(HP0_offset),
         
         .peripheral_clock(PS_clk),
@@ -442,15 +442,15 @@ module top(
         //------GTP signals-------
         .aligned(sfp_aligned),
 
-        .tx_reset_done(tx_reset_done),
-        .rx_reset_done(rx_reset_done),
+        .tx_resetdone(tx_reset_done),
+        .rx_resetdone(rx_reset_done),
 
         .tx_clk(sfp_tx_clk),
         .rx_clk(sfp_rx_clk),
         .tx_data(sfp_tx_data),
         .rx_data(sfp_rx_data),
-        .txcharisk(sfp_tx_is_k),
-        .rxcharisk(sfp_rx_is_k),
+        .tx_charisk(sfp_tx_is_k),
+        .rx_charisk(sfp_rx_is_k),
 
         //------Application signals-------
         .app_clk(app_clk),
