@@ -39,7 +39,8 @@ localparam MMR_SYS         = '0;
 localparam MMR_SCC         = MMR_SYS   + 1;
 localparam MMR_MEM         = MMR_SCC   + 1;
 localparam MMR_EVR         = MMR_MEM   + 1;
-localparam MMR_QSPI        = MMR_EVR   + 1;
+localparam MMR_SHARED      = MMR_EVR   + 1;
+localparam MMR_QSPI        = MMR_SHARED+ 1;
 localparam MMR_DEV_COUNT   = MMR_QSPI  + 1;
 
 //      Processing system

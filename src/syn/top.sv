@@ -456,6 +456,14 @@ module top(
         .shared_data_out(shared_data)
     );
 
+    shared_data_mem shared_data_mem_i
+    (
+        .clk(app_clk),
+        .aresetn(app_aresetn),
+        .mmr(mmr[MMR_SHARED]),
+        .shared_data_in(shared_data)
+    );
+
     //-------------GPIO--------------\\
     blink #(
         .FREQ_HZ(100000000) // 1s
