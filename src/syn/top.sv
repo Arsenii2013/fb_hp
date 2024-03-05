@@ -93,6 +93,8 @@ module top(
     assign sfp_tx_dis = 'b0;
 
     logic PS_clk;
+    logic app_clk;
+    logic app_rst;
     //---------GTP_COMMON------------\\
     logic REFCLK_PCIE;
     logic REFCLK_SFP;
@@ -217,7 +219,8 @@ module top(
         `endif // SYNTHESIS
 
         .GP0(GP0),
-        .HP0(bar2),
+        //.HP0(bar2),
+        .HP0(), //add sync from app_clk to PS_clk
         .HP0_offset(HP0_offset),
         
         .peripheral_clock(PS_clk),
@@ -277,8 +280,8 @@ module top(
         .bar0(bar0),
         .bar1(bar1),
         .bar2(bar2),
-        .bar_clk(PS_clk),
-        .bar_aresetn(PS_aresetn)
+        .bar_clk(app_clk),
+        .bar_aresetn(app_aresetn)
     );
 
     //-------------MMR--------------\\
@@ -290,23 +293,23 @@ module top(
     ) 
     mmr_crossbar 
     (
-        .aresetn(PS_aresetn),
-        .aclk(PS_clk),
+        .aresetn(app_aresetn),
+        .aclk(app_clk),
         .m(bar0),
         .s(mmr)
     );
 
     mem_wrapper
     mem_i (
-        .aclk(PS_clk),
-        .aresetn(PS_aresetn),
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
         .axi(mmr[MMR_SYS]),
         .offset(0)
     );
 
     mem_controller mem_controller_i(
-        .aclk(PS_clk),
-        .aresetn(PS_aresetn),
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
         .bus(mmr[MMR_MEM]),
         .offset(HP0_offset)
     );
@@ -320,16 +323,15 @@ module top(
         .sys_clk (spi_aclk)
     );
     assign spi_oclk = ~spi_aclk;
-    assign spi_aresetn = PS_aresetn;
     `else // SYNTHESIS
     
-    assign spi_aresetn = PS_aresetn;
+    assign spi_aresetn = app_aresetn;
     qspi_pll (
         .clk_out1(spi_aclk),
         .clk_out2(spi_oclk),
         .resetn(spi_aresetn),
         .locked(),
-        .clk_in1(PS_clk)
+        .clk_in1(app_clk)
     );
     `endif // SYNTHESIS
 
@@ -339,8 +341,8 @@ module top(
     #(
         .SPI_W(SPI_W)
     ) qspi_wrapper_i (
-        .aclk(PS_clk),
-        .aresetn(PS_aresetn),
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
         .ps_bus(GP0),
         .pcie_bus(mmr[MMR_QSPI]),
         //.pcie_bus(plug),
@@ -374,6 +376,7 @@ module top(
     logic        gt0_rxbyteisaligned_out;
     logic        gt0_rxbyterealign_out;
     logic        gt0_rxcommadet_out;
+    logic        sfp_aligned;
 
     assign sfp_reset = ~PS_aresetn | sfp_loss;
     assign led[1]    = tx_reset_done;
@@ -395,6 +398,7 @@ module top(
         .rx_data(sfp_rx_data),
         .txcharisk(sfp_tx_is_k),
         .rxcharisk(sfp_rx_is_k),
+        .aligned(sfp_aligned),
         .rx_n(sfp_rx_n),
         .rx_p(sfp_rx_p),
         .tx_n(sfp_tx_n),
@@ -425,128 +429,32 @@ module top(
     );
     `endif // MGT_FULL_STACK
 
-    /*ila_0 ila_tx(
-        .clk(sfp_tx_clk),
-        .probe0(tx_reset_done),
-        .probe1(rx_reset_done),
-        .probe2(gtpwizard_i.tx_data_i),
-        .probe3(sfp_rx_data),
-        .probe4(sfp_tx_is_k),
-        .probe5(sfp_rx_is_k),
-        .probe6(pll_reset),
-        .probe7(pll_lock)
-    );*/
-
-
-    /*ila_0 ila_tx(
-        .clk(pcie_i.pcie_qpll_drp_clk),
-        .probe0(!pcie_i.pcie_qpll_drp_rst_n),
-        .probe1(pcie_i.pcie_qpll_drp_ovrd),
-        .probe2(&pcie_i.pcie_qpll_drp_gen3),
-        .probe3(pcie_i.pcie_qpll_drp_qplllock),
-        .probe4(pcie_i.pcie_qpll_drp_start),
-        .probe5(pcie_i.DRP_DO),
-        .probe6(pcie_i.DRP_RDY),
-        .probe7(pcie_i.DRP_ADDR),
-        .probe8(pcie_i.DRP_EN),
-        .probe9(pcie_i.DRP_DI),
-        .probe10(pcie_i.pcie_qpll_drp_done),
-        .probe11(pcie_i.pcie_qpll_drp_reset),
-        .probe12(pcie_i.pcie_qpll_drp_crscode),
-        .probe13(pcie_i.pcie_qpll_drp_fsm)
-    );*/
-
-    //`ifndef SYNTHESIS
-    frame_gen
-    frame_gen_i (
-        .tx_data(sfp_tx_data),
-        .is_k(sfp_tx_is_k),
-        .tx_clk(sfp_tx_clk),
-        .ready(tx_reset_done)
-    );
-    //`else 
-    //    assign sfp_tx_data = '0;
-    //    assign sfp_tx_is_k = '0;
-    //`endif // SYNTHESIS
-
-
-    shared_data_rx_wrapper
-    shared_data_rx_wrapper_i(
-        .clk(sfp_rx_clk),
-        .rst(sfp_reset),
-        .aresetn(PS_aresetn),
-        .rx_data_in(sfp_rx_data[15:8]),
-        .rx_isk_in(sfp_rx_is_k[1]),
-        .pci_clk(PS_clk),
-        .axi_pci(bar1)
-    );
-    
-    logic psen;
-    logic psincdec;
-    logic psdone;
-    logic mmcm_locked;
-
-    int i = 0;
-
-    always_ff @(posedge PS_clk) begin
-        if(i < 100000)
-            i <= i + 1;
-    end 
-
-    mmcm_controller #(
-        .PERIOD_NS(10000000)
-    )
-    mmcm_controller_i
+    //--------------EVR--------------\\
+    axi4_lite_if #(.AW(32), .DW(32)) shared_data();
+    evr evr_i
     (
-        .aresetn(i >= 4000),
-        .clk(PS_clk),
-        .incdec(1),
-        .psen(psen),
-        .psincdec(psincdec),
-        .psdone(psdone)
-    );
+        .refclk(sfp_refclk_p),
 
-    mmcm_wrapper mmcm_wrapper_i(
-        .clk_in1(PS_clk),
-        .clk_in2(sfp_rx_clk),
-        .clk_in_sel(0),
-        .clk_out1(clk_ps),
-        .psclk(PS_clk),
-        .psen(psen),
-        .psincdec(psincdec),
-        .psdone(psdone),
-        .resetn(i >= 3000),
-        .locked(mmcm_locked)
-    );
+        //------GTP signals-------
+        .aligned(sfp_aligned),
 
-    /*`ifdef SYNTHESIS
-    ila_0 ila_rx(
-        .clk(PS_clk),
-        .probe0(shared_data_rx_wrapper_i.axi_mem.awaddr),
-        .probe1(shared_data_rx_wrapper_i.axi_mem.awprot),
-        .probe2(shared_data_rx_wrapper_i.axi_mem.awvalid),
-        .probe3(shared_data_rx_wrapper_i.axi_mem.awready),
-        .probe4(shared_data_rx_wrapper_i.axi_mem.wdata),
-        .probe5(shared_data_rx_wrapper_i.axi_mem.wstrb),
-        .probe6(shared_data_rx_wrapper_i.axi_mem.wvalid),
-        .probe7(shared_data_rx_wrapper_i.axi_mem.wready),
-        .probe8(shared_data_rx_wrapper_i.axi_mem.bresp),
-        .probe9(shared_data_rx_wrapper_i.axi_mem.bvalid),
-        .probe10(shared_data_rx_wrapper_i.axi_mem.bready),
-        .probe11(shared_data_rx_wrapper_i.axi_mem.araddr),
-        .probe12(shared_data_rx_wrapper_i.axi_mem.arprot),
-        .probe13(shared_data_rx_wrapper_i.axi_mem.arvalid),
-        .probe14(shared_data_rx_wrapper_i.axi_mem.arready),
-        .probe15(shared_data_rx_wrapper_i.axi_mem.rdata),
-        .probe16(shared_data_rx_wrapper_i.axi_mem.rresp),
-        .probe17(shared_data_rx_wrapper_i.axi_mem.rvalid),
-        .probe18(shared_data_rx_wrapper_i.axi_mem.rready),
-        .probe19(sfp_rx_data),
-        .probe20(shared_data_rx_wrapper_i.stream_decoder_i.rxfsm_state),
-        .probe21(shared_data_rx_wrapper_i.stream_decoder_i.rxfsm_next),
-        .probe22(shared_data_rx_wrapper_i.stream_decoder_i.sdfsm_state[0])
+        .tx_reset_done(tx_reset_done),
+        .rx_reset_done(rx_reset_done),
+
+        .tx_clk(sfp_tx_clk),
+        .rx_clk(sfp_rx_clk),
+        .tx_data(sfp_tx_data),
+        .rx_data(sfp_rx_data),
+        .txcharisk(sfp_tx_is_k),
+        .rxcharisk(sfp_rx_is_k),
+
+        //------Application signals-------
+        .app_clk(app_clk),
+        .app_rst(app_reset),
+        .ev(),
+        .mmr(mmr[MMR_EVR]),
+        .shared_data_out(shared_data)
     );
-    `endif*/
 
     //-------------GPIO--------------\\
     blink #(
