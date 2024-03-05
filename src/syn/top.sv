@@ -93,8 +93,13 @@ module top(
     assign sfp_tx_dis = 'b0;
 
     logic PS_clk;
+    logic PS_aresetn;
     logic app_clk;
-    logic app_rst;
+    logic app_reset;
+    logic app_aresetn;
+
+    assign app_aresetn = PS_aresetn;
+    assign app_reset   = !PS_aresetn;
     //---------GTP_COMMON------------\\
     logic REFCLK_PCIE;
     logic REFCLK_SFP;
@@ -186,7 +191,6 @@ module top(
     axi4_lite_if #(.AW(MMR_DEV_ADDR_W), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
      
     //-------Processing System-------\\
-    logic PS_aresetn;
     logic spi_aclk;
     logic spi_oclk;
     logic spi_aresetn;
