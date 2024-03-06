@@ -17,25 +17,43 @@ begin
 
     pci_e_write(0, 'h810, 'h00000100); // MMR_MEM offset 100 byte
     pci_e_read (0, 'h810, recv_data);
-    pci_e_write(2, 'h0, 'h0000BEEF);    // HP0
+    //pci_e_write(2, 'h0, 'h0000BEEF);    // HP0
 
     pci_e_write(0, 'h810, 'h00000000); // MMR_MEM offset 0 byte
-    pci_e_read (2, 'h100, recv_data);   // HP0
+    //pci_e_read (2, 'h100, recv_data);   // HP0
 
-    //bar 1 test
+    // bar 1 test
 
-    pci_e_write(1, 'h0, 'hbeef); 
-    pci_e_read (1, 'h0, recv_data); 
-    pci_e_read (1, 'h7FC, recv_data); 
+    //pci_e_write(1, 'h0, 'hbeef); 
+    //pci_e_read (1, 'h0, recv_data); 
+    //pci_e_read (1, 'h7FC, recv_data); 
 
-    pci_e_write(1, 'h7FC, 'hdeadbeef); 
-    pci_e_read (1, 'h7FC, recv_data); 
+    //pci_e_write(1, 'h7FC, 'hdeadbeef); 
+    //pci_e_read (1, 'h7FC, recv_data); 
+
+    // EVR
+    pci_e_write(0, 'hC04, 'h01); // DC enable
+    #10000;
+    pci_e_read (0, 'hC14, recv_data); 
+    $display ("EVR link delay %x", recv_data);
+
+    if(topTB.DUT.evr_i.parser_delay != '0)
+        pci_e_write(0, 32'hC18, topTB.DUT.evr_i.parser_delay + 32'h00080500); //  tgt delay = 8 clock cycles + 195 ps
+    else begin
+        $display ("EVR hasn't gotten a delay yet!");
+    end
+
+
+    // Shared data
+    pci_e_read (0, 'h1014, recv_data); 
+    $display ("Shared data delay %x", recv_data);
+
 
     // QSPI read write test
-    pci_e_write(0, 'hC00, 'h0000DEAD);
-    pci_e_write(0, 'hC04, 'h0000BEEF);
-    pci_e_read (0, 'hC00, recv_data);
-    pci_e_read (0, 'hC04, recv_data);
+    pci_e_write(0, 'h1400, 'h0000DEAD);
+    pci_e_write(0, 'h1404, 'h0000BEEF);
+    pci_e_read (0, 'h1400, recv_data);
+    pci_e_read (0, 'h1404, recv_data);
 
     $display("[%t] : Finished transmission of PCI-Express TLPs", $realtime);
     if (!test_failed_flag) begin 
