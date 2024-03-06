@@ -10,8 +10,8 @@ module shared_data_mem(
     axi4_lite_if.s             shared_data_in
 );
     axi4_lite_if #(
-        .AW        ( 32 ),
-        .DW        ( FB_DW       )
+        .AW        ( MMR_DEV_ADDR_W ),
+        .DW        ( MMR_DATA_W       )
     ) axi_mem();
 
     qspi_crossbar 

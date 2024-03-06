@@ -419,7 +419,7 @@ module top(
     );
     `else 
     gtp_model gtp_model_i(
-        .refclk(sfp_refclk_p),
+        .refclk(REFCLK_SFP),
         .sysclk(PS_clk), 
         .soft_reset(sfp_reset),
         .tx_reset_done(tx_reset_done),
@@ -437,7 +437,7 @@ module top(
     axi4_lite_if #(.AW(32), .DW(32)) shared_data();
     evr evr_i
     (
-        .refclk(sfp_refclk_p),
+        .refclk(PS_clk),
 
         //------GTP signals-------
         .aligned(sfp_aligned),
