@@ -97,25 +97,31 @@ module evr
             mmr.bvalid         <= 0;
             cr.dc_ena          <= 0;
             adjust_delay_req_upd <= 0;
+            mmr.rresp <= '0;
+            mmr.bresp <= '0;
+            mmr.rdata <= '0;
+            read       <= 0;
+            write_addr <= 0;
+            write_data <= 0;
         end
         else begin
-            if (~ready_sync)
+            if (~ready_sync) begin
                 cr.dc_ena <= 0;
-                mmr.rresp <= '0;
+            end
         
             adjust_delay_req_upd <= 0;
 
+            mmr.arready <= 0;
             if(mmr.arvalid) begin
                 addr <= mmr.araddr;
                 read <= 1;
-                mmr.arready <= 1;
-            end else begin
-                mmr.arready <= 0;
-            end
+                mmr.arready <= !read;
+            end 
 
-            if(read && mmr.rready) begin
+            mmr.rvalid <= read;
+            if(mmr.rvalid && mmr.rready) begin
                 read <= 0;
-                mmr.rvalid <= 1;
+                mmr.rvalid <= 0;
                 case (addr)
                     SR            : mmr.rdata <= data_t'(sr);
                     CR            : mmr.rdata <= data_t'(cr);
@@ -125,31 +131,28 @@ module evr
                     COMP_DELAY    : mmr.rdata <= data_t'(adjust_delay_comp);
                     default       : mmr.rdata <= '0;
                 endcase 
-            end else begin
-                mmr.rvalid <= 0;
-            end
+            end 
 
 
+            mmr.awready <= 0;
             if(mmr.awvalid) begin
                 addr <= mmr.awaddr;
                 write_addr <= 1;
-                mmr.awready <= 1;
-            end else begin
-                mmr.awready <= 0;
-            end
+                mmr.awready <= !write_addr;
+            end 
 
+            mmr.wready <= 0;
             if(mmr.wvalid) begin
                 data <= mmr.wdata;
                 write_data <= 1;
-                mmr.wready <= 1;
-            end else begin
-                mmr.wready <= 0;
-            end
+                mmr.wready <= !write_data;
+            end 
 
+            mmr.bvalid <= write_addr && write_data;
             if(write_addr && write_data && mmr.bready) begin
                 write_addr <= 0;
                 write_data <= 0;
-                mmr.bvalid <= 1;
+                mmr.bvalid <= 0;
                 case (addr)
                     CR        : cr <= cr_t'(data);
                     CR_S      : cr <= cr | cr_t'(data);
@@ -162,9 +165,7 @@ module evr
                     end
                     default;
                 endcase
-            end else begin
-                mmr.bvalid <= 0;
-            end
+            end 
             
         end
     end
