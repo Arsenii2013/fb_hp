@@ -176,7 +176,7 @@ module evr
     logic [1:0] beacon_cnt = '0;
     logic       beacon_pulse_tx;
 
-    assign beacon_pulse_rx        = rx_data[15:8] == 8'h7E;
+    assign beacon_pulse_rx        = rx_data[7:0] == 8'h7E;
     assign beacon_pulse_rx_expand = beacon_cnt != 'b0;
 
     always_ff @(posedge rx_clk) begin
@@ -201,20 +201,20 @@ module evr
     always_ff @(posedge tx_clk) tx_cnt <= tx_cnt + 1;
 
     always_comb begin
-        tx_charisk[0] = 0;
-        tx_data[7:0] = '0;
+        tx_charisk[1] = 0;
+        tx_data[15:8] = '0;
 
         if (beacon_pulse_tx) begin
-            tx_charisk[1] = 0;
-            tx_data[15:8]  = 8'h7E;
+            tx_charisk[0] = 0;
+            tx_data[7:0]  = 8'h7E;
         end
         else if (tx_cnt == '0) begin
-            tx_charisk[1] = 1;
-            tx_data[15:8]  = 8'hBC;
+            tx_charisk[0] = 1;
+            tx_data[7:0]  = 8'hBC;
         end
         else begin
-            tx_charisk[1] = 0;
-            tx_data[15:8]  = 8'h00;
+            tx_charisk[0] = 0;
+            tx_data[7:0]  = 8'h00;
         end
     end
 
@@ -223,7 +223,7 @@ module evr
     logic          local_beacon_ena;
     logic [  11:0] local_beacon_cnt = '1;
 
-    assign local_beacon_ena = !rx_charisk[1] && rx_data[15:8] == '0;
+    assign local_beacon_ena = !rx_charisk[0] && rx_data[7:0] == '0;
 
     always_ff @(posedge rx_clk) begin
         local_beacon_cnt     <= local_beacon_cnt - 1;
@@ -242,12 +242,12 @@ module evr
     logic [7:0]     rx_data_fifo_out;
     logic           rx_charisk_fifo_out;
 
-    assign rx_data_shared     = rx_data[7:0];
-    assign rx_charisk_shared  = rx_charisk[0];
+    assign rx_data_shared     = rx_data[15:8];
+    assign rx_charisk_shared  = rx_charisk[1];
 
     always_comb begin
-        rx_charisk_fifo_in    = local_beacon_ena && local_beacon_cnt == '0 ? 0     : (beacon_pulse_rx ?  0 : rx_charisk[1]);
-        rx_data_fifo_in       = local_beacon_ena && local_beacon_cnt == '0 ? 8'h7E : (beacon_pulse_rx ? '0 : rx_data[15:8]); // ignore external beacons becouse of fifo lenght
+        rx_charisk_fifo_in    = local_beacon_ena && local_beacon_cnt == '0 ? 0     : (beacon_pulse_rx ?  0 : rx_charisk[0]);
+        rx_data_fifo_in       = local_beacon_ena && local_beacon_cnt == '0 ? 8'h7E : (beacon_pulse_rx ? '0 : rx_data[7:0]); // ignore external beacons becouse of fifo lenght
     end
 
     assign ev                 = !fifo_empty && !rx_charisk_fifo_out ? rx_data_fifo_out : '0;
