@@ -86,8 +86,8 @@ module top(
     //-------------GPIO--------------\\
     output logic [3:0] led,
 
-    output logic       clk_0,
-    output logic       clk_ps
+    (* IOB = "TRUE" *) output logic after_dc,
+    (* IOB = "TRUE" *) output logic before_dc
 
     );
     assign sfp_tx_dis = 'b0;
@@ -434,6 +434,7 @@ module top(
     `endif // MGT_FULL_STACK
 
     //--------------EVR--------------\\
+    logic [7:0] ev;
     axi4_lite_if #(.AW(32), .DW(32)) shared_data();
     evr evr_i
     (
@@ -455,9 +456,22 @@ module top(
         //------Application signals-------
         .app_clk(app_clk),
         .app_rst(app_reset),
-        .ev(),
+        .ev(ev),
         .mmr(mmr[MMR_EVR]),
         .shared_data_out(shared_data)
+    );
+
+    ila_0 ila_tx(
+        .clk(app_clk),
+        .probe0(evr_i.adjust_i.measure.res),
+        .probe1(evr_i.pll_ph_inc),
+        .probe2(evr_i.pll_ph_dec),
+        .probe3(evr_i.psclk),
+        .probe4(evr_i.psen),
+        .probe5(evr_i.psincdec),
+        .probe6(evr_i.rx_data_shared),
+        .probe7(evr_i.rx_data_fifo_in),
+        .probe8(ev)
     );
 
     shared_data_mem shared_data_mem_i
@@ -466,6 +480,43 @@ module top(
         .aresetn(app_aresetn),
         .mmr(mmr[MMR_SHARED]),
         .shared_data_in(shared_data)
+    );
+
+    logic after_dc_reg;
+    logic [7:0] after_dc_ev;
+    assign after_dc = after_dc_reg;
+
+    always_ff @(posedge app_clk) begin
+        if(ev == after_dc_ev)
+            after_dc_reg <= 1;
+        else
+            after_dc_reg <= 0;
+    end
+
+    event_choise event_choise_a_dc(
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
+        .bus(mmr[MMR_DEV_COUNT]),
+        .ev(after_dc_ev)
+    );
+
+
+    logic before_dc_reg;
+    logic [7:0] before_dc_ev;
+    assign before_dc = before_dc_reg;
+
+    always_ff @(posedge sfp_rx_clk) begin
+        if(sfp_rx_data[7:0] == before_dc_ev)
+            before_dc_reg <= 1;
+        else
+            before_dc_reg <= 0;
+    end
+
+    event_choise event_choise_b_dc(
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
+        .bus(mmr[MMR_DEV_COUNT+1]),
+        .ev(before_dc_ev)
     );
 
     //-------------GPIO--------------\\
