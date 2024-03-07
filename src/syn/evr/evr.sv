@@ -112,16 +112,15 @@ module evr
             adjust_delay_req_upd <= 0;
 
             mmr.arready <= 0;
-            if(mmr.arvalid) begin
+            if(mmr.arvalid && !read) begin
                 addr <= mmr.araddr;
                 read <= 1;
-                mmr.arready <= !read;
+                mmr.arready <= 1;
             end 
 
             mmr.rvalid <= read;
-            if(mmr.rvalid && mmr.rready) begin
+            if(mmr.rready && read) begin
                 read <= 0;
-                mmr.rvalid <= 0;
                 case (addr)
                     SR            : mmr.rdata <= data_t'(sr);
                     CR            : mmr.rdata <= data_t'(cr);
@@ -135,24 +134,23 @@ module evr
 
 
             mmr.awready <= 0;
-            if(mmr.awvalid) begin
+            if(mmr.awvalid && !write_addr) begin
                 addr <= mmr.awaddr;
-                write_addr <= 1;
-                mmr.awready <= !write_addr;
+                write_addr  <= 1;
+                mmr.awready <= 1;
             end 
 
             mmr.wready <= 0;
-            if(mmr.wvalid) begin
+            if(mmr.wvalid && !write_data) begin
                 data <= mmr.wdata;
                 write_data <= 1;
-                mmr.wready <= !write_data;
+                mmr.wready <= 1;
             end 
 
             mmr.bvalid <= write_addr && write_data;
-            if(write_addr && write_data && mmr.bready) begin
+            if(mmr.bready && write_addr && write_data) begin
                 write_addr <= 0;
                 write_data <= 0;
-                mmr.bvalid <= 0;
                 case (addr)
                     CR        : cr <= cr_t'(data);
                     CR_S      : cr <= cr | cr_t'(data);
