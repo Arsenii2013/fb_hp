@@ -1,5 +1,11 @@
 `timescale 1ns/1ns
-
+/*
+This modile is porpused for:
+    GTP transciever core instance
+    drive its clock, reset and resetdone logic
+    realizes alignment 
+    returns beacon 
+*/
 module gtpwizard(
     input  logic        refclk,
     input  logic        sysclk,
@@ -8,6 +14,7 @@ module gtpwizard(
     output logic        rx_reset_done,
     output logic        tx_clk,
     output logic        rx_clk,
+    output logic        aligned,
     //input  logic       data_valid_in,
 
     output logic [15:0] rx_data,
@@ -110,34 +117,6 @@ module gtpwizard(
         .I                              (rxoutclk),
         .O                              (rx_clk)
     );
-//Beacon logic
-    logic       beacon_pulse_rx;
-    logic       beacon_pulse_rx_expand;
-    logic [1:0] beacon_cnt = '0;
-    logic       beacon_pulse_tx;
-
-    assign beacon_pulse_rx        = rx_data[7:0] == 8'h7E;
-    assign beacon_pulse_rx_expand = beacon_cnt != 'b0;
-
-    always_ff @(posedge rx_clk) begin
-        if(beacon_pulse_rx) 
-            beacon_cnt <= 2'b11;
-        else
-            if(beacon_cnt != 2'b0)
-                beacon_cnt <= beacon_cnt-1;         
-    end
-
-    xpm_cdc_pulse XPM_CDC_PULSE_i(
-        .dest_clk(tx_clk),
-        .dest_pulse(beacon_pulse_tx),
-        .dest_rst('b0),
-        .src_clk(rx_clk),
-        .src_pulse(beacon_pulse_rx_expand),
-        .src_rst('b0)
-    );
-
-    logic [15:0] tx_data_i;
-    assign tx_data_i = {tx_data[15:8], beacon_pulse_tx ? 8'h7E : tx_data[7:0]};
 
 //Alignment logic
     localparam WA_DETECT_INTERVAL = 32;
@@ -165,6 +144,7 @@ module gtpwizard(
     wafsm_state_t next;
 
     assign rxslide = state == wafsmCHECK && !detect;
+    assign aligned = state == wafsmALIGNED;
 
     logic test = 'b0;
     always_ff @(posedge rx_clk) begin
@@ -304,7 +284,7 @@ module gtpwizard(
         .gt0_gttxreset_in               ('b0),
         .gt0_txuserrdy_in               ('b1),
         //---------------- Transmit Ports - FPGA TX Interface Ports ----------------
-        .gt0_txdata_in                  (tx_data_i),
+        .gt0_txdata_in                  (tx_data),
         //---------------- Transmit Ports - TX 8B/10B Encoder Ports ----------------
         //.gt0_txchardispmode_in          (gt0_txchardispmode_i),
         //.gt0_txchardispval_in           (gt0_txchardispval_i),

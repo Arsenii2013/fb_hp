@@ -22,8 +22,8 @@ set SCK_OUT {qspi_wrapper_i/hs_spi_m/hs_spi_master_m/hs_spi_master/SCK_OUT/C}
 create_generated_clock -name SCK  -multiply_by 1  -source [get_pins $SCK_OUT] [get_ports SCK   ]
 #create_generated_clock -name SCK_n -source [get_pins $SCK_OUT] -invert [get_ports SCK(n)]
 
-set_property -dict { PACKAGE_PIN M1   IOSTANDARD LVCMOS33 } [get_ports { SCK }];
-set_property -dict { PACKAGE_PIN Y13  IOSTANDARD LVCMOS33 } [get_ports { CSn }];
+set_property -dict { PACKAGE_PIN R4   IOSTANDARD LVCMOS33 } [get_ports { SCK }];
+set_property -dict { PACKAGE_PIN M7  IOSTANDARD LVCMOS33 } [get_ports { CSn }];
 set_property -dict { PACKAGE_PIN P2   IOSTANDARD LVCMOS33 } [get_ports { MISO[0] }];
 set_property -dict { PACKAGE_PIN R7   IOSTANDARD LVCMOS33 } [get_ports { MISO[1] }];
 set_property -dict { PACKAGE_PIN P8   IOSTANDARD LVCMOS33 } [get_ports { MOSI[0] }];
