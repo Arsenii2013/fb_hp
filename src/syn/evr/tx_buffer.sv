@@ -17,17 +17,24 @@ module tx_buffer(
     logic        start;
 
     logic [31:0] data_in;
-    logic [ 3:0] charisk_in;
     logic        data_upd;
-    logic        isk_upd;
     logic        wr_en;
 
     logic [31:0] data_out;
-    logic [ 3:0] charisk_out;
     logic        rd_en;
 
     logic        full;
     logic        empty;
+
+    typedef enum  {
+        IDLE,
+        START,
+        STOP,
+        ODD,
+        EVEN
+    } tx_fsm_state_t;
+    tx_fsm_state_t tx_state;
+    tx_fsm_state_t tx_next;
 
 //MMR logic 
     typedef logic [MMR_DEV_ADDR_W-1:0] addr_t;
@@ -38,8 +45,7 @@ module tx_buffer(
         CR            = addr_t'(8'h04),
         CR_S          = addr_t'(8'h08),
         CR_C          = addr_t'(8'h0C),
-        DATA          = addr_t'(8'h14),
-        ISK           = addr_t'(8'h18)
+        DATA          = addr_t'(8'h14)
     } tx_regs;
 
     typedef struct packed {
@@ -67,20 +73,19 @@ module tx_buffer(
 
     always_ff @(posedge app_clk) begin
         if (!aresetn) begin
-            axi.arready        <= 0;
-            axi.rvalid         <= 0;
-            axi.awready        <= 0;
-            axi.wready         <= 0;
-            axi.bvalid         <= 0;
-            axi.rresp <= '0;
-            axi.bresp <= '0;
-            axi.rdata <= '0;
-            read       <= 0;
-            write_addr <= 0;
-            write_data <= 0;
-            cr.start <= 1'b0;
-            data_upd <= '0;
-            isk_upd  <= '0;
+            axi.arready  <= '0;
+            axi.rvalid   <= '0;
+            axi.awready  <= '0;
+            axi.wready   <= '0;
+            axi.bvalid   <= '0;
+            axi.rresp    <= '0;
+            axi.bresp    <= '0;
+            axi.rdata    <= '0;
+            read         <= '0;
+            write_addr   <= '0;
+            write_data   <= '0;
+            cr.start     <= '0;
+            data_upd     <= '0;
         end
         else begin
             axi.arready <= 0;
@@ -127,71 +132,85 @@ module tx_buffer(
                                 data_in    <= data;
                                 data_upd   <= 1;
                     end
-                    ISK      : begin
-                                charisk_in <= data;
-                                isk_upd    <= 1;
-                    end
                     default;
                 endcase
             end 
             
         end
-    end
 
-// FIFO write
-    always_ff @(posedge app_clk) begin
-        if(data_upd && isk_upd) begin
+
+        if(data_upd) begin
             data_upd <= '0;
-            isk_upd  <= '0;
         end 
+        if(cr.start)
+            cr.start <= tx_state == IDLE;
     end
 
-    assign wr_en = data_upd && isk_upd;
+    assign wr_en = data_upd;
 
 // FIFO read
-    typedef enum  {
-        IDLE,
-        ODD,
-        EVEN
-    } tx_fsm_state_t;
-    tx_fsm_state_t tx_state;
-    tx_fsm_state_t tx_next;
+    //start sequence
+    logic [3:0]  start_cnt = 0;
+    logic [7:0]  start_byte;
+    always_comb begin
+        case (start_cnt)
+            0 : start_byte = '0;
+            1 : start_byte = 'h5C;
+            2 : start_byte = '0;
+            3 : start_byte = '0;
+            default; start_byte = '0;
+        endcase
+    end 
 
+    //data transmit
     logic [1:0]  tx_cnt = 0;
     logic [31:0] tx_word;
-    logic [3:0]  word_isk;
     logic [7:0]  tx_bytes[3:0];
     logic [7:0]  tx_byte;
-
+    assign tx_word  = data_out;
     genvar i;
     generate 
     for (i = 0; i < 4; i++) begin
         assign tx_bytes[i] = tx_word[8 * (i + 1) - 1: 8 * i];
     end
     endgenerate
-
     assign tx_byte    = tx_bytes[tx_cnt];
-    assign tx_data    = tx_state == ODD ? tx_byte : '0;
-    assign tx_charisk = tx_state == ODD ? word_isk[tx_cnt] : '0;
-
     assign rd_en    = tx_state == EVEN && tx_cnt == 0;
-    assign tx_word  = data_out;
-    assign word_isk = charisk_out;
+
+    //stop and checksum
+    logic [15:0] checksum = 'hFFFF;
+    logic [3:0]  stop_cnt = 0;
+    logic [7:0]  stop_byte;
+    always_comb begin
+        case (stop_cnt)
+            0 : stop_byte = '0;
+            1 : stop_byte = 'h3C;
+            2 : stop_byte = '0;
+            3 : stop_byte = checksum[15:8];
+            2 : stop_byte = '0;
+            3 : stop_byte = checksum[7:0];
+            default; stop_byte = '0;
+        endcase
+    end 
+
+
+    assign tx_data    = tx_state == ODD ? tx_byte : '0;
+    assign tx_charisk = (tx_state == START && tx_data == 'h5C) || (tx_state == STOP && tx_data == 'h3C) ? 1 : 0;
+
     assign ready    = tx_state == IDLE;
-
-    always_ff @(posedge app_clk) begin 
-        if(cr.start)
-            cr.start <= tx_state == IDLE;
-    end
-
 
     always_ff @(posedge tx_clk) begin
         tx_state <= tx_next;
         case (tx_state)
-            IDLE : begin 
+            IDLE : begin
+                checksum  <= 'hFFFF; 
+                start_cnt <= '0;
+                tx_cnt    <= '0;
+                stop_cnt  <= '0;
             end
             ODD  : begin 
-                tx_cnt  <= tx_cnt + 1;
+                tx_cnt   <= tx_cnt + 1;
+                checksum <= checksum - tx_byte;
             end
             EVEN : begin 
             end
@@ -201,10 +220,12 @@ module tx_buffer(
 
     always_comb begin
         case (tx_state)
-            IDLE : tx_next = start && tx_odd ? EVEN : IDLE;
+            IDLE : tx_next = start && tx_odd ? START : IDLE;
+            START: tx_next = start_cnt == 3 ? EVEN : START;
             EVEN : tx_next = ODD;
-            ODD  : tx_next = empty && tx_cnt == 3 ? IDLE : EVEN;
-            default;
+            ODD  : tx_next = empty && tx_cnt == 3 ? STOP : EVEN;
+            STOP : tx_next = stop_cnt == 3 ? IDLE : STOP;
+            default; tx_next = IDLE;
         endcase
     end
 
@@ -224,7 +245,7 @@ module tx_buffer(
     )
     FIFO18E1_inst (
     // Read Data: 32-bit (each) output: Read output data
-    .DO({data_out, charisk_out}),                   // 32-bit output: Data output
+    .DO(data_out),                   // 32-bit output: Data output
     .DOP(),                 // 4-bit output: Parity data output
     .EMPTY(empty),             // 1-bit output: Empty flag
     .FULL(full),               // 1-bit output: Full flag
@@ -238,7 +259,7 @@ module tx_buffer(
     .WRCLK(app_clk),             // 1-bit input: Write clock
     .WREN(wr_en),               // 1-bit input: Write enable
     // Write Data: 32-bit (each) input: Write input data
-    .DI({data_in, charisk_in})                   // 32-bit input: Data input
+    .DI(data_in)                   // 32-bit input: Data input
     );
 
 endmodule
