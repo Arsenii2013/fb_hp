@@ -20,7 +20,10 @@ module evrTB();
  
     logic [7:0] ev;
     axi4_lite_if #(.AW(32), .DW(32)) mmr();
+    axi4_lite_if #(.AW(32), .DW(32)) tx();
     axi4_lite_if #(.AW(32), .DW(32)) shared_data();
+
+    logic [31:0] read_data;
 
     initial begin
         sysclk = 0;
@@ -82,6 +85,7 @@ module evrTB();
         .app_rst(app_rst),
         .ev(ev),
         .mmr(mmr),
+        .tx(tx),
         .shared_data_out(shared_data)
     );
 
@@ -100,8 +104,13 @@ module evrTB();
         .ready(aligned)
     );
 
-    axi_master axi_master_i(
+    axi_master mmr_master(
         .axi(mmr),
+        .aresetn(!app_rst),
+        .aclk(app_clk)
+    );
+    axi_master tx_master(
+        .axi(tx),
         .aresetn(!app_rst),
         .aclk(app_clk)
     );
@@ -109,9 +118,23 @@ module evrTB();
     initial begin
         @(posedge aligned);
         #1000;
-        axi_master_i.write(32'h04, 32'h01); // DC enable
-        wait(DUT.parser_delay != '0);
-        axi_master_i.write(32'h18, DUT.parser_delay + 32'h00080500); //  tgt delay = 8 clock cycles + 195 ps
+        mmr_master.write(32'h04, 32'h01); // DC enable
+        //wait(DUT.parser_delay != '0);
+        mmr_master.write(32'h18, DUT.parser_delay + 32'h00080500); //  tgt delay = 8 clock cycles + 195 ps
+        
+        @(posedge app_clk);
+         
+        tx_master.read(32'h00, read_data); 
+        tx_master.write(32'h14, 32'h89ABCDEF); 
+        tx_master.write(32'h18, 32'b1001); 
+        tx_master.write(32'h14, 32'h76543210); 
+        tx_master.write(32'h18, 32'b0101); 
+        tx_master.read(32'h00, read_data); 
+        tx_master.write(32'h04, 32'b1); 
+        tx_master.read(32'h00, read_data); 
+        #100;
+        tx_master.read(32'h00, read_data); 
+        tx_master.write(32'h04, 32'b1); 
     end
 
 endmodule
