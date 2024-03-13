@@ -16,11 +16,11 @@ module tx_buffer(
     logic        ready;
     logic        start;
 
-    logic [31:0] data_in;
+    logic [8:0] data_in;
     logic        data_upd;
     logic        wr_en;
 
-    logic [31:0] data_out;
+    logic [8:0] data_out;
     logic        rd_en;
 
     logic        full;
@@ -149,53 +149,9 @@ module tx_buffer(
     assign wr_en = data_upd;
 
 // FIFO read
-    //start sequence
-    logic [3:0]  start_cnt = 0;
-    logic [7:0]  start_byte;
-    always_comb begin
-        case (start_cnt)
-            0 : start_byte = '0;
-            1 : start_byte = 'h5C;
-            2 : start_byte = '0;
-            3 : start_byte = '0;
-            default; start_byte = '0;
-        endcase
-    end 
-
-    //data transmit
-    logic [1:0]  tx_cnt = 0;
-    logic [31:0] tx_word;
-    logic [7:0]  tx_bytes[3:0];
-    logic [7:0]  tx_byte;
-    assign tx_word  = data_out;
-    genvar i;
-    generate 
-    for (i = 0; i < 4; i++) begin
-        assign tx_bytes[i] = tx_word[8 * (i + 1) - 1: 8 * i];
-    end
-    endgenerate
-    assign tx_byte    = tx_bytes[tx_cnt];
-    assign rd_en    = tx_state == EVEN && tx_cnt == 0;
-
-    //stop and checksum
-    logic [15:0] checksum = 'hFFFF;
-    logic [3:0]  stop_cnt = 0;
-    logic [7:0]  stop_byte;
-    always_comb begin
-        case (stop_cnt)
-            0 : stop_byte = '0;
-            1 : stop_byte = 'h3C;
-            2 : stop_byte = '0;
-            3 : stop_byte = checksum[15:8];
-            2 : stop_byte = '0;
-            3 : stop_byte = checksum[7:0];
-            default; stop_byte = '0;
-        endcase
-    end 
-
-
-    assign tx_data    = tx_state == ODD ? tx_byte : '0;
-    assign tx_charisk = (tx_state == START && tx_data == 'h5C) || (tx_state == STOP && tx_data == 'h3C) ? 1 : 0;
+    assign rd_en      = tx_state == EVEN;
+    assign tx_data    = tx_state == ODD ? data_out[7:0] : '0;
+    assign tx_charisk = tx_state == ODD ? data_out[8]   : '0;;
 
     assign ready    = tx_state == IDLE;
 
@@ -203,14 +159,8 @@ module tx_buffer(
         tx_state <= tx_next;
         case (tx_state)
             IDLE : begin
-                checksum  <= 'hFFFF; 
-                start_cnt <= '0;
-                tx_cnt    <= '0;
-                stop_cnt  <= '0;
             end
             ODD  : begin 
-                tx_cnt   <= tx_cnt + 1;
-                checksum <= checksum - tx_byte;
             end
             EVEN : begin 
             end
@@ -220,12 +170,10 @@ module tx_buffer(
 
     always_comb begin
         case (tx_state)
-            IDLE : tx_next = start && tx_odd ? START : IDLE;
-            START: tx_next = start_cnt == 3 ? EVEN : START;
+            IDLE : tx_next = start && tx_odd ? EVEN : IDLE;
             EVEN : tx_next = ODD;
-            ODD  : tx_next = empty && tx_cnt == 3 ? STOP : EVEN;
-            STOP : tx_next = stop_cnt == 3 ? IDLE : STOP;
-            default; tx_next = IDLE;
+            ODD  : tx_next = empty ? IDLE : EVEN;
+            default; 
         endcase
     end
 
@@ -233,11 +181,11 @@ module tx_buffer(
 
 
 // FIFO
-    FIFO36E1 #(
-    .DATA_WIDTH(72),                    // Sets data width to 4-36
+    FIFO18E1 #(
+    .DATA_WIDTH(18),                    // Sets data width to 4-36
     .DO_REG(1),                        // Enable output register (1-0) Must be 1 if EN_SYN = FALSE
     .EN_SYN("FALSE"),                  // Specifies FIFO as dual-clock (FALSE) or Synchronous (TRUE)
-    .FIFO_MODE("FIFO36_72"),              // Sets mode to FIFO18 or FIFO18_36
+    .FIFO_MODE("FIFO18"),              // Sets mode to FIFO18 or FIFO18_36
     .FIRST_WORD_FALL_THROUGH("FALSE"), // Sets the FIFO FWFT to FALSE, TRUE
     .INIT(36'h000000000),              // Initial values on output port
     .SIM_DEVICE("7SERIES"),            // Must be set to "7SERIES" for simulation behavior

@@ -58,14 +58,33 @@ module tx_bufferTB();
         @(posedge app_clk);
          
         axi_master_i.read(32'h00, read_data); 
-        axi_master_i.write(32'h14, 32'h89ABCDEF); 
-        axi_master_i.write(32'h18, 32'b1001); 
-        axi_master_i.write(32'h14, 32'h76543210); 
-        axi_master_i.write(32'h18, 32'b0101); 
+        //start
+        axi_master_i.write(32'h14, 32'h15C); 
+        axi_master_i.write(32'h14, 32'h000); 
+        //addr
+        axi_master_i.write(32'h14, 32'h000); 
+        axi_master_i.write(32'h14, 32'h000); 
+        axi_master_i.write(32'h14, 32'h000); 
+        axi_master_i.write(32'h14, 32'h002);
+        //cnt 
+        axi_master_i.write(32'h14, 32'h000); 
+        axi_master_i.write(32'h14, 32'h000); 
+        axi_master_i.write(32'h14, 32'h000); 
+        axi_master_i.write(32'h14, 32'h004);
+        //data
+        axi_master_i.write(32'h14, 32'h0DE); 
+        axi_master_i.write(32'h14, 32'h0AD); 
+        axi_master_i.write(32'h14, 32'h0BE); 
+        axi_master_i.write(32'h14, 32'h0EF); 
+        //stop
+        axi_master_i.write(32'h14, 32'h13C); 
+        axi_master_i.write(32'h14, 32'h0FC); 
+        axi_master_i.write(32'h14, 32'h0C7); 
+
         axi_master_i.read(32'h00, read_data); 
         axi_master_i.write(32'h04, 32'b1); 
         axi_master_i.read(32'h00, read_data); 
-        #100;
+        #300;
         axi_master_i.read(32'h00, read_data); 
         axi_master_i.write(32'h04, 32'b1); 
 
