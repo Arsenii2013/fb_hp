@@ -43,17 +43,48 @@ begin
         $display ("EVR hasn't gotten a delay yet!");
     end
 
+    // TX start        
+    pci_e_read(0, 32'h1000, recv_data); 
+    //start
+    pci_e_write(0, 32'h1014, 32'h15C); 
+    pci_e_write(0, 32'h1014, 32'h000); 
+    //addr
+    pci_e_write(0, 32'h1014, 32'h000); 
+    pci_e_write(0, 32'h1014, 32'h000); 
+    pci_e_write(0, 32'h1014, 32'h000); 
+    pci_e_write(0, 32'h1014, 32'h002);
+    //cnt 
+    pci_e_write(0, 32'h1014, 32'h000); 
+    pci_e_write(0, 32'h1014, 32'h000); 
+    pci_e_write(0, 32'h1014, 32'h000); 
+    pci_e_write(0, 32'h1014, 32'h004);
+    //data
+    pci_e_write(0, 32'h1014, 32'h0DE); 
+    pci_e_write(0, 32'h1014, 32'h0AD); 
+    pci_e_write(0, 32'h1014, 32'h0BE); 
+    pci_e_write(0, 32'h1014, 32'h0EF); 
+    //stop
+    pci_e_write(0, 32'h1014, 32'h13C); 
+    pci_e_write(0, 32'h1014, 32'h0FC); 
+    pci_e_write(0, 32'h1014, 32'h0C7); 
+
+    pci_e_read(0, 32'h1000, recv_data); 
+    pci_e_write(0, 32'h1004, 32'b1); 
+    pci_e_read(0, 32'h1000, recv_data); 
+    #300;
+    pci_e_read(0, 32'h1000, recv_data); 
+    pci_e_write(0, 32'h1004, 32'b1); 
 
     // Shared data
-    pci_e_read (0, 'h1014, recv_data); 
+    pci_e_read (0, 'h1414, recv_data); 
     $display ("Shared data delay %x", recv_data);
 
 
     // QSPI read write test
-    pci_e_write(0, 'h1400, 'h0000DEAD);
-    pci_e_write(0, 'h1404, 'h0000BEEF);
-    pci_e_read (0, 'h1400, recv_data);
-    pci_e_read (0, 'h1404, recv_data);
+    pci_e_write(0, 'h1800, 'h0000DEAD);
+    pci_e_write(0, 'h1804, 'h0000BEEF);
+    pci_e_read (0, 'h1800, recv_data);
+    pci_e_read (0, 'h1804, recv_data);
 
     $display("[%t] : Finished transmission of PCI-Express TLPs", $realtime);
     if (!test_failed_flag) begin 

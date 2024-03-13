@@ -458,20 +458,14 @@ module top(
         .app_rst(app_reset),
         .ev(ev),
         .mmr(mmr[MMR_EVR]),
+        .tx(mmr[MMR_TX]),
         .shared_data_out(shared_data)
     );
 
     ila_0 ila_tx(
-        .clk(app_clk),
-        .probe0(evr_i.adjust_i.measure.res),
-        .probe1(evr_i.pll_ph_inc),
-        .probe2(evr_i.pll_ph_dec),
-        .probe3(evr_i.psclk),
-        .probe4(evr_i.psen),
-        .probe5(evr_i.psincdec),
-        .probe6(evr_i.rx_data_shared),
-        .probe7(evr_i.rx_data_fifo_in),
-        .probe8(ev)
+        .clk(sfp_tx_clk),
+        .probe0(sfp_tx_data),
+        .probe1(sfp_tx_is_k)
     );
 
     shared_data_mem shared_data_mem_i
