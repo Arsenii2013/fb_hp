@@ -181,7 +181,7 @@ module tx_buffer(
 
     always_ff @(posedge app_clk) begin 
         if(cr.start)
-            cr.start <= tx_state != IDLE;
+            cr.start <= tx_state == IDLE;
     end
 
 
