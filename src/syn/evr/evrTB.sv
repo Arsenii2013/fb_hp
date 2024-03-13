@@ -125,14 +125,33 @@ module evrTB();
         @(posedge app_clk);
          
         tx_master.read(32'h00, read_data); 
-        tx_master.write(32'h14, 32'h89ABCDEF); 
-        tx_master.write(32'h18, 32'b1001); 
-        tx_master.write(32'h14, 32'h76543210); 
-        tx_master.write(32'h18, 32'b0101); 
+        //start
+        tx_master.write(32'h14, 32'h15C); 
+        tx_master.write(32'h14, 32'h000); 
+        //addr
+        tx_master.write(32'h14, 32'h000); 
+        tx_master.write(32'h14, 32'h000); 
+        tx_master.write(32'h14, 32'h000); 
+        tx_master.write(32'h14, 32'h002);
+        //cnt 
+        tx_master.write(32'h14, 32'h000); 
+        tx_master.write(32'h14, 32'h000); 
+        tx_master.write(32'h14, 32'h000); 
+        tx_master.write(32'h14, 32'h004);
+        //data
+        tx_master.write(32'h14, 32'h0DE); 
+        tx_master.write(32'h14, 32'h0AD); 
+        tx_master.write(32'h14, 32'h0BE); 
+        tx_master.write(32'h14, 32'h0EF); 
+        //stop
+        tx_master.write(32'h14, 32'h13C); 
+        tx_master.write(32'h14, 32'h0FC); 
+        tx_master.write(32'h14, 32'h0C7); 
+
         tx_master.read(32'h00, read_data); 
         tx_master.write(32'h04, 32'b1); 
         tx_master.read(32'h00, read_data); 
-        #100;
+        #300;
         tx_master.read(32'h00, read_data); 
         tx_master.write(32'h04, 32'b1); 
     end
