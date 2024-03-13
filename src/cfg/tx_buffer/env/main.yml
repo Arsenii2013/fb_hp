@@ -1,0 +1,6 @@
+parameters:
+    VARIANT_NAME        : = ARGUMENTS['bv']
+    PROJECT_NAME        : = VARIANT_NAME
+    TOP_NAME            : tx_buffer
+    TESTBENCH_NAME      : tx_bufferTB
+    DEVICE              : xc7z015clg485-2
