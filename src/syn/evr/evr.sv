@@ -24,6 +24,7 @@ module evr
     input  logic            app_rst,
     output logic [7:0]      ev,
     axi4_lite_if.s          mmr,
+    axi4_lite_if.s          tx,
     axi4_lite_if.m          shared_data_out
 );
     logic ready;
@@ -198,10 +199,18 @@ module evr
     logic [   1:0] tx_cnt = '0;
     always_ff @(posedge tx_clk) tx_cnt <= tx_cnt + 1;
 
-    always_comb begin
-        tx_charisk[1] = 0;
-        tx_data[15:8] = '0;
+    tx_buffer tx_buffer_i(
+        .tx_clk(tx_clk),
+        .tx_ready(aligned),
+        .tx_data(tx_data[15:8]),
+        .tx_charisk(tx_charisk[1]),
+        .tx_odd(tx_cnt[0]),
+        .app_clk(app_clk),
+        .aresetn(~app_rst),
+        .axi(tx)
+    );
 
+    always_comb begin
         if (beacon_pulse_tx) begin
             tx_charisk[0] = 0;
             tx_data[7:0]  = 8'h7E;

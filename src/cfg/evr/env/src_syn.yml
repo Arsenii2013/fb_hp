@@ -8,4 +8,5 @@ sources:
     - src/syn/evr/dc/average.sv
     - src/syn/evr/dc/parser.sv
     - src/syn/evr/evr.sv
+    - src/syn/evr/tx_buffer.sv
     - src/lib/axi/axi4_lite_if.svh

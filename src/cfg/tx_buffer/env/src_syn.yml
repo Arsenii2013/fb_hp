@@ -1,0 +1,6 @@
+import : main
+
+sources:
+    - src/syn/evr/tx_buffer.sv
+    - src/syn/top.svh
+    - src/lib/axi/axi4_lite_if.svh
