@@ -26,6 +26,10 @@ module tx_buffer(
     logic        full;
     logic        empty;
 
+    logic        empty_app_clk;
+    logic        ready_app_clk;
+    logic        tx_run;
+
     typedef enum  {
         IDLE,
         START,
@@ -66,9 +70,9 @@ module tx_buffer(
     logic write_addr;
     logic write_data;
 
-    assign sr.ready       = ready;
+    assign sr.ready       = ready_app_clk;
     assign sr.full        = full;
-    assign sr.empty       = empty;
+    assign sr.empty       = empty_app_clk;
     assign start          = cr.start;
 
     always_ff @(posedge app_clk) begin
@@ -143,7 +147,7 @@ module tx_buffer(
             data_upd <= '0;
         end 
         if(cr.start)
-            cr.start <= tx_state == IDLE;
+            cr.start <= !tx_run;
     end
 
     assign wr_en = data_upd;
@@ -177,7 +181,35 @@ module tx_buffer(
         endcase
     end
 
+    xpm_cdc_single #(
+        .SIM_ASSERT_CHK(1)
+    )
+    xpm_cdc_empty (
+        .dest_out(empty_app_clk),
+        .dest_clk(app_clk),
+        .src_clk(tx_clk),
+        .src_in(empty)
+    );
 
+    xpm_cdc_single #(
+        .SIM_ASSERT_CHK(1)
+    )
+    xpm_cdc_run (
+        .dest_out(tx_run),
+        .dest_clk(app_clk),
+        .src_clk(tx_clk),
+        .src_in(tx_state != IDLE)
+    );
+
+    xpm_cdc_single #(
+        .SIM_ASSERT_CHK(1)
+    )
+    xpm_cdc_ready (
+        .dest_out(ready_app_clk),
+        .dest_clk(app_clk),
+        .src_clk(tx_clk),
+        .src_in(ready)
+    );
 
 
 // FIFO
