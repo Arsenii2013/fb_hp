@@ -241,16 +241,18 @@ module evr
 //RX Data logic 
     logic           fifo_empty;
 
-    logic [7:0]     rx_data_shared;
-    logic           rx_charisk_shared;
+    logic [7:0]     rx_data_shared_in;
+    logic           rx_charisk_shared_in;
+    logic [7:0]     rx_data_shared_out;
+    logic           rx_charisk_shared_out;
     
     logic [7:0]     rx_data_fifo_in;
     logic           rx_charisk_fifo_in;
     logic [7:0]     rx_data_fifo_out;
     logic           rx_charisk_fifo_out;
 
-    assign rx_data_shared     = rx_data[15:8];
-    assign rx_charisk_shared  = rx_charisk[1];
+    assign rx_data_shared_in     = rx_data[15:8];
+    assign rx_charisk_shared_in  = rx_charisk[1];
 
     always_comb begin
         rx_charisk_fifo_in    = local_beacon_ena && local_beacon_cnt == '0 ? 0     : (beacon_pulse_rx ?  0 : rx_charisk[0]);
@@ -264,8 +266,8 @@ module evr
     stream_decoder_m stream_decoder_i(
         .clk(app_clk),
         .rst(app_rst),
-        .rx_data_in(rx_data_shared),
-        .rx_isk_in(rx_charisk_shared),
+        .rx_data_in(rx_data_shared_out),
+        .rx_isk_in(rx_charisk_shared_out),
         .shared_data_out_i({shared_data_out})
     );
 
@@ -275,8 +277,8 @@ module evr
         .clk(app_clk),
         .rst(~ready_sync),
         .valid(!fifo_empty),
-        .rx_data(rx_data_shared),
-        .rx_isk(rx_charisk_shared),
+        .rx_data(rx_data_shared_out),
+        .rx_isk(rx_charisk_shared_out),
         .delay(parser_delay),
         .status(parser_status),
         .topoid(parser_topoid)
@@ -401,10 +403,10 @@ module evr
         .rst(app_rst),
         .wr_clk(rx_clk),
         .rd_clk(app_clk),
-        .d_in({rx_charisk_fifo_in, rx_data_fifo_in}),
+        .d_in({rx_charisk_fifo_in, rx_data_fifo_in, rx_data_shared_in, rx_charisk_shared_in}),
         .wr_en(ready && ~fifo_dec),
         .rd_en(ready && ~fifo_inc),
-        .d_out({rx_charisk_fifo_out, rx_data_fifo_out}),
+        .d_out({rx_charisk_fifo_out, rx_data_fifo_out, rx_data_shared_out, rx_charisk_shared_out}),
         .full(),
         .empty(fifo_empty)
     );
