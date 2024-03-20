@@ -1,3 +1,4 @@
+
   # Create interface ports
   set DDR [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 DDR ]
 
@@ -7,6 +8,7 @@
   set_property -dict [ list \
    CONFIG.ADDR_WIDTH {32} \
    CONFIG.DATA_WIDTH {32} \
+   CONFIG.FREQ_HZ {10000000} \
    CONFIG.HAS_BURST {0} \
    CONFIG.HAS_CACHE {0} \
    CONFIG.HAS_LOCK {0} \
@@ -24,6 +26,7 @@
    CONFIG.AWUSER_WIDTH {0} \
    CONFIG.BUSER_WIDTH {0} \
    CONFIG.DATA_WIDTH {32} \
+   CONFIG.FREQ_HZ {10000000} \
    CONFIG.HAS_BRESP {1} \
    CONFIG.HAS_BURST {0} \
    CONFIG.HAS_CACHE {0} \
@@ -53,6 +56,11 @@
   set peripheral_reset [ create_bd_port -dir O -from 0 -to 0 -type rst peripheral_reset ]
   set peripheral_aresetn [ create_bd_port -dir O -from 0 -to 0 -type rst peripheral_aresetn ]
   set peripheral_clock [ create_bd_port -dir O -type clk peripheral_clock ]
+  set app_clk [ create_bd_port -dir I -type clk -freq_hz 10000000 app_clk ]
+  set_property -dict [ list \
+   CONFIG.ASSOCIATED_RESET {bar_aresetn:app_aresetn} \
+ ] $app_clk
+  set app_aresetn [ create_bd_port -dir I -type rst app_aresetn ]
 
   # Create instance: processing_system7, and set properties
   set processing_system7 [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7 ]
@@ -98,7 +106,7 @@
     CONFIG.PCW_CLK1_FREQ {10000000} \
     CONFIG.PCW_CLK2_FREQ {10000000} \
     CONFIG.PCW_CLK3_FREQ {10000000} \
-    CONFIG.PCW_CPU_CPU_6X4X_MAX_RANGE {867} \
+    CONFIG.PCW_CPU_CPU_6X4X_MAX_RANGE {767} \
     CONFIG.PCW_CPU_PERIPHERAL_CLKSRC {ARM PLL} \
     CONFIG.PCW_CRYSTAL_PERIPHERAL_FREQMHZ {33.333333} \
     CONFIG.PCW_DCI_PERIPHERAL_CLKSRC {DDR PLL} \
@@ -609,19 +617,21 @@
   set proc_sys_reset [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset ]
 
   # Create interface connections
-  connect_bd_intf_net -intf_net S_AXI_0_1 [get_bd_intf_ports HP0] [get_bd_intf_pins HP0_protocol_convert/S_AXI]
+  connect_bd_intf_net -intf_net GP0_protocol_convert_M_AXI [get_bd_intf_ports GP0] [get_bd_intf_pins GP0_protocol_convert/M_AXI]
+  connect_bd_intf_net -intf_net HP0_1 [get_bd_intf_ports HP0] [get_bd_intf_pins HP0_protocol_convert/S_AXI]
   connect_bd_intf_net -intf_net S_AXI_HP0_FIFO_CTRL_0_1 [get_bd_intf_ports HP0_FIFO_CTRL] [get_bd_intf_pins processing_system7/S_AXI_HP0_FIFO_CTRL]
   connect_bd_intf_net -intf_net axi_protocol_convert_0_M_AXI [get_bd_intf_pins processing_system7/S_AXI_HP0] [get_bd_intf_pins HP0_protocol_convert/M_AXI]
-  connect_bd_intf_net -intf_net axi_protocol_convert_1_M_AXI [get_bd_intf_ports GP0] [get_bd_intf_pins GP0_protocol_convert/M_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7/FIXED_IO]
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7/M_AXI_GP0] [get_bd_intf_pins GP0_protocol_convert/S_AXI]
 
   # Create port connections
-  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins proc_sys_reset/peripheral_aresetn] [get_bd_ports peripheral_aresetn] [get_bd_pins HP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert/aresetn]
+  connect_bd_net -net aresetn_0_1 [get_bd_ports app_aresetn] [get_bd_pins HP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert/aresetn]
+  connect_bd_net -net bar_clk_1 [get_bd_ports app_clk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins HP0_protocol_convert/aclk] [get_bd_pins GP0_protocol_convert/aclk]
   connect_bd_net -net proc_sys_reset_0_peripheral_reset [get_bd_pins proc_sys_reset/peripheral_reset] [get_bd_ports peripheral_reset]
-  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins processing_system7/FCLK_CLK0] [get_bd_ports peripheral_clock] [get_bd_pins HP0_protocol_convert/aclk] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins proc_sys_reset/slowest_sync_clk] [get_bd_pins GP0_protocol_convert/aclk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK]
+  connect_bd_net -net proc_sys_reset_peripheral_aresetn [get_bd_pins proc_sys_reset/peripheral_aresetn] [get_bd_ports peripheral_aresetn]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins processing_system7/FCLK_RESET0_N] [get_bd_pins proc_sys_reset/ext_reset_in]
+  connect_bd_net -net processing_system7_FCLK_CLK0 [get_bd_pins processing_system7/FCLK_CLK0] [get_bd_pins proc_sys_reset/slowest_sync_clk] [get_bd_ports peripheral_clock]
 
   # Create address segments
   assign_bd_address -offset 0x40000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces processing_system7/Data] [get_bd_addr_segs GP0/Reg] -force

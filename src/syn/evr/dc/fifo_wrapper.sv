@@ -17,17 +17,17 @@ module fifo_wrapper
     output logic empty
 );
 
-FIFO18E1 #(
+FIFO36E1 #(
    .DATA_WIDTH(18),                    // Sets data width to 4-36
    .DO_REG(1),                        // Enable output register (1-0) Must be 1 if EN_SYN = FALSE
    .EN_SYN("FALSE"),                  // Specifies FIFO as dual-clock (FALSE) or Synchronous (TRUE)
-   .FIFO_MODE("FIFO18"),              // Sets mode to FIFO18 or FIFO18_36
+   .FIFO_MODE("FIFO36"),              // Sets mode to FIFO18 or FIFO18_36
    .FIRST_WORD_FALL_THROUGH("FALSE"), // Sets the FIFO FWFT to FALSE, TRUE
    .INIT(36'h000000000),              // Initial values on output port
    .SIM_DEVICE("7SERIES"),            // Must be set to "7SERIES" for simulation behavior
    .SRVAL(36'h000000000)              // Set/Reset value for output port
 )
-FIFO18E1_inst (
+FIFO36E1_inst (
    // Read Data: 32-bit (each) output: Read output data
    .DO(d_out),                   // 32-bit output: Data output
    .DOP(),                 // 4-bit output: Parity data output

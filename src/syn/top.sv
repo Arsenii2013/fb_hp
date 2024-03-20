@@ -94,12 +94,38 @@ module top(
 
     logic PS_clk;
     logic PS_aresetn;
+    logic PS_reset;
     logic app_clk;
     logic app_reset;
     logic app_aresetn;
 
-    assign app_aresetn = PS_aresetn;
-    assign app_reset   = !PS_aresetn;
+    xpm_cdc_async_rst #(
+        .INIT_SYNC_FF(0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
+        .RST_ACTIVE_HIGH(0)  // DECIMAL; 0=active low reset, 1=active high reset
+    )
+    xpm_cdc_aresetn_inst (
+        .dest_arst(app_aresetn), // 1-bit output: src_arst asynchronous reset signal synchronized to destination
+                                // clock domain. This output is registered. NOTE: Signal asserts asynchronously
+                                // but deasserts synchronously to dest_clk. Width of the reset signal is at least
+                                // (DEST_SYNC_FF*dest_clk) period.
+
+        .dest_clk(app_clk),   // 1-bit input: Destination clock.
+        .src_arst(PS_aresetn)    // 1-bit input: Source asynchronous reset signal.
+    );
+
+    xpm_cdc_async_rst #(
+        .INIT_SYNC_FF(0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
+        .RST_ACTIVE_HIGH(1)  // DECIMAL; 0=active low reset, 1=active high reset
+    )
+    xpm_cdc_areset_inst (
+        .dest_arst(app_reset), // 1-bit output: src_arst asynchronous reset signal synchronized to destination
+                                // clock domain. This output is registered. NOTE: Signal asserts asynchronously
+                                // but deasserts synchronously to dest_clk. Width of the reset signal is at least
+                                // (DEST_SYNC_FF*dest_clk) period.
+
+        .dest_clk(app_clk),   // 1-bit input: Destination clock.
+        .src_arst(PS_reset)    // 1-bit input: Source asynchronous reset signal.
+    );
     //---------GTP_COMMON------------\\
     logic REFCLK_PCIE;
     logic REFCLK_SFP;
@@ -223,13 +249,14 @@ module top(
         `endif // SYNTHESIS
 
         .GP0(GP0),
-        //.HP0(bar2),
-        .HP0(HP0), //add sync from app_clk to PS_clk
+        .HP0(bar2),
         .HP0_offset(HP0_offset),
         
         .peripheral_clock(PS_clk),
         .peripheral_aresetn(PS_aresetn),
-        .peripheral_reset()
+        .peripheral_reset(PS_reset),
+        .app_clk(app_clk),
+        .app_aresetn(app_aresetn)
     );
 
     //-------------PCI-E-------------\\     
@@ -462,11 +489,11 @@ module top(
         .shared_data_out(shared_data)
     );
 
-    ila_0 ila_tx(
+    /*ila_0 ila_tx(
         .clk(sfp_tx_clk),
         .probe0(sfp_tx_data),
         .probe1(sfp_tx_is_k)
-    );
+    );*/
 
     shared_data_mem shared_data_mem_i
     (
@@ -518,8 +545,8 @@ module top(
         .FREQ_HZ(100000000) // 1s
     )
     blink_i (
-        .reset(~PS_aresetn),
-        .clk(PS_clk),
+        .reset(~app_aresetn),
+        .clk(app_clk),
         .led(led[0])
     );
 

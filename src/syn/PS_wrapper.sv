@@ -31,8 +31,23 @@ module PS_wrapper_(
     output logic       peripheral_reset,
     axi4_lite_if.m                  GP0,
     axi4_lite_if.s                  HP0,
-    input  logic [HP0_ADDR_W-1:0]   HP0_offset
+    input  logic [HP0_ADDR_W-1:0]   HP0_offset,
+    input  logic                    app_aresetn,
+    input  logic                    app_clk
    );
+    logic [HP0_ADDR_W-1:0]   HP0_offset_sync;
+
+
+    xpm_cdc_gray #(
+        .WIDTH(HP0_ADDR_W)
+    )
+    xpm_cdc_gray_inst (
+        .dest_out_bin(HP0_offset_sync),
+        .dest_clk(dest_clk),
+        .src_clk(app_clk),
+        .src_in_bin(HP0_offset)
+    );
+
 
     logic [HP0_ADDR_W-1:0]   HP0_araddr, HP0_awaddr;
     assign HP0_araddr = HP0.araddr + HP0_offset;
@@ -101,9 +116,11 @@ module PS_wrapper_(
         .HP0_wstrb(HP0.wstrb),
         .HP0_wvalid(HP0.wvalid),
 
-        .peripheral_aresetn,
-        .peripheral_clock,
-        .peripheral_reset
+        .peripheral_aresetn(peripheral_aresetn),
+        .peripheral_clock(peripheral_clock),
+        .peripheral_reset(peripheral_reset),
+        .app_aresetn(app_aresetn),
+        .app_clk(app_clk)
     );
     `endif //SYNTHESIS 
 
