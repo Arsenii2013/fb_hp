@@ -45,6 +45,7 @@ sources:
     - src/syn/ddsc/b2f.sv
     - src/syn/ddsc/ddsc_core.sv
     - src/syn/ddsc/ddsc_if.sv
+    - src/syn/ddsc/ddsc_avmm.sv
     - src/syn/ddsc/ddsc.sv
 
 
