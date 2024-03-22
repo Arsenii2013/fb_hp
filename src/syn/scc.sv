@@ -256,3 +256,251 @@ endgenerate
 
 //------------------------------------------------
 endmodule : scc_m
+
+module sccTB();
+    logic clk;
+    logic aresetn;
+    logic cdr_locked;
+
+    initial begin
+        clk = 0;
+
+        forever #5 clk = ~clk;
+    end
+
+    initial begin
+        cdr_locked = 0;
+        @(negedge aresetn);
+        for(int i =0; i < 10; i++) begin
+            @(posedge clk);
+        end 
+        cdr_locked = 1;
+    end 
+
+    logic sync;
+    logic align;
+    logic log_start;
+    logic dds_clk_ena;
+    logic sync_x2;
+    logic align_x2;
+    logic test_out;
+    logic sync_prd;
+
+    logic [7:0] ev;
+    logic [7:0] shared_data;
+    axi4_lite_if #(.AW(32), .DW(32)) mmr();
+
+    scc_m DUT(
+        .clk(clk),
+        .aresetn(aresetn),
+        .cdr_locked(cdr_locked),
+
+        .mmr(mmr),
+
+        .ev(ev),
+        .sync(sync),
+        .align(align),
+        .log_start(log_start),
+
+        .dds_clk_ena(dds_clk_ena),
+
+        .sync_x2(sync_x2), 
+        .align_x2(align_x2),
+
+        .test_out(test_out),
+
+        .sync_prd(sync_prd)
+    );
+
+    axi_master mmr_master(
+        .axi(mmr),
+        .aclk(clk),
+        .aresetn(aresetn)
+    );
+
+    frame_gen frame_gen_i(
+        .tx_data({ev, shared_data}),
+        .is_k(),
+        .tx_clk(clk),
+        .ready(cdr_locked)
+    );
+
+    logic [31:0] recv_data;
+    initial begin
+        @(posedge cdr_locked);
+        for(int i =0; i < 10; i++) begin
+            @(posedge clk);
+        end 
+
+        mmr_master.read(32'h00, recv_data); // check cdr_locked
+        mmr_master.write(32'h10, 32'h15); // write sync_ev
+        mmr_master.write(32'h14, 32'd10); // write sync_prd
+        mmr_master.write(32'h18, 32'h15); // write align_ev
+        mmr_master.write(32'h1c, 32'h15); // write test0_ev
+
+        for(int i =0; i < 100; i++) begin
+            @(posedge clk);
+        end 
+        mmr_master.write(32'h04, 32'hFF); // enable all cr
+        #1000;
+        $stop();
+    end 
+
+endmodule
+
+module axi_master(
+    axi4_lite_if.m  axi,
+    input  logic    aclk,
+    input  logic    aresetn
+);
+    task automatic read(input [32:0] addr, output [32:0] data);
+        begin
+
+        logic [3:0] rresp;
+        
+        @(posedge aclk)
+        axi.araddr  <= addr;
+        axi.arvalid <= 1;
+        axi.rready  <= 1;
+
+        for(;;) begin
+            @(posedge aclk)
+            if(axi.arready)
+                break;
+        end
+        axi.arvalid <= 0;
+
+        for(;;) begin
+            @(posedge aclk)
+            if(axi.rvalid)
+                break;
+        end
+        data        = axi.rdata;
+        rresp       = axi.rresp;
+        axi.rready  <= 0;
+
+        if(rresp != 'b000)
+            $display("RRESP isnt equal 0! RRESP = %x", rresp);
+
+        $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
+        end
+    endtask
+
+    task automatic write(input [32:0] addr, input [32:0] data);
+        begin
+
+        logic [3:0] wresp;
+        
+        @(posedge aclk)
+        axi.awaddr  <= addr;
+        axi.wdata   <= data;
+        axi.awvalid <= 1;
+        axi.wvalid  <= 1;
+        axi.wstrb   <= 'hFFFF;
+        axi.bready  <= 1;
+
+        for(;;) begin
+            @(posedge aclk)
+            if(axi.awready && axi.wready)
+                break;
+        end
+        axi.awvalid <= 0;
+        axi.wvalid  <= 0;
+
+        for(;;) begin
+            @(posedge aclk)
+            if(axi.bvalid)
+                break;
+        end
+        wresp       = axi.bresp;
+        axi.rready  <= 0;
+
+        if(wresp != 'b000)
+            $display("BRESP isnt equal 0! BRESP = %x", wresp);
+
+        $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
+        end
+    endtask
+
+endmodule
+
+module frame_gen (
+    output logic  [15:0]  tx_data,
+    output logic  [2 :0]  is_k,
+
+    input  logic          tx_clk,
+    input  logic          ready 
+); 
+
+    localparam   WORDS_IN_BRAM = 32;
+    logic [$clog2(WORDS_IN_BRAM*2) - 1:0] i = 0;
+
+    logic [7:0] bram [0:WORDS_IN_BRAM-1] = 
+    '{ 
+        8'h5C, // start
+        8'hFF, // addr = 4 segment
+        8'h00, 8'h08, 8'h00, 8'h00, // 0-3 byte data 
+        8'h00, 8'h00, 8'h00, 8'h07, // 4-7 byte data
+        8'h00, 8'h00, 8'h00, 8'h00, // 8-11 byte data
+        8'h00, 8'h00, 8'h00, 8'h07, // 12-15 byte data
+        8'h3C, // stop
+        8'hFE, 8'hEA, // checksum
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00,
+        8'h00, 8'h00, 
+        8'h00
+    };
+    
+    logic [7:0] MSB, LSB;
+    logic isk_msb, isk_lsb;
+
+    assign tx_data = {LSB, MSB};    
+    assign is_k    = {isk_lsb, isk_msb};
+    assign isk_msb = (MSB == 8'h5C) || (MSB == 8'h3C); 
+    assign isk_lsb = LSB == 8'hBC;
+
+    always_comb begin : Event
+        LSB = '0;
+        if(!ready)
+            LSB = '0;
+        else if(i % 4 == 0)
+            LSB = 8'hBC; // K28.5
+        `ifndef SYNTHESIS
+        else if(i % 7 == 0)
+            LSB = 8'h7E; // beacon
+        else if(i % 29 == 0)
+            LSB = 8'h15; // test event
+        `endif //SYNTHESIS
+        else
+            LSB = '0;
+    end
+
+    always_comb begin : Data
+        MSB = 0;
+        `ifndef SYNTHESIS
+        if(!ready)
+            MSB = 0;
+        else if(i % 2 == 0)
+            MSB = '0; // distributed bus
+        else
+            MSB = bram[i / 2]; // segmented data buffer
+        `endif //SYNTHESIS
+    end
+
+    always_ff @( posedge tx_clk ) begin 
+        if(!ready) 
+        begin
+            i <= 0;
+        end
+        else
+        begin
+            i <= i+1;
+        end
+
+    end
+
+endmodule
+
+`endif//__SCC_SV__
