@@ -1,13 +1,9 @@
 `ifndef __DDSC_CORE_SV__
 `define __DDSC_CORE_SV__
 
-// synopsys translate off
-`define SIMULATOR
-// synopsys translate on
+`include "top.svh"
 
-`include "../hp.svh"
-
-module ddsc_core_m import hp_pkg::*;
+module ddsc_core_m
 #(
     parameter CONV_TBL_AW     = 8,
     parameter CONV_TBL_DW     = 8,
@@ -56,7 +52,7 @@ typedef logic [   DESC_OFFS_AW-1:0] offs_t;
 typedef logic [    DESC_TBL_DW-1:0] item_t;
 typedef logic [         TIME_W-1:0] time_t;
 
-typedef logic [        LLRF_DW-1:0] llrf_data_t;
+typedef logic [          FB_DW-1:0] llrf_data_t;
 
 typedef struct packed {
     logic                           valid;
@@ -325,7 +321,7 @@ always_comb begin
     end
 end
 
-`ifdef SIMULATOR
+`ifndef SYNTHESIS
 always @(posedge done)    
     $display("[%t]: <%0d> <ddsc core> executed %0s type descriptor at 0x%0x", $realtime, timestamp, desc_type.name(), desc);
 `endif        

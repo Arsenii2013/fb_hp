@@ -2,7 +2,7 @@
 
 `include "axi4_lite_if.svh"
 
-module ddsc_avmm_m import hp_pkg::*;
+module ddsc_m
 #(
     parameter NUMBER          = 0,
     parameter AW              = 12,
@@ -88,7 +88,8 @@ module ddsc_avmm_m import hp_pkg::*;
         .b_field(b_field),
         .b_ready(b_ready),
         .out(out),
-        .shared_in_i(shared_in_i_avmm)
+        .shared_in_i(shared_in_i_avmm),
+        .shared_out_i(shared_out_i_avmm)
     );
 
 
@@ -98,7 +99,7 @@ endmodule
 
 module axi2avmm_wrapper(
     input logic    clk,
-    input logic    arsetn,
+    input logic    aresetn,
     axi4_lite_if.s in,
     avmm_if.master out
 );

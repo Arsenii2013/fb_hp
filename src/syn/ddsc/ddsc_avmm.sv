@@ -1,13 +1,9 @@
 `ifndef __DDSC_SV__
 `define __DDSC_SV__
 
-// synopsys translate off
-`define SIMULATOR
-// synopsys translate on
+`include "top.svh"
 
-`include "../hp.svh"
-
-module ddsc_avmm_m import hp_pkg::*;
+module ddsc_avmm_m
 #(
     parameter NUMBER          = 0,
     parameter AW              = 12,
@@ -109,7 +105,7 @@ avmm_if #(
 
 avmm_if #(
     .AW        ( SHARED_MEM_AW ),
-    .DW        ( LLRF_DW       ),
+    .DW        ( FB_DW       ),
     .MAX_BURST ( 1             )
 ) shared_data_out_i();
 
@@ -218,7 +214,7 @@ always_comb begin
 end
 
 //------------------------------------------------
-`ifdef SIMULATOR
+`ifndef SYNTHESIS
 always @(posedge out.tx_valid)
     $display("[%t]: <ddsc core %0d> set new freq value %0d", $realtime, NUMBER, out.f);
 `endif 
@@ -233,7 +229,8 @@ dpram_avmm_m #(
     .AVMM_MAX_BURST    ( MAX_BURST         ),
     .APP_AW            ( CONV_TBL_AW       ),
     .APP_DW            ( CONV_TBL_DW       ),
-    .INIT_FILE         ( "conv_tbl.mif"    )
+    //.INIT_FILE         ( "conv_tbl.mif"    )
+    .INIT_FILE         ( "none"    )
 )
 conv_table
 (
@@ -250,7 +247,8 @@ dpram_avmm_m #(
     .AVMM_MAX_BURST    ( MAX_BURST         ),
     .APP_AW            ( DESC_TBL_AW       ),
     .APP_DW            ( DESC_TBL_DW       ),
-    .INIT_FILE         ( "desc_tbl.mif"    )
+    //.INIT_FILE         ( "desc_tbl.mif"    )
+    .INIT_FILE         ( "none"    )
 )
 desc_table
 (
@@ -286,6 +284,6 @@ ddsc_core
     .shared_data_out_i ( shared_data_out_i )
 );
 //------------------------------------------------
-endmodule : ddsc_m
+endmodule
 
 `endif//__DDSC_SV__
