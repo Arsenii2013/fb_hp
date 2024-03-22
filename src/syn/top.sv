@@ -489,6 +489,37 @@ module top(
         .shared_data_out(shared_data)
     );
 
+
+    axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) conv_tbl_i();
+    axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) desc_tbl_i();
+    axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) ddsc_shared();
+    ddsc_if #( .DW        ( 32              )) ddsc_out_i();
+
+
+    ddsc_m #(
+        .NUMBER         (0              ),
+        .AW             (TBL_MEM_ADDR_W ),
+        .DW             (TBL_DATA_W     ),
+        .EVENT_BUS_W    (EV_W           ),
+        .DESC_ITEM_DW   (DESC_ITEM_DW   ),
+        .DESC_ITEM_COUNT(DESC_ITEM_COUNT),
+        .B_FIELD_W      (B_FIELD_W      ),
+        .CLK_PRD        (CLK_PRD        )
+    ) ddsc_avmm (
+        .clk        (app_clk         ),
+        .rst        (app_reset       ),
+        .mmr_i      (mmr[MMR_DDSC]   ),
+        .conv_tbl_i (conv_tbl_i      ),
+        .desc_tbl_i (desc_tbl_i      ),
+        .sync       (sync            ),
+        .sync_prd   (sync_prd        ),
+        .ev         (ev              ),
+        .b_field    (b_field         ),
+        .b_ready    (b_ready         ),
+        .out        (ddsc_out_i      ),
+        .shared_in_i(shared_data     )
+    );
+
     /*ila_0 ila_tx(
         .clk(sfp_tx_clk),
         .probe0(sfp_tx_data),
@@ -500,7 +531,7 @@ module top(
         .clk(app_clk),
         .aresetn(app_aresetn),
         .mmr(mmr[MMR_SHARED]),
-        .shared_data_in(shared_data)
+        .shared_data_in(ddsc_shared)
     );
 
     logic after_dc_reg;
