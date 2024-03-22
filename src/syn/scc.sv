@@ -23,11 +23,13 @@ module scc_m
 
     output logic [           3:0] test_out,
 
-    output logic [MMR_DATA_W-1:0] sync_prd
+    output logic [MMR_DATA_W-1:0] sync_prd,
+    output logic                  sync_PS
 );
 
 //------------------------------------------------
 `timescale 1ns / 1ps
+parameter PS_SYNC_WIDTH = 32;
 
 //------------------------------------------------
 //
@@ -239,20 +241,33 @@ generate
 for (i=0; i<4; i++) begin : test_out_pulse_formers
     logic       test_pulse;
     logic       test_pulse_expand;
-    logic       test_pulse_cnt = '0;
+    logic [1:0] test_pulse_cnt = '0;
 
     assign test_pulse  = test_ena[i] && ev == test_ev[i];
-    assign test_out[i] = test_pulse_cnt != 1'b0;
+    assign test_out[i] = test_pulse_cnt != 'b0;
 
     always_ff @(posedge clk) begin
         if(test_pulse) 
-            test_pulse_cnt <= 1'b1;
+            test_pulse_cnt <= 'b11;
         else
-            if(test_pulse_cnt != 1'b0)
+            if(test_pulse_cnt != 'b0)
                 test_pulse_cnt <= test_pulse_cnt-1;         
     end
 end
 endgenerate
+
+//------------------------------------------------
+logic [$clog2(PS_SYNC_WIDTH):0] PS_pulse_cnt = '0;
+
+assign sync_PS = PS_pulse_cnt != 'b0;
+
+always_ff @(posedge clk) begin
+    if(sync) 
+        PS_pulse_cnt <= PS_SYNC_WIDTH;
+    else
+        if(PS_pulse_cnt != 'b0)
+            PS_pulse_cnt <= PS_pulse_cnt-1;         
+end
 
 //------------------------------------------------
 endmodule : scc_m
