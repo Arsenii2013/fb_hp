@@ -42,10 +42,10 @@ module pcie_wrapper_(
         output logic        DRP_WE,
 
         `ifdef SYNTHESIS
-        input  logic [1:0]  pcie_7x_mgt_rxn,
-        input  logic [1:0]  pcie_7x_mgt_rxp,
-        output logic [1:0]  pcie_7x_mgt_txn,
-        output logic [1:0]  pcie_7x_mgt_txp,
+        input  logic [PCIE_LANE-1:0]  pcie_7x_mgt_rxn,
+        input  logic [PCIE_LANE-1:0]  pcie_7x_mgt_rxp,
+        output logic [PCIE_LANE-1:0]  pcie_7x_mgt_txn,
+        output logic [PCIE_LANE-1:0]  pcie_7x_mgt_txp,
         `endif //SYNTHESIS      
         
         axi4_lite_if.m      bar0,
