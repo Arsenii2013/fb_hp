@@ -2,3 +2,4 @@ build/
 vivado*
 .Xil/
 .sconsign.dblite
+*.log
