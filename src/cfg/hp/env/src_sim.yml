@@ -1,0 +1,15 @@
+
+sources:
+    - src/sim/topTB.sv
+    - src/sim/pcie/model_ap2_tst_pcie_2_1_rport_7x.v
+    - src/sim/pcie/pcie_axi_trn_bridge.v
+    - src/sim/pcie/pci_exp_usrapp_cfg.v
+    - src/sim/pcie/pci_exp_usrapp_com.v
+    - src/sim/pcie/pci_exp_usrapp_pl.v
+    - src/sim/pcie/pci_exp_usrapp_rx.v
+    - src/sim/pcie/pci_exp_usrapp_tx.v
+    - src/sim/pcie/sys_clk_gen.v
+    - src/sim/pcie/xilinx_pcie_2_1_rport_7x.v
+    - src/sim/pcie/axi_model.sv
+    - src/sim/gtpwizard/gtp_model.sv
+    - src/syn/qpll_drp.sv

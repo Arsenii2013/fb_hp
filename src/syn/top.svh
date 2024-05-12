@@ -9,6 +9,7 @@ localparam FB_DW           = 32;
 
 
 //      PCI Express
+localparam PCIE_LANE       = 1;
 `define PCIE_PIPE_STACK
 localparam PCIE_DATA_W     = 32;
 

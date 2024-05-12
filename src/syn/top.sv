@@ -29,10 +29,10 @@ module top(
     `endif //SYNTHESIS      
     
     `ifdef SYNTHESIS
-    input  logic [1:0]  pcie_7x_mgt_rxn,
-    input  logic [1:0]  pcie_7x_mgt_rxp,
-    output logic [1:0]  pcie_7x_mgt_txn,
-    output logic [1:0]  pcie_7x_mgt_txp,
+    input  logic [PCIE_LANE-1:0]  pcie_7x_mgt_rxn,
+    input  logic [PCIE_LANE-1:0]  pcie_7x_mgt_rxp,
+    output logic [PCIE_LANE-1:0]  pcie_7x_mgt_txn,
+    output logic [PCIE_LANE-1:0]  pcie_7x_mgt_txp,
     `endif //SYNTHESIS 
     
     input  logic        REFCLK_PCIE_n,
@@ -299,10 +299,10 @@ module top(
         .DRP_WE(DRP_WE),
         
         `ifdef SYNTHESIS
-        .pcie_7x_mgt_rxn,
-        .pcie_7x_mgt_rxp,
-        .pcie_7x_mgt_txn,
-        .pcie_7x_mgt_txp,
+        .pcie_7x_mgt_rxn(pcie_7x_mgt_rxn),
+        .pcie_7x_mgt_rxp(pcie_7x_mgt_rxp),
+        .pcie_7x_mgt_txn(pcie_7x_mgt_txn),
+        .pcie_7x_mgt_txp(pcie_7x_mgt_txp),
         `endif //SYNTHESIS 
         
         .REFCLK(REFCLK_PCIE),

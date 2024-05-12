@@ -1,0 +1,69 @@
+
+type : gtwizard
+
+config:
+    gt0_val : false
+    gt0_val_rx_refclk : REFCLK1_Q0
+    gt0_val_tx_refclk : REFCLK1_Q0
+    gt0_pll1_fbdiv : 4
+    gt0_pll1_fbdiv_45 : 4
+    gt0_pll0_rxout_div : 2
+    gt0_pll0_txout_div : 2
+    gt0_pll1_rxout_div : 2
+    gt0_pll1_txout_div : 2
+    gt0_uselabtools : false
+    gt0_usesharedlogic : 1
+    gt0_val_align_comma_word : "Two_Byte_Boundaries"
+    gt0_val_clk_cor_seq_1_1 : 00000000
+    gt0_val_clk_cor_seq_1_2 : 00000000
+    gt0_val_clk_cor_seq_1_3 : 00000000
+    gt0_val_clk_cor_seq_1_4 : 00000000
+    gt0_val_clk_cor_seq_2_1 : 00000000
+    gt0_val_clk_cor_seq_2_2 : 00000000
+    gt0_val_clk_cor_seq_2_3 : 00000000
+    gt0_val_clk_cor_seq_2_4 : 00000000
+    gt0_val_comma_preset : "K28.5"
+    gt0_val_decoding : "8B/10B"
+    gt0_val_dfe_mode : "LPM-Auto"
+    gt0_val_drp_clock : 100
+    gt0_val_encoding : "8B/10B"
+    gt0_val_port_rxbyteisaligned : true
+    gt0_val_port_rxbyterealign : true
+    gt0_val_port_rxcharisk : true
+    gt0_val_port_rxcommadet : true
+    gt0_val_port_rxmcommaalignen : false
+    gt0_val_port_rxpcommaalignen : false
+    gt0_val_port_rxslide : true
+    gt0_val_rx_buffer_bypass_mode : "Auto"
+    gt0_val_rx_cm_trim : 800
+    gt0_val_rx_data_width : 16
+    gt0_val_rx_int_datawidth : 20
+    gt0_val_rx_line_rate : 2
+    gt0_val_rx_reference_clock : "125.000"
+    gt0_val_rx_termination_voltage : "Programmable"
+    gt0_val_rxbuf_en : true
+    gt0_val_rxoutclk_source : false
+    gt0_val_rxslide_mode : "OFF"
+    gt0_val_rxusrclk : "RXOUTCLK"
+    gt0_val_tx_data_width : 16
+    gt0_val_tx_int_datawidth : 20
+    gt0_val_tx_line_rate : 2
+    gt0_val_tx_reference_clock : "125.000"
+    gt0_val_txoutclk_source : true
+    gt_val_rx_pll : "PLL1"
+    gt_val_tx_pll : "PLL1"
+    identical_val_rx_line_rate : 2
+    identical_val_rx_reference_clock : "125.000"
+    identical_val_tx_line_rate : 2
+    identical_val_tx_reference_clock : "125.000"
+
+    gt3_val : true
+    gt3_val_rx_refclk : REFCLK1_Q0
+    gt3_val_tx_refclk : REFCLK1_Q0
+
+    gt0_usesharedlogic : 0
+
+    gt0_val_rx_buffer_bypass_mode : Auto
+    gt0_val_rxbuf_en : false
+    gt0_val_tx_buffer_bypass_mode : Manual
+    gt0_val_txbuf_en : false

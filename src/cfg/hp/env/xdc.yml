@@ -1,0 +1,5 @@
+
+sources:
+    - xdc/hp.xdc
+    - xdc/qspi.xdc
+#    - xdc/ax7015.xdc

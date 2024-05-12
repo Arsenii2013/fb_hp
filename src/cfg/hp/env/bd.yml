@@ -1,0 +1,4 @@
+
+sources:
+    - bd/PS.tcl
+    - bd/pcie.tcl

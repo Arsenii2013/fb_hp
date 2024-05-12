@@ -1,0 +1,43 @@
+import : main
+
+sources:
+    - src/syn/top.sv
+
+    - src/syn/pcie_wrapper.sv
+    - src/syn/time_meashure_wrapper.sv
+#    - src/syn/axi_if.svh
+#    - src/syn/top.svh
+    - src/syn/time_meashure.v
+    - src/syn/mem_wrapper.sv
+    - src/syn/PS_wrapper.sv
+    - src/lib/common/blink.sv
+    - src/lib/axi/axi4_lite_dw_translator.sv
+    - src/lib/axi/axi_crossbar.sv
+    - src/syn/mem_controller.sv
+
+    - src/lib/hs_spi/hs_spi.sv
+    - src/lib/hs_spi/hs_spi_avmm.sv
+    - src/lib/hs_spi/hs_spi_axi.sv
+    - src/lib/axi/axi4_lite_if.svh
+    - src/lib/avmm/avmm_iface.sv
+    - src/lib/avmm/avmm_slave_stub.sv
+    - src/syn/qspi_wrapper.sv
+    - src/syn/gtpwizard.sv
+    - src/syn/gt_common_wrapper.sv
+    - src/syn/qpll_drp.sv
+    - src/syn/evr/dc/mmcm_wrapper.sv
+    - src/syn/evr/dc/fifo_wrapper.sv
+    - src/syn/evr/dc/meashure.sv
+    - src/syn/evr/dc/adjust.sv
+    - src/syn/evr/dc/average.sv
+    - src/syn/evr/dc/parser.sv
+    - src/syn/evr/evr.sv
+    - src/syn/evr/shared_data_mem.sv
+    - src/syn/evr/shared_data/shared_data_rxtx.sv
+    - src/syn/evr/shared_data_wrapper.sv
+    - src/syn/evr/tx_buffer.sv
+
+
+    - src/syn/event_choise.sv
+
+    
