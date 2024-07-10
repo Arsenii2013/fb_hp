@@ -44,7 +44,7 @@ enum addr_t {
     CR       = addr_t'( 8'h04 ),
     CR_S     = addr_t'( 8'h08 ),
     CR_C     = addr_t'( 8'h0C ),
-    SYNC_EV  = addr_t'( 8'h10 ),
+    SYNC_EV  = addr_t'( 8'h10 ),        
     SYNC_PRD = addr_t'( 8'h14 ),
     ALIGN_EV = addr_t'( 8'h18 ),
     TEST0_EV = addr_t'( 8'h1C ),
@@ -115,6 +115,8 @@ always_ff @(posedge clk) begin
         write_data      <= 0;
         addr            <= '0;
         data            <= '0;
+        mmr.rresp <= '0;
+        mmr.bresp <= '0;
     end
     else begin
         mmr.arready <= 0;

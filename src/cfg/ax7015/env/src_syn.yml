@@ -48,6 +48,8 @@ sources:
     - src/syn/ddsc/ddsc_avmm.sv
     - src/syn/ddsc/ddsc.sv
 
+    - src/syn/scc.sv
+
 
     - src/syn/event_choise.sv
 

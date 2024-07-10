@@ -86,8 +86,7 @@ module top(
     //-------------GPIO--------------\\
     output logic [3:0] led,
 
-    (* IOB = "TRUE" *) output logic after_dc,
-    (* IOB = "TRUE" *) output logic before_dc
+    (* IOB = "TRUE" *) output logic [3:0] test_out
 
     );
     assign sfp_tx_dis = 'b0;
@@ -98,6 +97,7 @@ module top(
     logic app_clk;
     logic app_reset;
     logic app_aresetn;
+    logic PS_sync;
 
     xpm_cdc_async_rst #(
         .INIT_SYNC_FF(0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
@@ -221,6 +221,9 @@ module top(
     logic spi_oclk;
     logic spi_aresetn;
     logic [HP0_ADDR_W-1:0] HP0_offset;
+    logic [31:0]           emio;
+
+    assign emio[0] = PS_sync;
 
     PS_wrapper_ 
     PS_wrapper_i (
@@ -251,6 +254,8 @@ module top(
         .GP0(GP0),
         .HP0(bar2),
         .HP0_offset(HP0_offset),
+
+        .EMIO(emio),
         
         .peripheral_clock(PS_clk),
         .peripheral_aresetn(PS_aresetn),
@@ -344,6 +349,7 @@ module top(
         .bus(mmr[MMR_MEM]),
         .offset(HP0_offset)
     );
+
     //-------------QSPI--------------\\
     `ifndef SYNTHESIS
     sys_clk_gen
@@ -489,8 +495,10 @@ module top(
         .shared_data_out(shared_data)
     );
 
+    ddsc_if #( .DW        ( 32              )) ddsc_out_i();
+    axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) ddsc_shared();
 
-    axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) conv_tbl_i();
+    /*axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) conv_tbl_i();
     axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) desc_tbl_i();
     axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) ddsc_shared();
     ddsc_if #( .DW        ( 32              )) ddsc_out_i();
@@ -518,7 +526,7 @@ module top(
         .b_ready    (b_ready         ),
         .out        (ddsc_out_i      ),
         .shared_in_i(shared_data     )
-    );
+    );*/
 
     /*ila_0 ila_tx(
         .clk(sfp_tx_clk),
@@ -534,41 +542,27 @@ module top(
         .shared_data_in(ddsc_shared)
     );
 
-    logic after_dc_reg;
-    logic [7:0] after_dc_ev;
-    assign after_dc = after_dc_reg;
+    scc_m ssc_i(
+        .clk(app_clk),
+        .aresetn(),
+        .cdr_locked(sfp_aligned),
 
-    always_ff @(posedge app_clk) begin
-        if(ev == after_dc_ev)
-            after_dc_reg <= 1;
-        else
-            after_dc_reg <= 0;
-    end
+        .mmr(mmr[MMR_SCC]),
 
-    event_choise event_choise_a_dc(
-        .aclk(app_clk),
-        .aresetn(app_aresetn),
-        .bus(mmr[MMR_DEV_COUNT]),
-        .ev(after_dc_ev)
-    );
+        .ev(ev),
+        .sync(sync),
+        .align(),
+        .log_start(),
 
+        .dds_clk_ena(),
 
-    logic before_dc_reg;
-    logic [7:0] before_dc_ev;
-    assign before_dc = before_dc_reg;
+        .sync_x2(), 
+        .align_x2(),
 
-    always_ff @(posedge sfp_rx_clk) begin
-        if(sfp_rx_data[7:0] == before_dc_ev)
-            before_dc_reg <= 1;
-        else
-            before_dc_reg <= 0;
-    end
+        .test_out(test_out),
 
-    event_choise event_choise_b_dc(
-        .aclk(app_clk),
-        .aresetn(app_aresetn),
-        .bus(mmr[MMR_DEV_COUNT+1]),
-        .ev(before_dc_ev)
+        .sync_prd(sync_prd),
+        .sync_PS(PS_sync)
     );
 
     //-------------GPIO--------------\\
