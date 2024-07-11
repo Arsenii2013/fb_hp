@@ -32,7 +32,9 @@ module PS_wrapper_(
     axi4_lite_if.m                  GP0,
     axi4_lite_if.s                  HP0,
     input  logic [HP0_ADDR_W-1:0]   HP0_offset,
-    input  logic [31:0]             EMIO,
+    input  logic [EMIO_SIZE-1:0]    EMIO_I,
+    output logic [EMIO_SIZE-1:0]    EMIO_O,
+    output logic [EMIO_SIZE-1:0]    EMIO_T,
     input  logic                    app_aresetn,
     input  logic                    app_clk
    );
@@ -117,7 +119,9 @@ module PS_wrapper_(
         .HP0_wstrb(HP0.wstrb),
         .HP0_wvalid(HP0.wvalid),
 
-        .GPIO_I_0(EMIO),
+        .GPIO_I_0(EMIO_I),
+        .GPIO_O_0(EMIO_O),
+        .GPIO_T_0(EMIO_T),
 
         .peripheral_aresetn(peripheral_aresetn),
         .peripheral_clock(peripheral_clock),

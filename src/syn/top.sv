@@ -84,9 +84,9 @@ module top(
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
-    output logic [3:0] led,
+    output logic [3:0] led
 
-    (* IOB = "TRUE" *) output logic [3:0] test_out
+    //(* IOB = "TRUE" *) output logic [3:0] test_out
 
     );
     assign sfp_tx_dis = 'b0;
@@ -221,9 +221,19 @@ module top(
     logic spi_oclk;
     logic spi_aresetn;
     logic [HP0_ADDR_W-1:0] HP0_offset;
-    logic [31:0]           emio;
+    logic [EMIO_SIZE-1:0]  emio_o;
+    logic [EMIO_SIZE-1:0]  emio_i;
+    logic [EMIO_SIZE-1:0]  emio_t;
 
-    assign emio[0] = PS_sync;
+    assign emio_i[0] = led[0];
+    assign emio_i[1] = emio_o[1];
+    
+    counter counter_i(
+        .clk(app_clk),
+        .start(led[0]),
+        .stop(emio_o[1]),
+        .cnt(emio_i[9:2])
+    );
 
     PS_wrapper_ 
     PS_wrapper_i (
@@ -255,7 +265,9 @@ module top(
         .HP0(bar2),
         .HP0_offset(HP0_offset),
 
-        .EMIO(emio),
+        .EMIO_I(emio_i),
+        .EMIO_O(emio_o),
+        .EMIO_T(emio_t),
         
         .peripheral_clock(PS_clk),
         .peripheral_aresetn(PS_aresetn),
@@ -495,7 +507,7 @@ module top(
         .shared_data_out(shared_data)
     );
 
-    ddsc_if #( .DW        ( 32              )) ddsc_out_i();
+    //ddsc_if #( .DW        ( 32              )) ddsc_out_i();
     axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) ddsc_shared();
 
     /*axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) conv_tbl_i();
@@ -673,4 +685,29 @@ module frame_gen (
 
     end
 
+endmodule
+
+module counter(
+    input  logic       clk,
+
+    input  logic       start,
+    input  logic       stop,
+    output logic [7:0] cnt
+);
+    logic run = 0;
+    always_ff @( posedge clk ) begin 
+        if(start) 
+        begin
+            cnt <= 0;
+            run <= 1;
+        end
+        if(stop) 
+        begin
+            run <= 0;
+        end
+        if(run)
+        begin
+            cnt <= cnt+1;
+        end
+    end
 endmodule

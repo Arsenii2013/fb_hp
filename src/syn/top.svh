@@ -6,6 +6,7 @@
 localparam CLK_PRD         = 10;
 localparam SYNC_PRD_DEF    = 1000;
 localparam FB_DW           = 32;
+localparam EMIO_SIZE       = 32;
 
 
 //      PCI Express
