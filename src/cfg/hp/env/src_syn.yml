@@ -36,6 +36,7 @@ sources:
     - src/syn/evr/shared_data/shared_data_rxtx.sv
     - src/syn/evr/shared_data_wrapper.sv
     - src/syn/evr/tx_buffer.sv
+    - src/syn/scc.sv
 
 
     - src/syn/event_choise.sv

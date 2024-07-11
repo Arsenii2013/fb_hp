@@ -61,6 +61,7 @@
    CONFIG.ASSOCIATED_RESET {bar_aresetn:app_aresetn} \
  ] $app_clk
   set app_aresetn [ create_bd_port -dir I -type rst app_aresetn ]
+  set GPIO_I_0 [ create_bd_port -dir I -from 31 -to 0 GPIO_I_0 ]
 
   # Create instance: processing_system7, and set properties
   set processing_system7 [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7 ]
@@ -150,7 +151,7 @@
     CONFIG.PCW_EN_EMIO_CD_SDIO1 {0} \
     CONFIG.PCW_EN_EMIO_ENET0 {0} \
     CONFIG.PCW_EN_EMIO_ENET1 {0} \
-    CONFIG.PCW_EN_EMIO_GPIO {0} \
+    CONFIG.PCW_EN_EMIO_GPIO {1} \
     CONFIG.PCW_EN_EMIO_I2C0 {0} \
     CONFIG.PCW_EN_EMIO_I2C1 {0} \
     CONFIG.PCW_EN_EMIO_MODEM_UART0 {0} \
@@ -213,7 +214,9 @@
     CONFIG.PCW_GP1_EN_MODIFIABLE_TXN {1} \
     CONFIG.PCW_GP1_NUM_READ_THREADS {4} \
     CONFIG.PCW_GP1_NUM_WRITE_THREADS {4} \
-    CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE {0} \
+    CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE {1} \
+    CONFIG.PCW_GPIO_EMIO_GPIO_IO {32} \
+    CONFIG.PCW_GPIO_EMIO_GPIO_WIDTH {32} \
     CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {1} \
     CONFIG.PCW_GPIO_MIO_GPIO_IO {MIO} \
     CONFIG.PCW_GPIO_PERIPHERAL_ENABLE {0} \
@@ -626,6 +629,7 @@
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7/M_AXI_GP0] [get_bd_intf_pins GP0_protocol_convert/S_AXI]
 
   # Create port connections
+  connect_bd_net -net GPIO_I_0_1 [get_bd_ports GPIO_I_0] [get_bd_pins processing_system7/GPIO_I]
   connect_bd_net -net aresetn_0_1 [get_bd_ports app_aresetn] [get_bd_pins HP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert/aresetn]
   connect_bd_net -net bar_clk_1 [get_bd_ports app_clk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins HP0_protocol_convert/aclk] [get_bd_pins GP0_protocol_convert/aclk]
   connect_bd_net -net proc_sys_reset_0_peripheral_reset [get_bd_pins proc_sys_reset/peripheral_reset] [get_bd_ports peripheral_reset]

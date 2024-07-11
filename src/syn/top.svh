@@ -6,6 +6,7 @@
 localparam CLK_PRD         = 10;
 localparam SYNC_PRD_DEF    = 1000;
 localparam FB_DW           = 32;
+localparam EMIO_SIZE       = 32;
 
 
 //      PCI Express
@@ -41,8 +42,9 @@ localparam MMR_SCC         = MMR_SYS   + 1;
 localparam MMR_MEM         = MMR_SCC   + 1;
 localparam MMR_EVR         = MMR_MEM   + 1;
 localparam MMR_TX          = MMR_EVR   + 1;
-localparam MMR_SHARED      = MMR_TX   + 1;
-localparam MMR_QSPI        = MMR_SHARED+ 1;
+localparam MMR_SHARED      = MMR_TX    + 1;
+localparam MMR_DDSC        = MMR_SHARED+ 1;
+localparam MMR_QSPI        = MMR_DDSC  + 1;
 localparam MMR_DEV_COUNT   = MMR_QSPI  + 1;
 
 //      Processing system
@@ -63,5 +65,34 @@ localparam SHARED_MEM_SEG_SIZE = 16;
 localparam SHARED_MEM_AW       = $clog2(SHARED_MEM_SIZE);
 localparam SHARED_MEM_SEG_AW   = $clog2(SHARED_MEM_SIZE/SHARED_MEM_SEG_SIZE);
 localparam SHARED_MEM_COUNT    = 1;
+
+//      DDS/RIO/MFM controller tables
+localparam TBL_ADDR_W      = BAR1_ADDR_W;
+localparam TBL_DATA_W      = BAR1_DATA_W;
+localparam TBL_BASE_ADDR_W = 4;
+localparam TBL_MEM_ADDR_W  = TBL_ADDR_W - TBL_BASE_ADDR_W;
+
+localparam RIOC_CONV        = '0;
+localparam RIOC_DESC        = RIOC_CONV  + 1;
+localparam MFMC_CONV        = RIOC_DESC  + 1;
+localparam MFMC_DESC        = MFMC_CONV  + 1;
+localparam DDSC0_CONV       = MFMC_DESC  + 1;
+localparam DDSC0_DESC       = DDSC0_CONV + 1;
+localparam DDSC1_CONV       = DDSC0_DESC + 1;
+localparam DDSC1_DESC       = DDSC1_CONV + 1;
+localparam DDSC2_CONV       = DDSC1_DESC + 1;
+localparam DDSC2_DESC       = DDSC2_CONV + 1;
+localparam DDSC3_CONV       = DDSC2_DESC + 1;
+localparam DDSC3_DESC       = DDSC3_CONV + 1;
+localparam TBL_COUNT        = DDSC3_DESC + 1;
+
+//      Descriptors and events
+localparam DESC_ITEM_DW    = 32;
+localparam DESC_ITEM_COUNT = 16;
+
+localparam EV_W            = 8;
+
+//      Magnetic field parameters
+localparam B_FIELD_W       = 32;
 
 `endif //__TOP_SVH__

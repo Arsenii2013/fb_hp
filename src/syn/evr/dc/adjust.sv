@@ -52,7 +52,7 @@ module adjust_m
 //
 //      Parameters
 //
-localparam HIST  = 32'd150;
+localparam HIST  = 32'd050;
 localparam THRES = 32'd256;
 
 localparam SLOW_CNT_WIDTH = 20;
