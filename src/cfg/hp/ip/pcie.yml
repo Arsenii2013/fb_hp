@@ -1,0 +1,34 @@
+
+type : axi_pcie
+
+config:
+  AXIBAR2PCIEBAR_0  : '0x000000'
+  AXIBAR2PCIEBAR_1  : '0x100000'
+  AXIBAR2PCIEBAR_2  : '0x200000'
+  AXIBAR_0          : '0x000000'
+  AXIBAR_1          : '0x100000'
+  AXIBAR_2          : '0x200000'
+  AXIBAR_HIGHADDR_0 : '0x0FFFFF'
+  AXIBAR_HIGHADDR_1 : '0x1FFFFF'
+  AXIBAR_HIGHADDR_2 : '0x2FFFFF'
+  AXIBAR_NUM        : 3
+  BAR0_SIZE         : 64
+  BAR1_ENABLED      : true
+  BAR1_SCALE        : Kilobytes
+  BAR1_SIZE         : 128
+  BAR1_TYPE         : Memory
+  BAR2_ENABLED      : true
+  BAR2_SCALE        : Megabytes
+  BAR2_SIZE         : 1
+  BAR2_TYPE         : Memory
+  BASEADDR          : '0x000000'
+  DEVICE_ID         : '0x7021'
+  HIGHADDR          : '0x2FFFFF'
+  MAX_LINK_SPEED    : 5.0_GT/s
+  M_AXI_DATA_WIDTH  : 64
+  PCIEBAR2AXIBAR_1  : '0x100000'
+  PCIEBAR2AXIBAR_2  : '0x200000'
+  REF_CLK_FREQ      : 100_MHz
+  S_AXI_DATA_WIDTH  : 64
+  NO_OF_LANES       : X2 
+  en_ext_pipe_interface : true

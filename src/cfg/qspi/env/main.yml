@@ -1,0 +1,6 @@
+parameters:
+    VARIANT_NAME        : = ARGUMENTS['bv']
+    PROJECT_NAME        : = VARIANT_NAME
+    TOP_NAME            : hs_spi_master_m
+    TESTBENCH_NAME      : hs_spi_tb
+    DEVICE              : xc7z015clg485-2

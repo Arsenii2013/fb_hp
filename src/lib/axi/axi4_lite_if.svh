@@ -14,7 +14,7 @@ interface axi4_lite_if #(
     logic            awready;
     logic            awvalid;
     logic            bready;
-    logic [2     :0] bresp;
+    logic [1     :0] bresp;
     logic            bvalid;
     logic [DW-1  :0] rdata;
     logic            rready;

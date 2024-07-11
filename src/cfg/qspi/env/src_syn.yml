@@ -1,0 +1,4 @@
+import : main
+
+sources:
+    - src/lib/hs_spi/hs_spi.sv

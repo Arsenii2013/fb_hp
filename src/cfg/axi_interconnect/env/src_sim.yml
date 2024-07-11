@@ -1,0 +1,7 @@
+import : main
+
+sources:
+    - src/lib/axi/axi4_lite_if.svh
+    - src/lib/axi/axi_interconnect.sv
+    - src/lib/axi/axi_interconnectTB.sv
+    - src/syn/mem_wrapper.sv

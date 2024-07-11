@@ -1,28 +1,26 @@
 `timescale 1ns/1ns
-`include "system.svh"
+`include "top.svh"
 
 module topTB(
 
-    );
-    parameter  REF_CLK_FREQ          = 0; // 0 = 100 MHZ, 1 = 125 MHZ, 2 = 250 MHZ
-    localparam REF_CLK_HALF_CYCLE    = (REF_CLK_FREQ == 0) ? 5000 :
-                                        (REF_CLK_FREQ == 1) ? 4000 :
-                                        (REF_CLK_FREQ == 2) ? 2000 : 0;
+    );    
 
-    // RP Parameters
-    parameter USER_CLK_FREQ_RP           = 4;
-    parameter USER_CLK2_DIV2_RP          = "TRUE";
-    parameter LINK_CAP_MAX_LINK_WIDTH_RP = 6'h8;
-    
-    // EP Parameters
-    parameter USER_CLK_FREQ_EP           = 2; 
-    parameter USER_CLK2_DIV2_EP          = "FALSE";
-    parameter LINK_CAP_MAX_LINK_WIDTH_EP = 6'h1;
-    
-    //defparam topTB.RP.rport.EXT_PIPE_SIM = "TRUE";
-    
-    logic clock;
-    logic reset_n;
+    logic             REFCLK_PCIE;
+    logic             REFCLK_SFP;
+    logic             reset_n;
+    logic             reset;
+
+    `ifdef MGT_FULL_STACK
+    logic loop = 1'b1;
+    logic sfp_loss = 1'b0;
+    logic tx_p;
+    logic tx_n;
+    logic rx_p;
+    logic rx_n;
+
+    assign rx_p = tx_p ? loop : 1'b0;
+    assign rx_n = tx_n ? loop : 1'b0;
+    `endif //MGT_FULL_STACK
     
     `ifdef PCIE_PIPE_STACK
     //------------------- EP ------------------------------------
@@ -65,6 +63,11 @@ module topTB(
     assign xil_rx6_sigs_ep  = {3'b0,xil_tx6_sigs_rp[22:0]};
     assign xil_rx7_sigs_ep  = {3'b0,xil_tx7_sigs_rp[22:0]}; 
     `endif //PCIE_FULL_STACK
+
+    logic             sck;
+    logic             cs_n;
+    logic [SPI_W-1:0] mosi;
+    logic [SPI_W-1:0] miso;
         
     top DUT(
         `ifdef PCIE_PIPE_STACK
@@ -87,20 +90,36 @@ module topTB(
         .pipe_tx_6_sigs     (xil_tx6_sigs_ep),
         .pipe_tx_7_sigs     (xil_tx7_sigs_ep),
         `endif //PCIE_FULL_STACK
-        
-        .REFCLK_p(clock),
-        .REFCLK_n(~clock),
-        .PERST(reset_n)
+        .REFCLK_PCIE_p(REFCLK_PCIE),
+        .REFCLK_PCIE_n(~REFCLK_PCIE),
+        .PERST_PCIE(reset_n),
+
+        `ifdef MGT_FULL_STACK
+        .REFCLK_SFP_n(~REFCLK_SFP),
+        .REFCLK_SFP_p(REFCLK_SFP),
+        .sfp_rx_n(rx_n),
+        .sfp_rx_p(rx_p),
+        .sfp_tx_n(tx_n),
+        .sfp_tx_p(tx_p),
+        .sfp_tx_dis(),
+        .sfp_loss(sfp_loss),
+        `endif //MGT_FULL_STACK
+
+        .SCK(sck),
+        .CSn(cs_n),
+        .MISO(miso),
+        .MOSI(mosi)
     );
     
     `ifdef PCIE_PIPE_STACK
+    //defparam topTB.RP.rport.EXT_PIPE_SIM = "TRUE";
     xilinx_pcie_2_1_rport_7x
     #(
-        .REF_CLK_FREQ                   ( REF_CLK_FREQ               ),
+        .REF_CLK_FREQ                   ( 0                          ), // 0 = 100 MHZ, 1 = 125 MHZ, 2 = 250 MHZ
         .PL_FAST_TRAIN                  ( "TRUE"                     ),
         .ALLOW_X8_GEN2                  ( "TRUE"                     ),
         .C_DATA_WIDTH                   ( 128                        ),
-        .LINK_CAP_MAX_LINK_WIDTH        ( LINK_CAP_MAX_LINK_WIDTH_RP ),
+        .LINK_CAP_MAX_LINK_WIDTH        ( 6'h8                       ),
         .DEVICE_ID                      ( 16'h7100                   ),
         .LINK_CAP_MAX_LINK_SPEED        ( 4'h2                       ),
         .LINK_CTRL2_TARGET_LINK_SPEED   ( 4'h2                       ),
@@ -112,10 +131,10 @@ module topTB(
         .VC0_CPL_INFINITE               ( "TRUE"                     ),
         .VC0_TOTAL_CREDITS_PD           ( 437                        ),
         .VC0_TOTAL_CREDITS_CD           ( 461                        ),
-        .USER_CLK_FREQ                  ( USER_CLK_FREQ_RP           ),
-        .USER_CLK2_DIV2                 ( USER_CLK2_DIV2_RP          )
+        .USER_CLK_FREQ                  ( 4                          ),
+        .USER_CLK2_DIV2                 ( "TRUE"                     )
     ) RP (
-        .sys_clk(clock),
+        .sys_clk(REFCLK_PCIE),
         .sys_rst_n(reset_n),
         
         .common_commands_in ({11'b0,common_commands_out[0]} ), // pipe_clk from EP
@@ -139,14 +158,66 @@ module topTB(
         .pipe_tx_7_sigs     (xil_tx7_sigs_rp)
     
     );
-    `endif //PCIE_FULL_STACK
-    
+    `endif //PCIE_PIPE_STACK
+
+
+    localparam SPI_AVMM_AW  = 10;
+    localparam SPI_AVMM_DW  = 32;
+    localparam MAX_BURST    = 1;
+    localparam SPI_W        = 4;
+
+    logic             spi_slave_clk;
+
+    avmm_if #(
+        .AW        ( SPI_AVMM_AW ),
+        .DW        ( SPI_AVMM_DW ),
+        .MAX_BURST ( MAX_BURST   )
+    ) s_i();
+
+    hs_spi_slave_avmm_m
+    #(
+        .AW        ( 10 ),
+        .DW        ( 32 ),
+        .SPI_W     ( 4  ),
+        .MAX_BURST ( 1  )
+    )
+    spi_slave
+    (
+        .clkout    ( clkout      ),
+        .rst       ( reset       ),
+        .bus       ( s_i         ),
+        .SCK       ( sck         ),
+        .CSn       ( cs_n        ),
+        .MISO      ( miso        ),
+        .MOSI      ( mosi        )
+    );
+
+    avmm_slave_stub #(
+        .AW        ( SPI_AVMM_AW ),
+        .DW        ( SPI_AVMM_DW ),
+        .MAX_BURST ( MAX_BURST   )
+    )
+    avmm_slave
+    (
+        .clk       ( clkout      ),
+        .rst       ( reset       ),
+        .bus       ( s_i         )
+    );
+        
     sys_clk_gen
     #(
-        .halfcycle (REF_CLK_HALF_CYCLE),
+        .halfcycle (5000), // 5000 ps = 100 MHz
         .offset    (0)
     ) CLK_GEN (
-        .sys_clk (clock)
+        .sys_clk (REFCLK_PCIE)
+    );
+
+    sys_clk_gen
+    #(
+        .halfcycle (4000), // 4000 ps = 125 MHz
+        .offset    (0)
+    ) REFCLK_SFP_GEN (
+        .sys_clk (REFCLK_SFP)
     );
     
     integer i;
@@ -154,23 +225,34 @@ module topTB(
         $display("[%t] : System Reset Asserted...", $realtime);
         
         reset_n = 1'b0;
+        reset = 1'b1;
         
         for (i = 0; i < 500; i = i + 1) begin
         
-        @(posedge clock);
+        @(posedge REFCLK_PCIE);
         
         end
         
         $display("[%t] : System Reset De-asserted...", $realtime);
         
         reset_n = 1'b1;
+        reset = 1'b0;
     end
     
     
     
     initial 
-    begin    
-        # 1000000;
+    begin   
+        @(posedge DUT.gtpwizard_i.rx_reset_done) 
+        # 10000;
+        loop = 'b0;
+        sfp_loss = 1'b1;
+        # 10005;
+        loop = 'b1;
+        sfp_loss = 1'b0;
+        //DUT.gtpwizard_i.test <= 'b1;
+        @(posedge DUT.gtpwizard_i.rx_reset_done) 
+        # 10000;
         $finish;
     end
     

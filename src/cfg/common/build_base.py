@@ -83,11 +83,11 @@ class BuildBase:
     
     def add_sources(self):
         
-        src_syn = 'src_syn.yml ' + (self.src_dict['src_syn'] if 'src_syn' in self.src_dict else '')
-        src_sim = 'src_sim.yml ' + (self.src_dict['src_sim'] if 'src_sim' in self.src_dict else '')
-        ip      = 'ip.yml '      + (self.src_dict['ip']      if 'ip'      in self.src_dict else '')
-        hls     = ''             + (self.src_dict['hls']     if 'hls'     in self.src_dict else '')
-        bd      = 'bd.yml'             + (self.src_dict['bd']      if 'bd'      in self.src_dict else '')
+        src_syn = '' + (self.src_dict['src_syn'] if 'src_syn' in self.src_dict else '')
+        src_sim = '' + (self.src_dict['src_sim'] if 'src_sim' in self.src_dict else '')
+        ip      = '' + (self.src_dict['ip']      if 'ip'      in self.src_dict else '')
+        hls     = '' + (self.src_dict['hls']     if 'hls'     in self.src_dict else '')
+        bd      = '' + (self.src_dict['bd']      if 'bd'      in self.src_dict else '')
         
         self.src_syn        = self.merge_source_list(src_syn)      # list( itertools.chain.from_iterable( [read_sources(i) for i in src_syn.split()] ) )
         self.src_sim        = self.merge_source_list(src_sim)      # read_sources('src_sim.yml')

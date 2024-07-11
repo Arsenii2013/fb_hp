@@ -1,0 +1,10 @@
+import : main
+
+sources:
+    - src/lib/hs_spi/hs_spi.sv
+    - src/lib/hs_spi/hs_spi_avmm.sv
+    - src/lib/hs_spi/hs_spi_axi.sv
+    - src/lib/hs_spi/hs_spi_tb.sv
+    - src/lib/axi/axi4_lite_if.svh
+    - src/lib/avmm/avmm_iface.sv
+    - src/lib/avmm/avmm_slave_stub.sv

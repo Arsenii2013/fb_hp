@@ -1,0 +1,6 @@
+import : main
+
+sources:
+    - src/syn/gtpwizard.sv
+    - src/sim/gtpwizard/gtpwizardTB.sv
+    - src/sim/pcie/sys_clk_gen.v
