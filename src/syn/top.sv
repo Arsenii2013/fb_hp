@@ -225,14 +225,33 @@ module top(
     logic [EMIO_SIZE-1:0]  emio_i;
     logic [EMIO_SIZE-1:0]  emio_t;
 
-    assign emio_i[0] = led[0];
-    assign emio_i[1] = emio_o[1];
-    
-    counter counter_i(
+    assign emio_i[2] = emio_o[2];
+    logic rd_pulse;
+
+
+    xpm_cdc_pulse #(
+    .DEST_SYNC_FF(2),
+    .INIT_SYNC_FF(0),  
+    .REG_OUTPUT(0),  
+    .RST_USED(0),       
+    .SIM_ASSERT_CHK(0)
+    )
+    xpm_cdc_pulse_inst (
+    .dest_pulse(rd_pulse),
+    .dest_clk(app_clk),  
+    .src_clk(PS_clk),     
+    .src_pulse(emio_o[2])
+    );
+
+
+    test_fifo test_fifo_i(
         .clk(app_clk),
-        .start(led[0]),
-        .stop(emio_o[1]),
-        .cnt(emio_i[9:2])
+        .rst(app_reset || emio_o[3]),
+        .data_out(emio_i[36:4]),
+        .empty(emio_i[0]),
+        .full(emio_i[1]),
+        .rd_en(rd_pulse),
+        .presc(emio_o[22:4])
     );
 
     PS_wrapper_ 
@@ -687,27 +706,69 @@ module frame_gen (
 
 endmodule
 
-module counter(
-    input  logic       clk,
+module test_fifo(
+    input  logic        clk,
+    input  logic        rst,
 
-    input  logic       start,
-    input  logic       stop,
-    output logic [7:0] cnt
+    output logic [17:0] data_out,
+    output logic        empty,
+    output logic        full,
+    input  logic        rd_en,
+
+    input  logic [32:0] presc
 );
-    logic run = 0;
-    always_ff @( posedge clk ) begin 
-        if(start) 
+    logic wr_en;
+    logic [17:0] data_in;
+    logic [32:0] cnt;
+
+    assign wr_en = cnt == presc;
+    always_ff @(posedge clk) begin
+        if(rst)
         begin
-            cnt <= 0;
-            run <= 1;
+            data_in <= 0;
+            cnt     <= 0;
         end
-        if(stop) 
+        else 
         begin
-            run <= 0;
-        end
-        if(run)
-        begin
-            cnt <= cnt+1;
+            if(!full)
+                cnt <= cnt + 1;
+            if(cnt >= presc)
+                cnt <= 0;
+
+            if(cnt == presc)
+            begin
+                data_in <= data_in+1;
+            end
         end
     end
+// FIFO
+    FIFO18E1 #(
+    .DATA_WIDTH(18),                    // Sets data width to 4-36
+    .DO_REG(1),                        // Enable output register (1-0) Must be 1 if EN_SYN = FALSE
+    .EN_SYN("TRUE"),                  // Specifies FIFO as dual-clock (FALSE) or Synchronous (TRUE)
+    .FIFO_MODE("FIFO18"),              // Sets mode to FIFO18 or FIFO18_36
+    .FIRST_WORD_FALL_THROUGH("FALSE"), // Sets the FIFO FWFT to FALSE, TRUE
+    .INIT(36'h000000000),              // Initial values on output port
+    .SIM_DEVICE("7SERIES"),            // Must be set to "7SERIES" for simulation behavior
+    .SRVAL(36'h000000000)              // Set/Reset value for output port
+    )
+    FIFO18E1_inst (
+    // Read Data: 32-bit (each) output: Read output data
+    .DO(data_out),                   // 32-bit output: Data output
+    .DOP(),                 // 4-bit output: Parity data output
+    .EMPTY(empty),             // 1-bit output: Empty flag
+    .FULL(full),               // 1-bit output: Full flag
+    // Read Control Signals: 1-bit (each) input: Read clock, enable and reset input signals
+    .RDCLK(clk),             // 1-bit input: Read clock
+    .RDEN(rd_en),               // 1-bit input: Read enable
+    .REGCE(1),             // 1-bit input: Clock enable
+    .RST(rst),                 // 1-bit input: Asynchronous Reset
+    .RSTREG(rst),           // 1-bit input: Output register set/reset
+    // Write Control Signals: 1-bit (each) input: Write clock and enable input signals
+    .WRCLK(clk),             // 1-bit input: Write clock
+    .WREN(wr_en),               // 1-bit input: Write enable
+    // Write Data: 32-bit (each) input: Write input data
+    .DI(data_in)                   // 32-bit input: Data input
+    );
+
 endmodule
