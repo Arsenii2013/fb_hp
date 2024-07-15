@@ -225,14 +225,12 @@ module top(
     logic [EMIO_SIZE-1:0]  emio_i;
     logic [EMIO_SIZE-1:0]  emio_t;
 
-    assign emio_i[0] = led[0];
-    assign emio_i[1] = emio_o[1];
-    
-    counter counter_i(
+    test_fifo test_fifo_i(
         .clk(app_clk),
-        .start(led[0]),
-        .stop(emio_o[1]),
-        .cnt(emio_i[9:2])
+        .rst(app_reset),
+        .clear(emio_o[0]),
+        .presc(emio_o[31:1]),
+        .axi(GP0)
     );
 
     PS_wrapper_ 
@@ -392,7 +390,7 @@ module top(
     ) qspi_wrapper_i (
         .aclk(app_clk),
         .aresetn(app_aresetn),
-        .ps_bus(GP0),
+        .ps_bus(plug),
         .pcie_bus(mmr[MMR_QSPI]),
         //.pcie_bus(plug),
 
@@ -687,27 +685,49 @@ module frame_gen (
 
 endmodule
 
-module counter(
-    input  logic       clk,
+module test_fifo(
+    input  logic        clk,
+    input  logic        rst,
+    input  logic        clear,
 
-    input  logic       start,
-    input  logic       stop,
-    output logic [7:0] cnt
+    axi4_lite_if.s     axi,
+
+    input  logic [32:0] presc
 );
-    logic run = 0;
-    always_ff @( posedge clk ) begin 
-        if(start) 
+    logic wr_en;
+    logic [7:0] data_in;
+    logic [32:0] cnt;
+    logic full;
+
+    assign wr_en = cnt == presc;
+    always_ff @(posedge clk) begin
+        if(rst || clear)
         begin
-            cnt <= 0;
-            run <= 1;
+            data_in <= 0;
+            cnt     <= 0;
         end
-        if(stop) 
+        else 
         begin
-            run <= 0;
-        end
-        if(run)
-        begin
-            cnt <= cnt+1;
+            if(!full)
+                cnt <= cnt + 1;
+            if(cnt >= presc)
+                cnt <= 0;
+
+            if(cnt == presc)
+            begin
+                data_in <= data_in+1;
+            end
         end
     end
+
+
+    event_fifo event_fifo_i(
+        .aclk(clk),
+        .aresetn(!rst && !clear),
+        .wr_en(wr_en),
+        .data_in(data_in),
+        .axi(axi),
+        .full(full)
+    );
+
 endmodule
