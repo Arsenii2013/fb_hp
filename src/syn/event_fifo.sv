@@ -9,13 +9,13 @@ module event_fifo(
     input  logic       wr_en,
     input  logic [7:0] data_in,
 
-    axi4_lite_if.s     axi
+    axi4_lite_if.s     axi,
+
+    output logic       empty,
+    output logic       full
 );
     logic [7:0] data_out;
     logic        rd_en;
-
-    logic        full;
-    logic        empty;
 
     typedef enum  {
         IDLE,
