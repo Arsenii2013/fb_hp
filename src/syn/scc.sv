@@ -46,11 +46,14 @@ enum addr_t {
     CR_C     = addr_t'( 8'h0C ),
     SYNC_EV  = addr_t'( 8'h10 ),        
     SYNC_PRD = addr_t'( 8'h14 ),
-    ALIGN_EV = addr_t'( 8'h18 ),
-    TEST0_EV = addr_t'( 8'h1C ),
-    TEST1_EV = addr_t'( 8'h20 ),
-    TEST2_EV = addr_t'( 8'h24 ),
-    TEST3_EV = addr_t'( 8'h28 )
+    ALIGN_EV0= addr_t'( 8'h18 ),
+    ALIGN_EV1= addr_t'( 8'h1C ),
+    ALIGN_EV2= addr_t'( 8'h20 ),
+    ALIGN_EV3= addr_t'( 8'h24 ),
+    TEST0_EV = addr_t'( 8'h28 ),
+    TEST1_EV = addr_t'( 8'h2C ),
+    TEST2_EV = addr_t'( 8'h30 ),
+    TEST3_EV = addr_t'( 8'h34 )
 } regs;
 
 typedef struct packed
@@ -67,8 +70,10 @@ data_t      sr;
 cr_t        cr        = cr_t'(0);
 event_t     sync_ev   = '0;
 
-event_t     align_ev  = '0;
-logic       align_ena =  0;
+
+event_t [3:0] align_ev  = '0;
+logic   [3:0] align_ena =  0;
+logic   [3:0] align_p;
 
 logic [3:0] test_ena  = '0;
 event_t     test_ev[4];
@@ -130,16 +135,19 @@ always_ff @(posedge clk) begin
         if(mmr.rready && read) begin
             read <= 0;
             case (addr)
-                CR:       mmr.rdata <= data_t'(cr);
-                SR:       mmr.rdata <= data_t'(sr);
-                SYNC_EV:  mmr.rdata <= data_t'(sync_ev);
-                SYNC_PRD: mmr.rdata <= data_t'(sync_prd);
-                ALIGN_EV: mmr.rdata <= data_t'(align_ev);
-                TEST0_EV: mmr.rdata <= data_t'(test_ev[0]);
-                TEST1_EV: mmr.rdata <= data_t'(test_ev[1]);
-                TEST2_EV: mmr.rdata <= data_t'(test_ev[2]);
-                TEST3_EV: mmr.rdata <= data_t'(test_ev[3]);
-                default:  mmr.rdata <= '0;
+                CR:        mmr.rdata <= data_t'(cr);
+                SR:        mmr.rdata <= data_t'(sr);
+                SYNC_EV:   mmr.rdata <= data_t'(sync_ev);
+                SYNC_PRD:  mmr.rdata <= data_t'(sync_prd);
+                ALIGN_EV0: mmr.rdata <= data_t'(align_ev[0]);
+                ALIGN_EV1: mmr.rdata <= data_t'(align_ev[1]);
+                ALIGN_EV2: mmr.rdata <= data_t'(align_ev[2]);
+                ALIGN_EV3: mmr.rdata <= data_t'(align_ev[3]);
+                TEST0_EV:  mmr.rdata <= data_t'(test_ev[0]);
+                TEST1_EV:  mmr.rdata <= data_t'(test_ev[1]);
+                TEST2_EV:  mmr.rdata <= data_t'(test_ev[2]);
+                TEST3_EV:  mmr.rdata <= data_t'(test_ev[3]);
+                default:   mmr.rdata <= '0;
             endcase
         end 
 
@@ -170,10 +178,22 @@ always_ff @(posedge clk) begin
                 SYNC_PRD: begin
                     if (data != 0)
                         sync_prd <= data_t'(data);
+                end                
+                ALIGN_EV0: begin
+                    align_ev[0]   <= event_t'(data);
+                    align_ena[0]  <= event_t'(data) != '0;
                 end
-                ALIGN_EV: begin
-                    align_ev  <= event_t'(data);
-                    align_ena <= event_t'(data) != '0;
+                ALIGN_EV1: begin
+                    align_ev[1]   <= event_t'(data);
+                    align_ena[1]  <= event_t'(data) != '0;
+                end
+                ALIGN_EV2: begin
+                    align_ev[2]   <= event_t'(data);
+                    align_ena[2]  <= event_t'(data) != '0;
+                end
+                ALIGN_EV3: begin
+                    align_ev[3]   <= event_t'(data);
+                    align_ena[3]  <= event_t'(data) != '0;
                 end
                 TEST0_EV: begin
                     test_ev[0]  <= event_t'(data);
@@ -199,11 +219,11 @@ end
 
 //always_comb begin
 //    case (mmr.address)
-//        CSR:      mmr.readdata = data_t'(csr);
-//        SYNC_EV:  mmr.readdata = data_t'(sync_ev);
-//        SYNC_PRD: mmr.readdata = data_t'(sync_prd);
-//        ALIGN_EV: mmr.readdata = data_t'(align_ev);
-//        default:  mmr.readdata = '0;
+//        CSR:      mmr.rdata = data_t'(csr);
+//        SYNC_EV:  mmr.rdata = data_t'(sync_ev);
+//        SYNC_PRD: mmr.rdata = data_t'(sync_prd);
+//        ALIGN_EV: mmr.rdata = data_t'(align_ev);
+//        default:  mmr.rdata = '0;
 //    endcase
 //end
 
@@ -238,7 +258,29 @@ always_ff @(posedge clk) begin
 end
 
 //------------------------------------------------
+always_ff @(posedge clk) align_x2 <= align_p[0] | align_p[1] | align_p[2] | align_p[3];
+
 genvar i;
+generate
+    for (i=0; i<4; i=i+1) begin : align_pulse_formers
+            logic       align_pulse;
+            logic       align_pulse_expand;
+            logic [1:0] align_pulse_cnt = '0;
+
+            assign align_pulse  = align_ena[i] && ev == align_ev[i];
+            assign align_p[i]   = align_pulse_cnt != 'b0;
+
+            always_ff @(posedge clk) begin
+                if(align_pulse) 
+                    align_pulse_cnt <= 'b11;
+                else
+                    if(align_pulse_cnt != 'b0)
+                        align_pulse_cnt <= align_pulse_cnt-1;         
+    end
+    end
+endgenerate
+
+//------------------------------------------------
 generate
 for (i=0; i<4; i++) begin : test_out_pulse_formers
     logic       test_pulse;
