@@ -231,7 +231,7 @@ module top(
         .rst(app_reset),
         .clear(emio_o[0]),
         .presc(emio_o[31:1]),
-        .axi(GP0)
+        .axi(mmr[MMR_PSEVENT])
     );
 
     PS_wrapper_ 
