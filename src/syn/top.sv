@@ -333,7 +333,6 @@ module top(
     );
 
     //-------------MMR--------------\\
-
     axi4_lite_if #(.AW(GP0_ADDR_W), .DW(MMR_DATA_W)) un();
 
     axi_2master 
@@ -364,6 +363,14 @@ module top(
         .aclk(app_clk),
         .aresetn(app_aresetn),
         .axi(mmr[MMR_SYS]),
+        .offset(0)
+    );
+
+    mem_wrapper
+    ps_mem_i (
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
+        .axi(mmr[MMR_PSMEM]),
         .offset(0)
     );
 
