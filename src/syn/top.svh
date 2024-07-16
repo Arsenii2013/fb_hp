@@ -46,7 +46,8 @@ localparam MMR_MEM         = MMR_EVMUX   + 1;
 localparam MMR_QSPI        = MMR_MEM     + 1;
 localparam MMR_LOG         = MMR_QSPI    + 1;
 localparam MMR_TX          = MMR_LOG     + 1;
-localparam MMR_PSEVENT     = MMR_TX      + 1;
+localparam MMR_PSMEM       = MMR_TX      + 1;
+localparam MMR_PSEVENT     = MMR_PSMEM   + 1;
 localparam MMR_SHARED      = MMR_PSEVENT + 1;
 localparam MMR_DEV_COUNT   = MMR_SHARED  + 1;
 
