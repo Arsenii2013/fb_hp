@@ -11,6 +11,8 @@ sources:
     - src/syn/mem_wrapper.sv
     - src/syn/PS_wrapper.sv
     - src/lib/common/blink.sv
+    - src/lib/axi/axi_2master.sv
+    - src/lib/axi/axi_interconnect.sv
     - src/lib/axi/axi4_lite_dw_translator.sv
     - src/lib/axi/axi_crossbar.sv
     - src/syn/mem_controller.sv

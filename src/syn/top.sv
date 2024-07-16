@@ -333,6 +333,18 @@ module top(
     );
 
     //-------------MMR--------------\\
+
+    axi4_lite_if #(.AW(GP0_ADDR_W), .DW(MMR_DATA_W)) un();
+
+    axi_2master 
+    axi_interconnect_i(
+        .aresetn(app_aresetn),
+        .aclk(app_clk),
+        .m1(GP_CONTROL),
+        .m2(bar0),
+        .s(un)
+    );
+
     axi_crossbar
     #(
         .N(MMR_DEV_COUNT2),
@@ -343,7 +355,7 @@ module top(
     (
         .aresetn(app_aresetn),
         .aclk(app_clk),
-        .m(bar0),
+        .m(un),
         .s(mmr)
     );
 
