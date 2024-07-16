@@ -205,10 +205,11 @@ module top(
 
 
     //-----------Interfaces----------\\
-    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP_CONTROL();
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP_DATA();
     axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
 
-    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
+    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(FB_DW)) bar0();
     axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
     axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();    
     
@@ -230,7 +231,7 @@ module top(
         .rst(app_reset),
         .clear(emio_o[0]),
         .presc(emio_o[31:1]),
-        .axi(GP0)
+        .axi(mmr[MMR_PSEVENT])
     );
 
     PS_wrapper_ 
@@ -259,7 +260,8 @@ module top(
         .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
         `endif // SYNTHESIS
 
-        .GP0(GP0),
+        .GP_CONTROL(GP_CONTROL),
+        .GP_DATA(GP_DATA),
         .HP0(bar2),
         .HP0_offset(HP0_offset),
 
@@ -331,6 +333,18 @@ module top(
     );
 
     //-------------MMR--------------\\
+
+    axi4_lite_if #(.AW(GP0_ADDR_W), .DW(MMR_DATA_W)) un();
+
+    axi_2master 
+    axi_interconnect_i(
+        .aresetn(app_aresetn),
+        .aclk(app_clk),
+        .m1(GP_CONTROL),
+        .m2(bar0),
+        .s(un)
+    );
+
     axi_crossbar
     #(
         .N(MMR_DEV_COUNT2),
@@ -341,7 +355,7 @@ module top(
     (
         .aresetn(app_aresetn),
         .aclk(app_clk),
-        .m(bar0),
+        .m(un),
         .s(mmr)
     );
 

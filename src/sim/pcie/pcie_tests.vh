@@ -15,11 +15,11 @@ begin
     pci_e_write(0, 'h0, 'h0000DEAD); // MMR_SYS
     pci_e_read (0, 'h0, recv_data);
 
-    pci_e_write(0, 'h810, 'h00000100); // MMR_MEM offset 100 byte
-    pci_e_read (0, 'h810, recv_data);
+    pci_e_write(0, 'h1410, 'h00000100); // MMR_MEM offset 100 byte
+    pci_e_read (0, 'h1410, recv_data);
     //pci_e_write(2, 'h0, 'h0000BEEF);    // HP0
 
-    pci_e_write(0, 'h810, 'h00000000); // MMR_MEM offset 0 byte
+    pci_e_write(0, 'h1410, 'h00000000); // MMR_MEM offset 0 byte
     //pci_e_read (2, 'h100, recv_data);   // HP0
 
     // bar 1 test
@@ -53,40 +53,36 @@ begin
 
 
     // TX start        
-    pci_e_read(0, 32'h1000, recv_data); 
+    pci_e_read(0, 32'h2000, recv_data); 
     //start
-    pci_e_write(0, 32'h1014, 32'h15C); 
-    pci_e_write(0, 32'h1014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h15C); 
+    pci_e_write(0, 32'h2014, 32'h000); 
     //addr
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h002);
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h002);
     //cnt 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h004);
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h004);
     //data
-    pci_e_write(0, 32'h1014, 32'h0DE); 
-    pci_e_write(0, 32'h1014, 32'h0AD); 
-    pci_e_write(0, 32'h1014, 32'h0BE); 
-    pci_e_write(0, 32'h1014, 32'h0EF); 
+    pci_e_write(0, 32'h2014, 32'h0DE); 
+    pci_e_write(0, 32'h2014, 32'h0AD); 
+    pci_e_write(0, 32'h2014, 32'h0BE); 
+    pci_e_write(0, 32'h2014, 32'h0EF); 
     //stop
-    pci_e_write(0, 32'h1014, 32'h13C); 
-    pci_e_write(0, 32'h1014, 32'h0FC); 
-    pci_e_write(0, 32'h1014, 32'h0C7); 
+    pci_e_write(0, 32'h2014, 32'h13C); 
+    pci_e_write(0, 32'h2014, 32'h0FC); 
+    pci_e_write(0, 32'h2014, 32'h0C7); 
 
-    pci_e_read(0, 32'h1000, recv_data); 
-    pci_e_write(0, 32'h1004, 32'b1); 
-    pci_e_read(0, 32'h1000, recv_data); 
+    pci_e_read(0, 32'h2000, recv_data); 
+    pci_e_write(0, 32'h2004, 32'b1); 
+    pci_e_read(0, 32'h2000, recv_data); 
     #300;
-    pci_e_read(0, 32'h1000, recv_data); 
-    pci_e_write(0, 32'h1004, 32'b1); 
-
-    // Shared data
-    pci_e_read (0, 'h1414, recv_data); 
-    $display ("Shared data delay %x", recv_data);
+    pci_e_read(0, 32'h2000, recv_data); 
+    pci_e_write(0, 32'h2004, 32'b1); 
 
 
     // QSPI read write test

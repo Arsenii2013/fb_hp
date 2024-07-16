@@ -38,16 +38,17 @@ localparam MMR_BASE_ADDR_W = 6;
 localparam MMR_DEV_ADDR_W  = MMR_ADDR_W - MMR_BASE_ADDR_W;
 
 localparam MMR_SYS         = '0;
-localparam MMR_SCC         = MMR_SYS   + 1;
-localparam MMR_IC          = MMR_SCC   + 1;
-localparam MMR_EVR         = MMR_IC    + 1;
-localparam MMR_EVMUX       = MMR_EVR   + 1;
-localparam MMR_MEM         = MMR_EVMUX + 1;
-localparam MMR_QSPI        = MMR_MEM   + 1;
-localparam MMR_LOG         = MMR_QSPI  + 1;
-localparam MMR_TX          = MMR_LOG   + 1;
-localparam MMR_SHARED      = MMR_TX    + 1;
-localparam MMR_DEV_COUNT   = MMR_SHARED+ 1;
+localparam MMR_SCC         = MMR_SYS     + 1;
+localparam MMR_IC          = MMR_SCC     + 1;
+localparam MMR_EVR         = MMR_IC      + 1;
+localparam MMR_EVMUX       = MMR_EVR     + 1;
+localparam MMR_MEM         = MMR_EVMUX   + 1;
+localparam MMR_QSPI        = MMR_MEM     + 1;
+localparam MMR_LOG         = MMR_QSPI    + 1;
+localparam MMR_TX          = MMR_LOG     + 1;
+localparam MMR_PSEVENT     = MMR_TX      + 1;
+localparam MMR_SHARED      = MMR_PSEVENT + 1;
+localparam MMR_DEV_COUNT   = MMR_SHARED  + 1;
 
 //      Processing system
 localparam GP0_ADDR_W      = 32;
