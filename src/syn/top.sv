@@ -205,10 +205,11 @@ module top(
 
 
     //-----------Interfaces----------\\
-    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP_CONTROL();
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP_DATA();
     axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
 
-    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
+    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(FB_DW)) bar0();
     axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
     axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();    
     
@@ -259,7 +260,8 @@ module top(
         .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
         `endif // SYNTHESIS
 
-        .GP0(GP0),
+        .GP_CONTROL(GP_CONTROL),
+        .GP_DATA(GP_DATA),
         .HP0(bar2),
         .HP0_offset(HP0_offset),
 

@@ -1,9 +1,9 @@
-   # Create interface ports
+  # Create interface ports
   set DDR [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:ddrx_rtl:1.0 DDR ]
 
   set FIXED_IO [ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO ]
 
-  set GP0 [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 GP0 ]
+  set GP_CONTROL [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 GP_CONTROL ]
   set_property -dict [ list \
    CONFIG.ADDR_WIDTH {32} \
    CONFIG.DATA_WIDTH {32} \
@@ -14,7 +14,7 @@
    CONFIG.HAS_QOS {0} \
    CONFIG.HAS_REGION {0} \
    CONFIG.PROTOCOL {AXI4LITE} \
-   ] $GP0
+   ] $GP_CONTROL
 
   set HP0_FIFO_CTRL [ create_bd_intf_port -mode Slave -vlnv xilinx.com:display_processing_system7:hpstatusctrl_rtl:1.0 HP0_FIFO_CTRL ]
 
@@ -50,6 +50,21 @@
    CONFIG.WUSER_WIDTH {0} \
    ] $HP0
 
+  set GP_DATA [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 GP_DATA ]
+  set_property -dict [ list \
+   CONFIG.ADDR_WIDTH {32} \
+   CONFIG.DATA_WIDTH {32} \
+   CONFIG.FREQ_HZ {10000000} \
+   CONFIG.HAS_BURST {0} \
+   CONFIG.HAS_CACHE {0} \
+   CONFIG.HAS_LOCK {0} \
+   CONFIG.HAS_QOS {0} \
+   CONFIG.HAS_REGION {0} \
+   CONFIG.NUM_READ_OUTSTANDING {8} \
+   CONFIG.NUM_WRITE_OUTSTANDING {8} \
+   CONFIG.PROTOCOL {AXI4LITE} \
+   ] $GP_DATA
+
 
   # Create ports
   set peripheral_reset [ create_bd_port -dir O -from 0 -to 0 -type rst peripheral_reset ]
@@ -57,6 +72,7 @@
   set peripheral_clock [ create_bd_port -dir O -type clk peripheral_clock ]
   set app_clk [ create_bd_port -dir I -type clk -freq_hz 10000000 app_clk ]
   set_property -dict [ list \
+   CONFIG.ASSOCIATED_BUSIF {GP_CONTROL:HP0} \
    CONFIG.ASSOCIATED_RESET {bar_aresetn:app_aresetn} \
  ] $app_clk
   set app_aresetn [ create_bd_port -dir I -type rst app_aresetn ]
@@ -581,7 +597,7 @@
     CONFIG.PCW_USE_FABRIC_INTERRUPT {0} \
     CONFIG.PCW_USE_HIGH_OCM {0} \
     CONFIG.PCW_USE_M_AXI_GP0 {1} \
-    CONFIG.PCW_USE_M_AXI_GP1 {0} \
+    CONFIG.PCW_USE_M_AXI_GP1 {1} \
     CONFIG.PCW_USE_PROC_EVENT_BUS {0} \
     CONFIG.PCW_USE_PS_SLCR_REGISTERS {0} \
     CONFIG.PCW_USE_S_AXI_ACP {0} \
@@ -620,19 +636,30 @@
   # Create instance: proc_sys_reset, and set properties
   set proc_sys_reset [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset ]
 
+  # Create instance: GP0_protocol_convert1, and set properties
+  set GP0_protocol_convert1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 GP0_protocol_convert1 ]
+  set_property -dict [list \
+    CONFIG.MI_PROTOCOL {AXI4LITE} \
+    CONFIG.SI_PROTOCOL {AXI3} \
+    CONFIG.TRANSLATION_MODE {2} \
+  ] $GP0_protocol_convert1
+
+
   # Create interface connections
-  connect_bd_intf_net -intf_net GP0_protocol_convert_M_AXI [get_bd_intf_ports GP0] [get_bd_intf_pins GP0_protocol_convert/M_AXI]
+  connect_bd_intf_net -intf_net GP0_protocol_convert1_M_AXI [get_bd_intf_ports GP_DATA] [get_bd_intf_pins GP0_protocol_convert1/M_AXI]
+  connect_bd_intf_net -intf_net GP0_protocol_convert_M_AXI [get_bd_intf_ports GP_CONTROL] [get_bd_intf_pins GP0_protocol_convert/M_AXI]
   connect_bd_intf_net -intf_net HP0_1 [get_bd_intf_ports HP0] [get_bd_intf_pins HP0_protocol_convert/S_AXI]
   connect_bd_intf_net -intf_net S_AXI_HP0_FIFO_CTRL_0_1 [get_bd_intf_ports HP0_FIFO_CTRL] [get_bd_intf_pins processing_system7/S_AXI_HP0_FIFO_CTRL]
   connect_bd_intf_net -intf_net axi_protocol_convert_0_M_AXI [get_bd_intf_pins processing_system7/S_AXI_HP0] [get_bd_intf_pins HP0_protocol_convert/M_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7/FIXED_IO]
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7/M_AXI_GP0] [get_bd_intf_pins GP0_protocol_convert/S_AXI]
+  connect_bd_intf_net -intf_net processing_system7_M_AXI_GP1 [get_bd_intf_pins GP0_protocol_convert1/S_AXI] [get_bd_intf_pins processing_system7/M_AXI_GP1]
 
   # Create port connections
   connect_bd_net -net GPIO_I_0_1 [get_bd_ports GPIO_I_0] [get_bd_pins processing_system7/GPIO_I]
-  connect_bd_net -net aresetn_0_1 [get_bd_ports app_aresetn] [get_bd_pins HP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert/aresetn]
-  connect_bd_net -net bar_clk_1 [get_bd_ports app_clk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins HP0_protocol_convert/aclk] [get_bd_pins GP0_protocol_convert/aclk]
+  connect_bd_net -net aresetn_0_1 [get_bd_ports app_aresetn] [get_bd_pins HP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert1/aresetn]
+  connect_bd_net -net bar_clk_1 [get_bd_ports app_clk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins HP0_protocol_convert/aclk] [get_bd_pins GP0_protocol_convert/aclk] [get_bd_pins processing_system7/M_AXI_GP1_ACLK] [get_bd_pins GP0_protocol_convert1/aclk]
   connect_bd_net -net proc_sys_reset_0_peripheral_reset [get_bd_pins proc_sys_reset/peripheral_reset] [get_bd_ports peripheral_reset]
   connect_bd_net -net proc_sys_reset_peripheral_aresetn [get_bd_pins proc_sys_reset/peripheral_aresetn] [get_bd_ports peripheral_aresetn]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins processing_system7/FCLK_RESET0_N] [get_bd_pins proc_sys_reset/ext_reset_in]
@@ -641,5 +668,5 @@
   connect_bd_net -net processing_system7_GPIO_T [get_bd_pins processing_system7/GPIO_T] [get_bd_ports GPIO_T_0]
 
   # Create address segments
-  assign_bd_address -offset 0x40000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces processing_system7/Data] [get_bd_addr_segs GP0/Reg] -force
+  assign_bd_address -offset 0x40000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces processing_system7/Data] [get_bd_addr_segs GP_CONTROL/Reg] -force
   assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces HP0] [get_bd_addr_segs processing_system7/S_AXI_HP0/HP0_DDR_LOWOCM] -force
