@@ -221,7 +221,11 @@ always_ff @(posedge clk) begin
             write_data <= 0;
             case (addr)
                 SR: begin
+<<<<<<< HEAD
                     automatic sr_t sr_wr = sr_t'(mmr.writedata);
+=======
+                    automatic sr_t sr_wr = sr_t'(mmr.wdata);
+>>>>>>> 2927dab (Chemge scc logic)
                     sr.clk_sync_loss <= sr.clk_sync_loss & sr_wr.clk_sync_loss;
                     sr.afe_down      <= sr.afe_down      & sr_wr.afe_down;
                     sr.dc_changed    <= sr.dc_changed    & sr_wr.dc_changed;
