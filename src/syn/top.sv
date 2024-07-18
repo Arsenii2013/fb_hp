@@ -225,13 +225,15 @@ module top(
     logic [EMIO_SIZE-1:0]  emio_o;
     logic [EMIO_SIZE-1:0]  emio_i;
     logic [EMIO_SIZE-1:0]  emio_t;
+    logic [7:0]            test_event;
 
     test_fifo test_fifo_i(
         .clk(app_clk),
         .rst(app_reset),
         .clear(emio_o[0]),
         .presc(emio_o[31:1]),
-        .axi(mmr[MMR_PSEVENT])
+        .axi(mmr[MMR_PSEVENT]),
+        .event_out(test_event)
     );
 
     PS_wrapper_ 
@@ -564,6 +566,7 @@ module top(
         .probe0(sfp_tx_data),
         .probe1(sfp_tx_is_k)
     );*/
+    axi4_lite_if #(.AW(32), .DW(32)) afe_ctrl_i();
 
     shared_data_mem shared_data_mem_i
     (
@@ -575,17 +578,19 @@ module top(
 
     scc_m ssc_i(
         .clk(app_clk),
-        .aresetn(),
-        .cdr_locked(sfp_aligned),
+        .rst(),
+        .evr_link_ok(1),
+        .dc_coarse_done(1),
+
+        .afe_init_done(1),
 
         .mmr(mmr[MMR_SCC]),
+        .afe_ctrl_i(afe_ctrl_i),
 
-        .ev(ev),
+        .ev(test_event),
         .sync(sync),
         .align(),
         .log_start(),
-
-        .dds_clk_ena(),
 
         .sync_x2(), 
         .align_x2(),
@@ -594,6 +599,14 @@ module top(
 
         .sync_prd(sync_prd),
         .sync_PS(PS_sync)
+    );
+
+    mem_wrapper
+    asd (
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
+        .axi(afe_ctrl_i),
+        .offset(0)
     );
 
     //-------------GPIO--------------\\
@@ -711,14 +724,18 @@ module test_fifo(
     input  logic        rst,
     input  logic        clear,
 
-    axi4_lite_if.s     axi,
+    axi4_lite_if.s      axi,
 
-    input  logic [32:0] presc
+    input  logic [32:0] presc,
+
+    output logic [7:0]  event_out
 );
     logic wr_en;
     logic [7:0] data_in;
     logic [32:0] cnt;
     logic full;
+
+    assign event_out    = data_in;
 
     assign wr_en = cnt == presc;
     always_ff @(posedge clk) begin

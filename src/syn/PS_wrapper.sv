@@ -154,6 +154,7 @@ module PS_wrapper_(
     `endif //SYNTHESIS 
 
     `ifndef SYNTHESIS
+    assign EMIO_O = '0;
     sys_clk_gen
     #(
         .halfcycle (CLK_PRD / 2 * 1000), 

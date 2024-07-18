@@ -11,6 +11,7 @@ sources:
     - src/syn/mem_wrapper.sv
     - src/syn/PS_wrapper.sv
     - src/lib/common/blink.sv
+    - src/lib/common/pf.sv
     - src/lib/axi/axi_2master.sv
     - src/lib/axi/axi_interconnect.sv
     - src/lib/axi/axi4_lite_dw_translator.sv
@@ -40,6 +41,7 @@ sources:
     - src/syn/evr/tx_buffer.sv
     - src/syn/scc.sv
     - src/syn/event_fifo.sv
+    - src/syn/llrf_init.sv
 
 
     - src/syn/event_choise.sv

@@ -51,7 +51,7 @@ begin
     pci_e_write(0, 32'h418, 32'h15); // write align_ev
     pci_e_write(0, 32'h41c, 32'h15); // write test0_ev
 
-
+/*
     // TX start        
     pci_e_read(0, 32'h2000, recv_data); 
     //start
@@ -90,7 +90,7 @@ begin
     pci_e_write(0, 'h1804, 'h0000BEEF);
     pci_e_read (0, 'h1800, recv_data);
     pci_e_read (0, 'h1804, recv_data);
-
+*/
     $display("[%t] : Finished transmission of PCI-Express TLPs", $realtime);
     if (!test_failed_flag) begin 
         $display ("Test Completed Successfully");

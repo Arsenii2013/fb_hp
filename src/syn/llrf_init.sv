@@ -72,17 +72,6 @@ stfsm_state_t   stfsm_state   = stfsmAFE_RESET, stfsm_next;
 //      Logic
 //
 
-initial afe_ctrl_i.awaddr  = '0;
-initial afe_ctrl_i.awprot  = '0;
-initial afe_ctrl_i.awvalid = '0;
-initial afe_ctrl_i.wdata   = '0;
-initial afe_ctrl_i.wstrb   = '1;
-initial afe_ctrl_i.wvalid  = '0;
-initial afe_ctrl_i.bready  = '0;
-initial afe_ctrl_i.araddr  = '0;
-initial afe_ctrl_i.arprot  = '0;
-initial afe_ctrl_i.arvalid = '0;
-initial afe_ctrl_i.rready  = '0;
 
 always_ff @(posedge clk) begin
     if (rst) begin
