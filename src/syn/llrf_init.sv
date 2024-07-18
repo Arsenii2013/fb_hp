@@ -102,16 +102,16 @@ always_ff @(posedge clk) begin
         //------------------------------------------------
         endcase
         
-        if ((afe_ctrl_i.awvalid | afe_ctrl_i.awready)) begin
+        if ((afe_ctrl_i.awvalid & afe_ctrl_i.awready)) begin
             afe_ctrl_i.awvalid <= 0;
         end
-        if ((afe_ctrl_i.wvalid  | afe_ctrl_i.wready)) begin
+        if ((afe_ctrl_i.wvalid  & afe_ctrl_i.wready)) begin
             afe_ctrl_i.wvalid <= 0;
         end
-        if ((afe_ctrl_i.arvalid | afe_ctrl_i.arready)) begin
+        if ((afe_ctrl_i.arvalid & afe_ctrl_i.arready)) begin
             afe_ctrl_i.arvalid <= 0;
         end
-        if ((afe_ctrl_i.bvalid  | afe_ctrl_i.bready)) begin
+        if ((afe_ctrl_i.bvalid  & afe_ctrl_i.bready)) begin
             afe_ctrl_i.bready <= 0;
         end
 

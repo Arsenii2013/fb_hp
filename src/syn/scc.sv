@@ -44,6 +44,7 @@ module scc_m
 //------------------------------------------------
 `timescale 1ns / 1ps
 parameter PS_SYNC_WIDTH = 32;
+parameter SYNC_PRD_DEF  = 64;
 
 //------------------------------------------------
 //
@@ -143,7 +144,7 @@ end
 always_ff @(posedge clk) begin
     if (!aresetn) begin
         cr              <=  cr_t'(0);
-        sync_ev         <= '0;
+        sync_ev         <= 1;
         sync_prd        <=  data_t'(SYNC_PRD_DEF);
         align_ena       <=  0;
         align_ev        <= '0;
@@ -330,8 +331,6 @@ pf_m #(.WIDTH(1)            ) afe_down_pf   (.clk(clk), .in(~afe_init_done),    
 pf_m #(.WIDTH(1)            ) dc_changed_pf (.clk(clk), .in(~dc_coarse_done),             .out(dc_changed_p));
 pf_m #(.WIDTH(1)            ) sync_loss_pf  (.clk(clk), .in(~sr.clk_sync_done),           .out(sync_loss_p) );
 
-
-pf_m #(.WIDTH(PS_SYNC_WIDTH)) PS_pf         (.clk(clk), .in(sync),                        .out(sync_PS)     );
 
 //------------------------------------------------
 llrf_init_m llrf_init

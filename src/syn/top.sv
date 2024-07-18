@@ -501,6 +501,7 @@ module top(
 
     //--------------EVR--------------\\
     logic [7:0] ev;
+    logic       dc_coarse_done;
     axi4_lite_if #(.AW(32), .DW(32)) shared_data();
     evr evr_i
     (
@@ -525,7 +526,8 @@ module top(
         .ev(ev),
         .mmr(mmr[MMR_EVR]),
         .tx(mmr[MMR_TX]),
-        .shared_data_out(shared_data)
+        .shared_data_out(shared_data),
+        .dc_coarse_done(dc_coarse_done)
     );
 
     //ddsc_if #( .DW        ( 32              )) ddsc_out_i();
@@ -739,7 +741,7 @@ module test_fifo(
 
     axi4_lite_if.s      axi,
 
-    input  logic [32:0] presc,
+    input  logic [31:0] presc,
 
     output logic [7:0]  event_out
 );
