@@ -576,13 +576,20 @@ module top(
         .shared_data_in(ddsc_shared)
     );
 
+    logic dds_clk;
+    logic afe_ready;
+    logic sync_x2;
+    logic align_x2;
+
     scc_m ssc_i(
         .clk(app_clk),
         .rst(),
+        //.evr_link_ok(sfp_aligned),
+        //.dc_coarse_done(dc_coarse_done),
         .evr_link_ok(1),
         .dc_coarse_done(1),
 
-        .afe_init_done(1),
+        .afe_init_done(afe_ready),
 
         .mmr(mmr[MMR_SCC]),
         .afe_ctrl_i(afe_ctrl_i),
@@ -591,9 +598,10 @@ module top(
         .sync(sync),
         .align(),
         .log_start(),
+        .dds_clk_out(dds_clk),
 
-        .sync_x2(), 
-        .align_x2(),
+        .sync_x2(sync_x2), 
+        .align_x2(align_x2),
 
         .test_out(test_out),
 
@@ -601,12 +609,17 @@ module top(
         .sync_PS(PS_sync)
     );
 
-    mem_wrapper
-    asd (
-        .aclk(app_clk),
+    afe_model afe_model_i
+    (
+        .clk(app_clk),
+        .clk_d2(dds_clk),
         .aresetn(app_aresetn),
-        .axi(afe_ctrl_i),
-        .offset(0)
+
+        .afe_ready(afe_ready),
+        .sync_x2(sync_x2),
+        .align_x2(align_x2),
+        .afe_ctrl_i(afe_ctrl_i),
+        .test_mmr(mmr[MMR_DEV_COUNT])
     );
 
     //-------------GPIO--------------\\
