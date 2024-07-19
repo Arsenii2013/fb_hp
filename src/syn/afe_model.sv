@@ -224,6 +224,9 @@ module axi_slave_afe
             slv_reg3 <= 0;
         end 
         else begin
+
+        slv_reg0 <= dds_prd;
+        slv_reg1 <= align;
         if (slv_reg_wren)
             begin
             case ( axi_awaddr[ADDR_LSB+OPT_MEM_ADDR_BITS:ADDR_LSB] )
@@ -263,8 +266,8 @@ module axi_slave_afe
                     slv_reg4[(byte_index*8) +: 8] <= bus.wdata[(byte_index*8) +: 8];
                     end 
                 default : begin
-                            slv_reg0 <= dds_prd;
-                            slv_reg1 <= align;
+                            slv_reg0 <= slv_reg0;
+                            slv_reg1 <= slv_reg1;
                             slv_reg2 <= slv_reg2;
                             slv_reg3 <= slv_reg3;
                             slv_reg4 <= slv_reg4;

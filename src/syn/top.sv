@@ -741,7 +741,7 @@ module test_fifo(
 
     axi4_lite_if.s      axi,
 
-    input  logic [31:0] presc,
+    input  logic [30:0] presc,
 
     output logic [7:0]  event_out
 );
