@@ -84,9 +84,9 @@ module top(
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
-    output logic [3:0] led
+    output logic [3:0] led,
 
-    //(* IOB = "TRUE" *) output logic [3:0] test_out
+    (* IOB = "TRUE" *) output logic [3:0] test_out
 
     );
     assign sfp_tx_dis = 'b0;
@@ -98,6 +98,8 @@ module top(
     logic app_reset;
     logic app_aresetn;
     logic PS_sync;
+    logic PS_busy;
+    logic [7:0] ev;
 
     xpm_cdc_async_rst #(
         .INIT_SYNC_FF(0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
@@ -225,15 +227,19 @@ module top(
     logic [EMIO_SIZE-1:0]  emio_o;
     logic [EMIO_SIZE-1:0]  emio_i;
     logic [EMIO_SIZE-1:0]  emio_t;
-    logic [7:0]            test_event;
 
-    test_fifo test_fifo_i(
-        .clk(app_clk),
-        .rst(app_reset),
-        .clear(emio_o[0]),
-        .presc(emio_o[31:1]),
-        .axi(mmr[MMR_PSEVENT]),
-        .event_out(test_event)
+    assign emio_i[0] = PS_sync;
+    assign emio_i[1] = PS_busy;
+
+    logic [8:0] ev_and_sync;
+    assign ev_and_sync = {sync, ev};
+
+    event_fifo event_fifo_i(
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
+        .wr_en(ev_and_sync != 0),
+        .data_in(ev_and_sync),
+        .axi(mmr[MMR_PSEVENT])
     );
 
     PS_wrapper_ 
@@ -373,6 +379,14 @@ module top(
         .aclk(app_clk),
         .aresetn(app_aresetn),
         .axi(mmr[MMR_PSMEM]),
+        .offset(0)
+    );
+
+    mem_wrapper
+    logger_ctrl (
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
+        .axi(mmr[MMR_LOG]),
         .offset(0)
     );
 
@@ -596,7 +610,7 @@ module top(
         .mmr(mmr[MMR_SCC]),
         .afe_ctrl_i(afe_ctrl_i),
 
-        .ev(test_event),
+        .ev(ev),
         .sync(sync),
         .align(),
         .log_start(),
@@ -608,7 +622,8 @@ module top(
         .test_out(test_out),
 
         .sync_prd(sync_prd),
-        .sync_PS(PS_sync)
+        .sync_PS(PS_sync),
+        .busy_PS(PS_busy)
     );
 
     afe_model afe_model_i
