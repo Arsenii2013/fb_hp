@@ -32,9 +32,9 @@ begin
     //pci_e_read (1, 'h7FC, recv_data); 
 
     // EVR
-    pci_e_write(0, 'hC04, 'h01); // DC enable
+    //pci_e_write(0, 'hC04, 'h01); // DC enable
     #10000;
-    pci_e_read (0, 'hC14, recv_data); 
+    //pci_e_read (0, 'hC14, recv_data); 
     $display ("EVR link delay %x", recv_data);
 
     if(topTB.DUT.evr_i.parser_delay != '0)
@@ -51,7 +51,11 @@ begin
     pci_e_write(0, 32'h418, 32'h15); // write align_ev
     pci_e_write(0, 32'h41c, 32'h15); // write test0_ev
 
+    #10000;
+    pci_e_read(0, 32'h3000, recv_data); // get sync prd
+    pci_e_read(0, 32'h3004, recv_data); // get align
 
+/*
     // TX start        
     pci_e_read(0, 32'h2000, recv_data); 
     //start
@@ -90,7 +94,7 @@ begin
     pci_e_write(0, 'h1804, 'h0000BEEF);
     pci_e_read (0, 'h1800, recv_data);
     pci_e_read (0, 'h1804, recv_data);
-
+*/
     $display("[%t] : Finished transmission of PCI-Express TLPs", $realtime);
     if (!test_failed_flag) begin 
         $display ("Test Completed Successfully");

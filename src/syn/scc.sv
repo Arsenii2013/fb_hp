@@ -1,22 +1,36 @@
+//------------------------------------------------
+//
+//      Project: LLRF HP
+//
+//      Module:  Sync & clock control
+//
+//------------------------------------------------
+
 `ifndef __SCC_SV__
 `define __SCC_SV__
 
 `include "top.svh"
+`include "afe.svh"
 
 module scc_m
 (
     input  logic                  clk,
-    output logic                  aresetn,
-    input  logic                  cdr_locked,
+    output logic                  rst,
 
     axi4_lite_if.s                mmr,
+    axi4_lite_if.m                afe_ctrl_i,
+
+    input  logic                  afe_init_done,
+    input  logic                  evr_link_ok,
+    input  logic                  dc_coarse_done,
+    output logic                  llrf_sync_done,
 
     input  logic [      EV_W-1:0] ev,
     output logic                  sync,
     output logic                  align,
     output logic                  log_start,
 
-    output logic                  dds_clk_ena,
+    output logic                  dds_clk_out,
 
     output logic                  sync_x2, // x2 repeated outputs
     output logic                  align_x2,
@@ -30,6 +44,7 @@ module scc_m
 //------------------------------------------------
 `timescale 1ns / 1ps
 parameter PS_SYNC_WIDTH = 32;
+parameter SYNC_PRD_DEF  = 64;
 
 //------------------------------------------------
 //
@@ -40,49 +55,75 @@ typedef logic [    MMR_DATA_W-1:0] data_t;
 typedef logic [          EV_W-1:0] event_t;
 
 enum addr_t {
-    SR       = addr_t'( 8'h00 ),
-    CR       = addr_t'( 8'h04 ),
-    CR_S     = addr_t'( 8'h08 ),
-    CR_C     = addr_t'( 8'h0C ),
-    SYNC_EV  = addr_t'( 8'h10 ),        
-    SYNC_PRD = addr_t'( 8'h14 ),
-    ALIGN_EV0= addr_t'( 8'h18 ),
-    ALIGN_EV1= addr_t'( 8'h1C ),
-    ALIGN_EV2= addr_t'( 8'h20 ),
-    ALIGN_EV3= addr_t'( 8'h24 ),
-    TEST0_EV = addr_t'( 8'h28 ),
-    TEST1_EV = addr_t'( 8'h2C ),
-    TEST2_EV = addr_t'( 8'h30 ),
-    TEST3_EV = addr_t'( 8'h34 )
+    SR        = addr_t'( 8'h00 ),
+    CR        = addr_t'( 8'h04 ),
+    CR_S      = addr_t'( 8'h08 ),
+    CR_C      = addr_t'( 8'h0C ),
+    SYNC_EV   = addr_t'( 8'h10 ),
+    SYNC_PRD  = addr_t'( 8'h14 ),
+    ALIGN_EV0 = addr_t'( 8'h18 ),
+    ALIGN_EV1 = addr_t'( 8'h1C ),
+    ALIGN_EV2 = addr_t'( 8'h20 ),
+    ALIGN_EV3 = addr_t'( 8'h24 ),
+    TEST0_EV  = addr_t'( 8'h28 ),
+    TEST1_EV  = addr_t'( 8'h2C ),
+    TEST2_EV  = addr_t'( 8'h30 ),
+    TEST3_EV  = addr_t'( 8'h34 )
 } regs;
 
 typedef struct packed
 {
+    logic clk_sync_manual;
     logic dds_sync_ena;
     logic dds_clk_ena;
 } cr_t;
+
+typedef struct packed
+{
+    logic odd_shift;
+    logic dc_changed;
+    logic afe_down;
+    logic clk_sync_loss;
+    logic clk_sync_done;
+    logic dds_sync_ena;
+    logic dds_clk_ena;
+} sr_t;
 
 //------------------------------------------------
 //
 //      Objects
 //
-data_t      sr;
-cr_t        cr        = cr_t'(0);
-event_t     sync_ev   = '0;
+sr_t          sr;
+cr_t          cr        = 0;
+event_t       sync_ev   = 1;
+logic         sync_ev_p;
+logic         sync_ev_recv;
 
-
-event_t [3:0] align_ev  = '0;
-logic   [3:0] align_ena =  0;
+event_t [3:0] align_ev  = 0;
+logic   [3:0] align_ev_recv;
 logic   [3:0] align_p;
+logic   [3:0] align_ena  = '0;
 
-logic [3:0] test_ena  = '0;
-event_t     test_ev[4];
+event_t [3:0] test_ev  = 0;
+logic   [3:0] test_ev_recv;
+logic   [3:0] test_p;
+logic   [3:0] test_ena  = '0;
 
-data_t      cnt = data_t'(SYNC_PRD_DEF);
+logic         int_dds_clk_ena;
+logic         int_dds_sync_ena;
+logic         dds_clk = 0;
 
-logic [1:0] rst_cnt = '1;
+logic         sync_loss_p;
+logic         dc_changed_p;
+logic         afe_down_p;
+logic         odd_shift_p;
 
+data_t        cnt = data_t'(SYNC_PRD_DEF - 1);
 
+//------------------------------------------------
+//
+//      Logic
+//
 logic [MMR_DEV_ADDR_W-1:0] addr;
 logic [MMR_DATA_W-1:0] data;
 logic read;
@@ -90,10 +131,8 @@ logic write_addr;
 logic write_data;
 
 
-//------------------------------------------------
-//
-//      Logic
-//
+logic [1:0] rst_cnt = '1;
+
 assign aresetn = rst_cnt == '0;
 
 always_ff @(posedge clk) begin
@@ -101,12 +140,11 @@ always_ff @(posedge clk) begin
         rst_cnt <= rst_cnt - 2'b01;
 end
 
-//----------------------------------------------
 
 always_ff @(posedge clk) begin
     if (!aresetn) begin
         cr              <=  cr_t'(0);
-        sync_ev         <= '0;
+        sync_ev         <= 1;
         sync_prd        <=  data_t'(SYNC_PRD_DEF);
         align_ena       <=  0;
         align_ev        <= '0;
@@ -122,8 +160,26 @@ always_ff @(posedge clk) begin
         data            <= '0;
         mmr.rresp <= '0;
         mmr.bresp <= '0;
+
+        sr.clk_sync_loss <= 0;
+        sr.afe_down      <= 0;
+        sr.dc_changed    <= 0;
+        sr.odd_shift     <= 0;
+        sr.clk_sync_loss <= 0;
     end
     else begin
+
+        if (sync_loss_p )
+            sr.clk_sync_loss <= 1;
+        if (afe_down_p  )
+            sr.afe_down      <= 1;
+        if (dc_changed_p)
+            sr.dc_changed    <= 1;
+        if (odd_shift_p ) begin 
+            sr.odd_shift     <= 1;
+            sr.clk_sync_loss <= 1;
+        end
+
         mmr.arready <= 0;
         if(mmr.arvalid && !read) begin
             addr <= mmr.araddr;
@@ -171,6 +227,13 @@ always_ff @(posedge clk) begin
             write_addr <= 0;
             write_data <= 0;
             case (addr)
+                SR: begin
+                    automatic sr_t sr_wr = sr_t'(mmr.wdata);
+                    sr.clk_sync_loss <= sr.clk_sync_loss & sr_wr.clk_sync_loss;
+                    sr.afe_down      <= sr.afe_down      & sr_wr.afe_down;
+                    sr.dc_changed    <= sr.dc_changed    & sr_wr.dc_changed;
+                    sr.odd_shift     <= sr.odd_shift     & sr_wr.odd_shift;
+                end
                 CR:       cr      <= cr_t'(data);
                 CR_S:     cr      <= cr | cr_t'(data);
                 CR_C:     cr      <= cr & ~(cr_t'(data));
@@ -217,349 +280,83 @@ always_ff @(posedge clk) begin
     end
 end
 
-//always_comb begin
-//    case (mmr.address)
-//        CSR:      mmr.rdata = data_t'(csr);
-//        SYNC_EV:  mmr.rdata = data_t'(sync_ev);
-//        SYNC_PRD: mmr.rdata = data_t'(sync_prd);
-//        ALIGN_EV: mmr.rdata = data_t'(align_ev);
-//        default:  mmr.rdata = '0;
-//    endcase
-//end
+//------------------------------------------------
+assign sr.dds_clk_ena  = cr.clk_sync_manual ? cr.dds_clk_ena  : int_dds_clk_ena;
+assign sr.dds_sync_ena = cr.clk_sync_manual ? cr.dds_sync_ena : int_dds_sync_ena;
+assign dds_clk_ena     = sr.dds_clk_ena;
+assign llrf_sync_done  = sr.clk_sync_done;
 
 //------------------------------------------------
-assign sr = data_t'(cdr_locked);
-assign dds_clk_ena = cr.dds_clk_ena;
+assign sync_ev_recv    = ev == sync_ev && sync_ev != 0;
 
 //------------------------------------------------
 always_ff @(posedge clk) begin
-    automatic logic ev_recieved = ev == align_ev;
-    align    <= align_ena &  ev_recieved;
-    align_x2 <= align_ena & (ev_recieved | align);
-end
-
-//------------------------------------------------
-always_ff @(posedge clk) begin
-    automatic logic ev_recieved = ev == sync_ev && sync_ev != 0;
-    automatic logic reload      = cnt == data_t'(1);
-    if (cr.dds_sync_ena) begin
-        cnt <= cnt - data_t'(1);
-        if (reload || ev_recieved) 
-            cnt <= sync_prd;
+    automatic logic cnt_reload = cnt == 0;
+    if (sr.dds_sync_ena) begin
+        cnt <= cnt - 1;
+        if (cnt_reload || sync_ev_recv) 
+            cnt <= sync_prd - 1;
     end
-    sync    <= cr.dds_sync_ena &  reload;
-    sync_x2 <= cr.dds_sync_ena & (reload | sync);
 end
 
 //------------------------------------------------
-always_ff @(posedge clk) begin
-    automatic logic ev_recieved = ev == sync_ev && sync_ev != 0;
-    log_start <= cr.dds_sync_ena & ev_recieved;
-end
+always_ff @(posedge clk) dds_clk     <= sync_ev_recv ? 0 : ~dds_clk;
+always_ff @(posedge clk) dds_clk_out <= sr.dds_clk_ena ? dds_clk : 0;
+
+assign odd_shift_p = sr.clk_sync_done && sync_ev_recv && dds_clk == 0;
 
 //------------------------------------------------
 always_ff @(posedge clk) align_x2 <= align_p[0] | align_p[1] | align_p[2] | align_p[3];
-
 genvar i;
 generate
     for (i=0; i<4; i=i+1) begin : align_pulse_formers
-            logic       align_pulse;
-            logic       align_pulse_expand;
-            logic [1:0] align_pulse_cnt = '0;
-
-            assign align_pulse  = align_ena[i] && ev == align_ev[i];
-            assign align_p[i]   = align_pulse_cnt != 'b0;
-
-            always_ff @(posedge clk) begin
-                if(align_pulse) 
-                    align_pulse_cnt <= 'b11;
-                else
-                    if(align_pulse_cnt != 'b0)
-                        align_pulse_cnt <= align_pulse_cnt-1;         
-    end
+        assign align_ev_recv[i] = align_ev[i] != 0 && ev == align_ev[i];
+        pf_m #(.WIDTH(2)) align_pf (.clk(clk), .in(align_ev_recv[i]), .out(align_p[i]));
     end
 endgenerate
 
 //------------------------------------------------
 generate
-for (i=0; i<4; i++) begin : test_out_pulse_formers
-    logic       test_pulse;
-    logic       test_pulse_expand;
-    logic [1:0] test_pulse_cnt = '0;
-
-    assign test_pulse  = test_ena[i] && ev == test_ev[i];
-    assign test_out[i] = test_pulse_cnt != 'b0;
-
-    always_ff @(posedge clk) begin
-        if(test_pulse) 
-            test_pulse_cnt <= 'b11;
-        else
-            if(test_pulse_cnt != 'b0)
-                test_pulse_cnt <= test_pulse_cnt-1;         
+    for (i=0; i<4; i=i+1) begin : test_pulse_formers
+        assign test_ev_recv[i] = test_ev[i] != 0 && ev == test_ev[i];
+        pf_m #(.WIDTH(2)) test_pf (.clk(clk), .in(test_ev_recv[i]), .out(test_p[i]));
     end
-end
 endgenerate
 
+pf_m #(.WIDTH(3), .POR("ON")) rst_pf        (.clk(clk), .in(0),                           .out(rst)         );
+
+pf_m #(.WIDTH(1)            ) sync_pf       (.clk(clk), .in(sr.dds_sync_ena && cnt == 0), .out(sync)        );
+pf_m #(.WIDTH(2)            ) sync_x2_pf    (.clk(clk), .in(sr.dds_sync_ena && cnt == 0), .out(sync_x2)     );
+
+
+pf_m #(.WIDTH(1)            ) afe_down_pf   (.clk(clk), .in(~afe_init_done),              .out(afe_down_p)  );
+pf_m #(.WIDTH(1)            ) dc_changed_pf (.clk(clk), .in(~dc_coarse_done),             .out(dc_changed_p));
+pf_m #(.WIDTH(1)            ) sync_loss_pf  (.clk(clk), .in(~sr.clk_sync_done),           .out(sync_loss_p) );
+
+
 //------------------------------------------------
-logic [$clog2(PS_SYNC_WIDTH):0] PS_pulse_cnt = '0;
+llrf_init_m llrf_init
+(
+    .clk             ( clk                 ),
+    .rst             ( rst                 ),
+    
+    .mode            ( !cr.clk_sync_manual ),
+    .sync_done       ( sr.clk_sync_done    ),
+    
+    .sync            ( sync                ),
+    .sync_ev_p       ( sync_ev_recv        ),
+    
+    .afe_ready       ( afe_init_done       ),
+    .link_ok         ( evr_link_ok         ),
+    .dc_coarse_done  ( dc_coarse_done      ),
 
-assign sync_PS = PS_pulse_cnt != 'b0;
-
-always_ff @(posedge clk) begin
-    if(sync) 
-        PS_pulse_cnt <= PS_SYNC_WIDTH;
-    else
-        if(PS_pulse_cnt != 'b0)
-            PS_pulse_cnt <= PS_pulse_cnt-1;         
-end
-
+    .dds_clk_ena     ( int_dds_clk_ena     ),
+    .dds_sync_ena    ( int_dds_sync_ena    ),
+    
+    .afe_ctrl_i      ( afe_ctrl_i          )
+);
+    
 //------------------------------------------------
 endmodule : scc_m
-
-module sccTB();
-    logic clk;
-    logic aresetn;
-    logic cdr_locked;
-
-    initial begin
-        clk = 0;
-
-        forever #5 clk = ~clk;
-    end
-
-    initial begin
-        cdr_locked = 0;
-        @(negedge aresetn);
-        for(int i =0; i < 10; i++) begin
-            @(posedge clk);
-        end 
-        cdr_locked = 1;
-    end 
-
-    logic sync;
-    logic align;
-    logic log_start;
-    logic dds_clk_ena;
-    logic sync_x2;
-    logic align_x2;
-    logic test_out;
-    logic sync_prd;
-
-    logic [7:0] ev;
-    logic [7:0] shared_data;
-    axi4_lite_if #(.AW(32), .DW(32)) mmr();
-
-    scc_m DUT(
-        .clk(clk),
-        .aresetn(aresetn),
-        .cdr_locked(cdr_locked),
-
-        .mmr(mmr),
-
-        .ev(ev),
-        .sync(sync),
-        .align(align),
-        .log_start(log_start),
-
-        .dds_clk_ena(dds_clk_ena),
-
-        .sync_x2(sync_x2), 
-        .align_x2(align_x2),
-
-        .test_out(test_out),
-
-        .sync_prd(sync_prd)
-    );
-
-    axi_master mmr_master(
-        .axi(mmr),
-        .aclk(clk),
-        .aresetn(aresetn)
-    );
-
-    frame_gen frame_gen_i(
-        .tx_data({ev, shared_data}),
-        .is_k(),
-        .tx_clk(clk),
-        .ready(cdr_locked)
-    );
-
-    logic [31:0] recv_data;
-    initial begin
-        @(posedge cdr_locked);
-        for(int i =0; i < 10; i++) begin
-            @(posedge clk);
-        end 
-
-        mmr_master.read(32'h00, recv_data); // check cdr_locked
-        mmr_master.write(32'h10, 32'h15); // write sync_ev
-        mmr_master.write(32'h14, 32'd10); // write sync_prd
-        mmr_master.write(32'h18, 32'h15); // write align_ev
-        mmr_master.write(32'h1c, 32'h15); // write test0_ev
-
-        for(int i =0; i < 100; i++) begin
-            @(posedge clk);
-        end 
-        mmr_master.write(32'h04, 32'hFF); // enable all cr
-        #1000;
-        $stop();
-    end 
-
-endmodule
-
-module axi_master(
-    axi4_lite_if.m  axi,
-    input  logic    aclk,
-    input  logic    aresetn
-);
-    task automatic read(input [32:0] addr, output [32:0] data);
-        begin
-
-        logic [3:0] rresp;
-        
-        @(posedge aclk)
-        axi.araddr  <= addr;
-        axi.arvalid <= 1;
-        axi.rready  <= 1;
-
-        for(;;) begin
-            @(posedge aclk)
-            if(axi.arready)
-                break;
-        end
-        axi.arvalid <= 0;
-
-        for(;;) begin
-            @(posedge aclk)
-            if(axi.rvalid)
-                break;
-        end
-        data        = axi.rdata;
-        rresp       = axi.rresp;
-        axi.rready  <= 0;
-
-        if(rresp != 'b000)
-            $display("RRESP isnt equal 0! RRESP = %x", rresp);
-
-        $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
-        end
-    endtask
-
-    task automatic write(input [32:0] addr, input [32:0] data);
-        begin
-
-        logic [3:0] wresp;
-        
-        @(posedge aclk)
-        axi.awaddr  <= addr;
-        axi.wdata   <= data;
-        axi.awvalid <= 1;
-        axi.wvalid  <= 1;
-        axi.wstrb   <= 'hFFFF;
-        axi.bready  <= 1;
-
-        for(;;) begin
-            @(posedge aclk)
-            if(axi.awready && axi.wready)
-                break;
-        end
-        axi.awvalid <= 0;
-        axi.wvalid  <= 0;
-
-        for(;;) begin
-            @(posedge aclk)
-            if(axi.bvalid)
-                break;
-        end
-        wresp       = axi.bresp;
-        axi.rready  <= 0;
-
-        if(wresp != 'b000)
-            $display("BRESP isnt equal 0! BRESP = %x", wresp);
-
-        $display("[%t] : Address: %x, Data: %x", $realtime, addr, data);
-        end
-    endtask
-
-endmodule
-
-module frame_gen (
-    output logic  [15:0]  tx_data,
-    output logic  [2 :0]  is_k,
-
-    input  logic          tx_clk,
-    input  logic          ready 
-); 
-
-    localparam   WORDS_IN_BRAM = 32;
-    logic [$clog2(WORDS_IN_BRAM*2) - 1:0] i = 0;
-
-    logic [7:0] bram [0:WORDS_IN_BRAM-1] = 
-    '{ 
-        8'h5C, // start
-        8'hFF, // addr = 4 segment
-        8'h00, 8'h08, 8'h00, 8'h00, // 0-3 byte data 
-        8'h00, 8'h00, 8'h00, 8'h07, // 4-7 byte data
-        8'h00, 8'h00, 8'h00, 8'h00, // 8-11 byte data
-        8'h00, 8'h00, 8'h00, 8'h07, // 12-15 byte data
-        8'h3C, // stop
-        8'hFE, 8'hEA, // checksum
-        8'h00, 8'h00,
-        8'h00, 8'h00,
-        8'h00, 8'h00,
-        8'h00, 8'h00,
-        8'h00, 8'h00, 
-        8'h00
-    };
-    
-    logic [7:0] MSB, LSB;
-    logic isk_msb, isk_lsb;
-
-    assign tx_data = {LSB, MSB};    
-    assign is_k    = {isk_lsb, isk_msb};
-    assign isk_msb = (MSB == 8'h5C) || (MSB == 8'h3C); 
-    assign isk_lsb = LSB == 8'hBC;
-
-    always_comb begin : Event
-        LSB = '0;
-        if(!ready)
-            LSB = '0;
-        else if(i % 4 == 0)
-            LSB = 8'hBC; // K28.5
-        `ifndef SYNTHESIS
-        else if(i % 7 == 0)
-            LSB = 8'h7E; // beacon
-        else if(i % 29 == 0)
-            LSB = 8'h15; // test event
-        `endif //SYNTHESIS
-        else
-            LSB = '0;
-    end
-
-    always_comb begin : Data
-        MSB = 0;
-        `ifndef SYNTHESIS
-        if(!ready)
-            MSB = 0;
-        else if(i % 2 == 0)
-            MSB = '0; // distributed bus
-        else
-            MSB = bram[i / 2]; // segmented data buffer
-        `endif //SYNTHESIS
-    end
-
-    always_ff @( posedge tx_clk ) begin 
-        if(!ready) 
-        begin
-            i <= 0;
-        end
-        else
-        begin
-            i <= i+1;
-        end
-
-    end
-
-endmodule
 
 `endif//__SCC_SV__

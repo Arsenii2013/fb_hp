@@ -225,13 +225,15 @@ module top(
     logic [EMIO_SIZE-1:0]  emio_o;
     logic [EMIO_SIZE-1:0]  emio_i;
     logic [EMIO_SIZE-1:0]  emio_t;
+    logic [7:0]            test_event;
 
     test_fifo test_fifo_i(
         .clk(app_clk),
         .rst(app_reset),
         .clear(emio_o[0]),
         .presc(emio_o[31:1]),
-        .axi(mmr[MMR_PSEVENT])
+        .axi(mmr[MMR_PSEVENT]),
+        .event_out(test_event)
     );
 
     PS_wrapper_ 
@@ -499,6 +501,7 @@ module top(
 
     //--------------EVR--------------\\
     logic [7:0] ev;
+    logic       dc_coarse_done;
     axi4_lite_if #(.AW(32), .DW(32)) shared_data();
     evr evr_i
     (
@@ -523,7 +526,8 @@ module top(
         .ev(ev),
         .mmr(mmr[MMR_EVR]),
         .tx(mmr[MMR_TX]),
-        .shared_data_out(shared_data)
+        .shared_data_out(shared_data),
+        .dc_coarse_done(dc_coarse_done)
     );
 
     //ddsc_if #( .DW        ( 32              )) ddsc_out_i();
@@ -564,6 +568,7 @@ module top(
         .probe0(sfp_tx_data),
         .probe1(sfp_tx_is_k)
     );*/
+    axi4_lite_if #(.AW(32), .DW(32)) afe_ctrl_i();
 
     shared_data_mem shared_data_mem_i
     (
@@ -573,27 +578,50 @@ module top(
         .shared_data_in(ddsc_shared)
     );
 
+    logic dds_clk;
+    logic afe_ready;
+    logic sync_x2;
+    logic align_x2;
+
     scc_m ssc_i(
         .clk(app_clk),
-        .aresetn(),
-        .cdr_locked(sfp_aligned),
+        .rst(),
+        //.evr_link_ok(sfp_aligned),
+        //.dc_coarse_done(dc_coarse_done),
+        .evr_link_ok(1),
+        .dc_coarse_done(1),
+
+        .afe_init_done(afe_ready),
 
         .mmr(mmr[MMR_SCC]),
+        .afe_ctrl_i(afe_ctrl_i),
 
-        .ev(ev),
+        .ev(test_event),
         .sync(sync),
         .align(),
         .log_start(),
+        .dds_clk_out(dds_clk),
 
-        .dds_clk_ena(),
-
-        .sync_x2(), 
-        .align_x2(),
+        .sync_x2(sync_x2), 
+        .align_x2(align_x2),
 
         .test_out(test_out),
 
         .sync_prd(sync_prd),
         .sync_PS(PS_sync)
+    );
+
+    afe_model afe_model_i
+    (
+        .clk(app_clk),
+        .clk_d2(dds_clk),
+        .aresetn(app_aresetn),
+
+        .afe_ready(afe_ready),
+        .sync_x2(sync_x2),
+        .align_x2(align_x2),
+        .afe_ctrl_i(afe_ctrl_i),
+        .test_mmr(mmr[MMR_DEV_COUNT])
     );
 
     //-------------GPIO--------------\\
@@ -711,14 +739,18 @@ module test_fifo(
     input  logic        rst,
     input  logic        clear,
 
-    axi4_lite_if.s     axi,
+    axi4_lite_if.s      axi,
 
-    input  logic [32:0] presc
+    input  logic [30:0] presc,
+
+    output logic [7:0]  event_out
 );
     logic wr_en;
     logic [7:0] data_in;
     logic [32:0] cnt;
     logic full;
+
+    assign event_out    = data_in;
 
     assign wr_en = cnt == presc;
     always_ff @(posedge clk) begin

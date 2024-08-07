@@ -25,7 +25,8 @@ module evr
     output logic [7:0]      ev,
     axi4_lite_if.s          mmr,
     axi4_lite_if.s          tx,
-    axi4_lite_if.m          shared_data_out
+    axi4_lite_if.m          shared_data_out,
+    output logic            dc_coarse_done
 );
     logic ready;
     logic ready_sync;
@@ -49,6 +50,8 @@ module evr
     logic [         31:0] adjust_delay_comp;
 
     logic [         31:0] target_delay;
+
+    assign dc_coarse_done = adjust_status != 0;
 
 //MMR logic 
     typedef logic [MMR_DEV_ADDR_W-1:0] addr_t;
