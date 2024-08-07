@@ -16,9 +16,15 @@ module fifo_wrapper
     output logic full,
     output logic empty
 );
+    localparam FIFO_DW = WIDTH <= 4  ?  4: 
+                         WIDTH <= 8  ?  9:
+                         WIDTH <= 16 ? 18:
+                         WIDTH <= 32 ? 36:
+                                       72;
+
 
 FIFO36E1 #(
-   .DATA_WIDTH(18),                    // Sets data width to 4-36
+   .DATA_WIDTH(FIFO_DW),                    // Sets data width to 4-36
    .DO_REG(1),                        // Enable output register (1-0) Must be 1 if EN_SYN = FALSE
    .EN_SYN("FALSE"),                  // Specifies FIFO as dual-clock (FALSE) or Synchronous (TRUE)
    .FIFO_MODE("FIFO36"),              // Sets mode to FIFO18 or FIFO18_36

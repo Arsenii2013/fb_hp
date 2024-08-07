@@ -262,7 +262,7 @@ module evr
         rx_data_fifo_in       = local_beacon_ena && local_beacon_cnt == '0 ? 8'h7E : (beacon_pulse_rx ? '0 : rx_data[7:0]); // ignore external beacons becouse of fifo lenght
     end
 
-    assign ev                 = !fifo_empty && !rx_charisk_fifo_out ? rx_data_fifo_out : '0;
+    assign ev                 = !fifo_empty && !rx_charisk_fifo_out && rx_data_fifo_out!='h7E ? rx_data_fifo_out : '0;
 
 
 //Shared data buffer
@@ -400,7 +400,7 @@ module evr
 
 //FIFO 
     fifo_wrapper #(
-        .WIDTH( $bits(rx_data) ),
+        .WIDTH( $bits({rx_charisk, rx_data}) ),
         .DEPTH( 1024 )
     ) fifo_i (
         .rst(app_rst),

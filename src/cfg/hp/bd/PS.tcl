@@ -72,7 +72,7 @@
   set peripheral_clock [ create_bd_port -dir O -type clk peripheral_clock ]
   set app_clk [ create_bd_port -dir I -type clk -freq_hz 10000000 app_clk ]
   set_property -dict [ list \
-   CONFIG.ASSOCIATED_BUSIF {GP_CONTROL:HP0} \
+   CONFIG.ASSOCIATED_BUSIF {GP_CONTROL:HP0:GP_DATA} \
    CONFIG.ASSOCIATED_RESET {bar_aresetn:app_aresetn} \
  ] $app_clk
   set app_aresetn [ create_bd_port -dir I -type rst app_aresetn ]
@@ -489,8 +489,6 @@
     CONFIG.PCW_SPI1_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_SPI_PERIPHERAL_CLKSRC {IO PLL} \
     CONFIG.PCW_SPI_PERIPHERAL_VALID {0} \
-    CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {32} \
-    CONFIG.PCW_S_AXI_HP0_ID_WIDTH {6} \
     CONFIG.PCW_TPIU_PERIPHERAL_CLKSRC {External} \
     CONFIG.PCW_TRACE_INTERNAL_WIDTH {2} \
     CONFIG.PCW_TRACE_PERIPHERAL_ENABLE {0} \
@@ -600,10 +598,10 @@
     CONFIG.PCW_USE_M_AXI_GP1 {1} \
     CONFIG.PCW_USE_PROC_EVENT_BUS {0} \
     CONFIG.PCW_USE_PS_SLCR_REGISTERS {0} \
-    CONFIG.PCW_USE_S_AXI_ACP {0} \
+    CONFIG.PCW_USE_S_AXI_ACP {1} \
     CONFIG.PCW_USE_S_AXI_GP0 {0} \
     CONFIG.PCW_USE_S_AXI_GP1 {0} \
-    CONFIG.PCW_USE_S_AXI_HP0 {1} \
+    CONFIG.PCW_USE_S_AXI_HP0 {0} \
     CONFIG.PCW_USE_S_AXI_HP1 {0} \
     CONFIG.PCW_USE_S_AXI_HP2 {0} \
     CONFIG.PCW_USE_S_AXI_HP3 {0} \
@@ -645,12 +643,15 @@
   ] $GP0_protocol_convert1
 
 
+  # Create instance: axi_dwidth_converter_0, and set properties
+  set axi_dwidth_converter_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dwidth_converter:2.1 axi_dwidth_converter_0 ]
+
   # Create interface connections
   connect_bd_intf_net -intf_net GP0_protocol_convert1_M_AXI [get_bd_intf_ports GP_DATA] [get_bd_intf_pins GP0_protocol_convert1/M_AXI]
   connect_bd_intf_net -intf_net GP0_protocol_convert_M_AXI [get_bd_intf_ports GP_CONTROL] [get_bd_intf_pins GP0_protocol_convert/M_AXI]
   connect_bd_intf_net -intf_net HP0_1 [get_bd_intf_ports HP0] [get_bd_intf_pins HP0_protocol_convert/S_AXI]
-  connect_bd_intf_net -intf_net S_AXI_HP0_FIFO_CTRL_0_1 [get_bd_intf_ports HP0_FIFO_CTRL] [get_bd_intf_pins processing_system7/S_AXI_HP0_FIFO_CTRL]
-  connect_bd_intf_net -intf_net axi_protocol_convert_0_M_AXI [get_bd_intf_pins processing_system7/S_AXI_HP0] [get_bd_intf_pins HP0_protocol_convert/M_AXI]
+  connect_bd_intf_net -intf_net HP0_protocol_convert_M_AXI [get_bd_intf_pins HP0_protocol_convert/M_AXI] [get_bd_intf_pins axi_dwidth_converter_0/S_AXI]
+  connect_bd_intf_net -intf_net axi_dwidth_converter_0_M_AXI [get_bd_intf_pins axi_dwidth_converter_0/M_AXI] [get_bd_intf_pins processing_system7/S_AXI_ACP]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7/FIXED_IO]
   connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7/M_AXI_GP0] [get_bd_intf_pins GP0_protocol_convert/S_AXI]
@@ -658,8 +659,8 @@
 
   # Create port connections
   connect_bd_net -net GPIO_I_0_1 [get_bd_ports GPIO_I_0] [get_bd_pins processing_system7/GPIO_I]
-  connect_bd_net -net aresetn_0_1 [get_bd_ports app_aresetn] [get_bd_pins HP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert1/aresetn]
-  connect_bd_net -net bar_clk_1 [get_bd_ports app_clk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK] [get_bd_pins processing_system7/S_AXI_HP0_ACLK] [get_bd_pins HP0_protocol_convert/aclk] [get_bd_pins GP0_protocol_convert/aclk] [get_bd_pins processing_system7/M_AXI_GP1_ACLK] [get_bd_pins GP0_protocol_convert1/aclk]
+  connect_bd_net -net aresetn_0_1 [get_bd_ports app_aresetn] [get_bd_pins HP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert1/aresetn] [get_bd_pins axi_dwidth_converter_0/s_axi_aresetn]
+  connect_bd_net -net bar_clk_1 [get_bd_ports app_clk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK] [get_bd_pins HP0_protocol_convert/aclk] [get_bd_pins GP0_protocol_convert/aclk] [get_bd_pins processing_system7/M_AXI_GP1_ACLK] [get_bd_pins GP0_protocol_convert1/aclk] [get_bd_pins axi_dwidth_converter_0/s_axi_aclk] [get_bd_pins processing_system7/S_AXI_ACP_ACLK]
   connect_bd_net -net proc_sys_reset_0_peripheral_reset [get_bd_pins proc_sys_reset/peripheral_reset] [get_bd_ports peripheral_reset]
   connect_bd_net -net proc_sys_reset_peripheral_aresetn [get_bd_pins proc_sys_reset/peripheral_aresetn] [get_bd_ports peripheral_aresetn]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins processing_system7/FCLK_RESET0_N] [get_bd_pins proc_sys_reset/ext_reset_in]
@@ -669,4 +670,3 @@
 
   # Create address segments
   assign_bd_address -offset 0x40000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces processing_system7/Data] [get_bd_addr_segs GP_CONTROL/Reg] -force
-  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces HP0] [get_bd_addr_segs processing_system7/S_AXI_HP0/HP0_DDR_LOWOCM] -force
