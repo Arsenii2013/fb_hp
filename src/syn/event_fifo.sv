@@ -7,14 +7,14 @@ module event_fifo(
     input  logic       aresetn,
 
     input  logic       wr_en,
-    input  logic [7:0] data_in,
+    input  logic [8:0] data_in,
 
     axi4_lite_if.s     axi,
 
     output logic       empty,
     output logic       full
 );
-    logic [7:0] data_out;
+    logic [8:0] data_out;
     logic        rd_en;
 
     typedef enum  {
@@ -163,8 +163,8 @@ module event_fifo(
     )
     FIFO18E1_inst (
     // Read Data: 32-bit (each) output: Read output data
-    .DO(data_out),                   // 32-bit output: Data output
-    .DOP(),                 // 4-bit output: Parity data output
+    .DO(data_out[7:0]),                   // 32-bit output: Data output
+    .DOP(data_out[8]),                 // 4-bit output: Parity data output
     .EMPTY(empty),             // 1-bit output: Empty flag
     .FULL(full),               // 1-bit output: Full flag
     // Read Control Signals: 1-bit (each) input: Read clock, enable and reset input signals
@@ -177,7 +177,8 @@ module event_fifo(
     .WRCLK(aclk),             // 1-bit input: Write clock
     .WREN(wr_en),               // 1-bit input: Write enable
     // Write Data: 32-bit (each) input: Write input data
-    .DI(data_in)                   // 32-bit input: Data input
+    .DI(data_in[7:0]),                   // 32-bit input: Data input
+    .DIP(data_in[8])
     );
 
 endmodule

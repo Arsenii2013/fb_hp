@@ -13,7 +13,7 @@ module event_fifoTB();
     end
 
     logic       wr_en;
-    logic [7:0] data_in;
+    logic [8:0] data_in;
 
     axi4_lite_if     axi();
 
@@ -77,7 +77,7 @@ module event_fifoTB();
 
         @(posedge app_clk);
         wr_en   <= 1;
-        data_in <= 'hF;
+        data_in <= 'h10F;
         #100000;
         @(posedge app_clk);
         wr_en   <= 0;
