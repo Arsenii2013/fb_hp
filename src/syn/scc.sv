@@ -28,7 +28,6 @@ module scc_m
     input  logic [      EV_W-1:0] ev,
     output logic                  sync,
     output logic                  align,
-    output logic                  log_start,
 
     output logic                  dds_clk_out,
 
@@ -38,7 +37,8 @@ module scc_m
     output logic [           3:0] test_out,
 
     output logic [MMR_DATA_W-1:0] sync_prd,
-    output logic                  sync_PS
+    output logic                  sync_PS,
+    input  logic                  busy_PS
 );
 
 //------------------------------------------------
@@ -95,7 +95,7 @@ typedef struct packed
 //
 sr_t          sr;
 cr_t          cr        = 0;
-event_t       sync_ev   = 1;
+event_t       sync_ev   = 0;
 logic         sync_ev_p;
 logic         sync_ev_recv;
 
@@ -144,7 +144,7 @@ end
 always_ff @(posedge clk) begin
     if (!aresetn) begin
         cr              <=  cr_t'(0);
-        sync_ev         <= 1;
+        sync_ev         <= 0;
         sync_prd        <=  data_t'(SYNC_PRD_DEF);
         align_ena       <=  0;
         align_ev        <= '0;
