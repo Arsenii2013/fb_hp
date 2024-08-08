@@ -154,7 +154,6 @@ module PS_wrapper_(
     `endif //SYNTHESIS 
 
     `ifndef SYNTHESIS
-    assign EMIO_O = '0;
     sys_clk_gen
     #(
         .halfcycle (CLK_PRD / 2 * 1000), 
@@ -180,6 +179,26 @@ module PS_wrapper_(
         peripheral_aresetn <= 1;
         peripheral_reset   <= 0;
     end
+
+    logic sync;
+    logic busy = 0;
+
+    assign sync = EMIO_I[0];
+    assign EMIO_O[1] = busy;
+
+    always_ff @(posedge peripheral_clock) begin
+        if(sync) begin
+            if($urandom()%4 == 0) begin
+                busy <= 1;
+            end
+        end
+        if(busy) begin
+            if($urandom()%10 == 0) begin
+                busy <= 0;
+            end
+        end
+    end
+
     `endif //SYNTHESIS 
         
  endmodule
