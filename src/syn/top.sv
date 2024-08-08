@@ -100,6 +100,7 @@ module top(
     logic PS_sync;
     logic PS_busy;
     logic [7:0] ev;
+    logic sync;
 
     xpm_cdc_async_rst #(
         .INIT_SYNC_FF(0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
@@ -229,7 +230,8 @@ module top(
     logic [EMIO_SIZE-1:0]  emio_t;
 
     assign emio_i[0] = PS_sync;
-    assign emio_i[1] = PS_busy;
+    assign PS_busy   = emio_o[1];
+
 
     logic [8:0] ev_and_sync;
     assign ev_and_sync = {sync, ev};
@@ -514,8 +516,8 @@ module top(
     `endif // MGT_FULL_STACK
 
     //--------------EVR--------------\\
-    logic [7:0] ev;
     logic       dc_coarse_done;
+    logic [7:0] ev_mrf;
     axi4_lite_if #(.AW(32), .DW(32)) shared_data();
     evr evr_i
     (
@@ -537,11 +539,30 @@ module top(
         //------Application signals-------
         .app_clk(app_clk),
         .app_rst(app_reset),
-        .ev(ev),
+        .ev(ev_mrf),
         .mmr(mmr[MMR_EVR]),
         .tx(mmr[MMR_TX]),
         .shared_data_out(shared_data),
         .dc_coarse_done(dc_coarse_done)
+    );
+
+    //---------------EV_MUX----------------
+    logic [7:0] ev_soft;
+    event_generator event_generator_i(
+        .app_clk(app_clk),
+        .aresetn(app_aresetn),
+        .mmr(mmr[MMR_EVG]),
+        .ev(ev_soft)
+    );
+
+    ev_mux ev_mux_i(
+        .app_clk(app_clk),
+        .aresetn(app_aresetn),
+        .mmr(mmr[MMR_EVMUX]),
+        .ev(ev),
+        .ev_mrf(ev_mrf),
+        .ev_trigger(0),
+        .ev_soft(ev_soft)
     );
 
     //ddsc_if #( .DW        ( 32              )) ddsc_out_i();
@@ -599,7 +620,7 @@ module top(
 
     scc_m ssc_i(
         .clk(app_clk),
-        .rst(),
+        .rst(!app_aresetn),
         //.evr_link_ok(sfp_aligned),
         //.dc_coarse_done(dc_coarse_done),
         .evr_link_ok(1),
@@ -613,7 +634,6 @@ module top(
         .ev(ev),
         .sync(sync),
         .align(),
-        .log_start(),
         .dds_clk_out(dds_clk),
 
         .sync_x2(sync_x2), 
@@ -636,7 +656,7 @@ module top(
         .sync_x2(sync_x2),
         .align_x2(align_x2),
         .afe_ctrl_i(afe_ctrl_i),
-        .test_mmr(mmr[MMR_DEV_COUNT])
+        .test_mmr(mmr[MMR_DEV_COUNT + 1])
     );
 
     //-------------GPIO--------------\\

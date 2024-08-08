@@ -42,14 +42,23 @@ begin
     else begin
         $display ("EVR hasn't gotten a delay yet!");
     end
+    
+    // EVG 
+    pci_e_write(0, 32'h2810, 32'h15);  // write ev0
+    pci_e_write(0, 32'h2814, 32'h100); // write delay0
+    pci_e_write(0, 32'h2804, 32'h2);   // write 
+    pci_e_write(0, 32'h2804, 32'h8);   // start
+
+    // EVM
+    pci_e_write(0, 32'h1010, 32'h2);   // ev_soft
+
 
     // SCC
 
-    pci_e_read(0, 32'h400, recv_data); // check cdr_locked
+    //pci_e_read(0, 32'h400, recv_data); // check cdr_locked
     pci_e_write(0, 32'h410, 32'h15); // write sync_ev
     pci_e_write(0, 32'h414, 32'd10); // write sync_prd
-    pci_e_write(0, 32'h418, 32'h15); // write align_ev
-    pci_e_write(0, 32'h41c, 32'h15); // write test0_ev
+    pci_e_write(0, 32'h404, 32'h3);  // write enable
 
     #10000;
     pci_e_read(0, 32'h3000, recv_data); // get sync prd
