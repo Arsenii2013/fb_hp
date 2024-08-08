@@ -1,0 +1,6 @@
+import : main
+
+sources:
+    - src/syn/ev_mux.sv
+    - src/syn/top.svh
+    - src/lib/axi/axi4_lite_if.svh

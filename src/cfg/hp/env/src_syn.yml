@@ -43,6 +43,8 @@ sources:
     - src/syn/event_fifo.sv
     - src/syn/llrf_init.sv
     - src/syn/afe_model.sv
+    - src/syn/event_generator.sv
+    - src/syn/ev_mux.sv
 
 
     - src/syn/event_choise.sv

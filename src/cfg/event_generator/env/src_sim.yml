@@ -1,0 +1,4 @@
+import : main
+
+sources:
+    - src/syn/ev_mux.sv
