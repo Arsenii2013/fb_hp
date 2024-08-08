@@ -15,7 +15,7 @@
 module scc_m
 (
     input  logic                  clk,
-    output logic                  rst,
+    input  logic                  rst,
 
     axi4_lite_if.s                mmr,
     axi4_lite_if.m                afe_ctrl_i,
@@ -323,15 +323,29 @@ generate
     end
 endgenerate
 
-pf_m #(.WIDTH(3), .POR("ON")) rst_pf        (.clk(clk), .in(0),                           .out(rst)         );
+//------------------------------------------------
+logic [$clog2(PS_SYNC_WIDTH):0] PS_pulse_cnt = '0;
 
-pf_m #(.WIDTH(1)            ) sync_pf       (.clk(clk), .in(sr.dds_sync_ena && cnt == 0), .out(sync)        );
-pf_m #(.WIDTH(2)            ) sync_x2_pf    (.clk(clk), .in(sr.dds_sync_ena && cnt == 0), .out(sync_x2)     );
+always_ff @(posedge clk) begin
+    if(rst)
+        sync_PS <= 0;
+    else if(sync && !busy_PS) 
+        sync_PS <= 1;
+    else if (busy_PS)
+        sync_PS <= 0;
+       
+end
 
 
-pf_m #(.WIDTH(1)            ) afe_down_pf   (.clk(clk), .in(~afe_init_done),              .out(afe_down_p)  );
-pf_m #(.WIDTH(1)            ) dc_changed_pf (.clk(clk), .in(~dc_coarse_done),             .out(dc_changed_p));
-pf_m #(.WIDTH(1)            ) sync_loss_pf  (.clk(clk), .in(~sr.clk_sync_done),           .out(sync_loss_p) );
+//pf_m #(.WIDTH(3), .POR("ON")) rst_pf        (.clk(clk), .in(0),                           .out(rst)         );
+
+pf_m #(.WIDTH(1), .POR("OFF")) sync_pf       (.clk(clk), .in(sr.dds_sync_ena && cnt == 0), .out(sync)        );
+pf_m #(.WIDTH(2), .POR("OFF")) sync_x2_pf    (.clk(clk), .in(sr.dds_sync_ena && cnt == 0), .out(sync_x2)     );
+
+
+pf_m #(.WIDTH(1), .POR("OFF")) afe_down_pf   (.clk(clk), .in(~afe_init_done),              .out(afe_down_p)  );
+pf_m #(.WIDTH(1), .POR("OFF")) dc_changed_pf (.clk(clk), .in(~dc_coarse_done),             .out(dc_changed_p));
+pf_m #(.WIDTH(1), .POR("OFF")) sync_loss_pf  (.clk(clk), .in(~sr.clk_sync_done),           .out(sync_loss_p) );
 
 
 //------------------------------------------------
