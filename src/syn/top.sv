@@ -281,7 +281,7 @@ module top(
     
     //localparam MMR_DEV_COUNT2 = 2 ** ($clog2(MMR_DEV_COUNT) + 1);
     localparam MMR_DEV_COUNT2 = 64;
-    axi4_lite_if #(.AW(MMR_DEV_ADDR_W), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
+    axi4_lite_if #(.AW(32), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
      
     //-------Processing System-------\\
     logic spi_aclk;
@@ -493,7 +493,17 @@ module top(
     );
     `endif // SYNTHESIS
 
-    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) plug();
+    axi4_lite_if #(.DW(32), .AW(BAR0_ADDR_W)) plug();
+    assign plug.awaddr  = '0;
+    assign plug.arprot  = '0;
+    assign plug.awvalid = '0;
+    assign plug.wdata   = '0;
+    assign plug.wstrb   = '0;
+    assign plug.wvalid  = '0;
+    assign plug.bready  = '0;
+    assign plug.araddr  = '0;
+    assign plug.arvalid = '0;
+    assign plug.rready  = '0;
 
     qspi_wrapper 
     #(
