@@ -284,9 +284,6 @@ module top(
     axi4_lite_if #(.AW(32), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
      
     //-------Processing System-------\\
-    logic spi_aclk;
-    logic spi_oclk;
-    logic spi_aresetn;
     logic [HP0_ADDR_W-1:0] HP0_offset;
     logic [EMIO_SIZE-1:0]  emio_o;
     logic [EMIO_SIZE-1:0]  emio_i;
@@ -472,6 +469,24 @@ module top(
     );
 
     //-------------QSPI--------------\\
+    logic spi_aclk;
+    logic spi_oclk;
+    logic spi_aresetn;
+
+    xpm_cdc_async_rst #(
+        .INIT_SYNC_FF(0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
+        .RST_ACTIVE_HIGH(0)  // DECIMAL; 0=active low reset, 1=active high reset
+    )
+    xpm_cdc_spi_aresetn_inst (
+        .dest_arst(spi_aresetn), // 1-bit output: src_arst asynchronous reset signal synchronized to destination
+                                // clock domain. This output is registered. NOTE: Signal asserts asynchronously
+                                // but deasserts synchronously to dest_clk. Width of the reset signal is at least
+                                // (DEST_SYNC_FF*dest_clk) period.
+
+        .dest_clk(spi_aclk),   // 1-bit input: Destination clock.
+        .src_arst(PS_aresetn)    // 1-bit input: Source asynchronous reset signal.
+    );
+
     `ifndef SYNTHESIS
     sys_clk_gen
     #(
@@ -480,14 +495,18 @@ module top(
     ) CLK_GEN (
         .sys_clk (spi_aclk)
     );
-    assign spi_oclk = ~spi_aclk;
+    sys_clk_gen
+    #(
+        .halfcycle (CLK_PRD / 2 * 1000), // in ps
+        .offset    (2000)  // 
+    ) CLK_GEN_1 (
+        .sys_clk (spi_oclk)
+    );
     `else // SYNTHESIS
-    
-    assign spi_aresetn = app_aresetn;
     qspi_pll (
         .clk_out1(spi_aclk),
         .clk_out2(spi_oclk),
-        .resetn(spi_aresetn),
+        .resetn(app_aresetn),
         .locked(),
         .clk_in1(app_clk)
     );
@@ -524,6 +543,13 @@ module top(
         .MISO(MISO),
         .MOSI(MOSI)
     );
+
+    /*ila_0 ila_tx(
+        .clk(spi_oclk),
+        .probe0(CSn),
+        .probe1(MISO),
+        .probe2(MOSI)
+    );*/
 
     //-------------SFP---------------\\
     logic        sfp_reset;
@@ -726,7 +752,7 @@ module top(
         .busy_PS(PS_busy)
     );
 
-    afe_model afe_model_i
+    /*afe_model afe_model_i
     (
         .clk(app_clk),
         .clk_d2(dds_clk),
@@ -737,7 +763,7 @@ module top(
         .align_x2(align_x2),
         .afe_ctrl_i(afe_ctrl_i),
         .test_mmr(mmr[MMR_DEV_COUNT + 1])
-    );
+    );*/
 
     //-------------GPIO--------------\\
     blink #(
