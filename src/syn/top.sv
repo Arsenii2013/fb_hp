@@ -233,6 +233,15 @@ module top(
     assign PS_busy   = emio_o[1];
 
 
+    OBUFT OBUFT_inst (
+        .O(afe_pwr_ena),     // Buffer output (connect directly to top-level port)
+        .I(0),     // Buffer input
+        .T(emio_t[2])      // 3-state enable input
+    );
+
+    assign emio_i[3] = afe_pwr_gd;
+
+
     logic [8:0] ev_and_sync;
     assign ev_and_sync = {sync, ev};
 
@@ -615,8 +624,6 @@ module top(
 
     logic dds_clk;
     logic afe_ready;
-    logic sync_x2;
-    logic align_x2;
 
     scc_m ssc_i(
         .clk(app_clk),
@@ -634,10 +641,10 @@ module top(
         .ev(ev),
         .sync(sync),
         .align(),
-        .dds_clk_out(dds_clk),
+        .dds_clk_out(DDS_CLK),
 
-        .sync_x2(sync_x2), 
-        .align_x2(align_x2),
+        .sync_x2(DDS_SYNC), 
+        .align_x2(),
 
         .test_out(test_out),
 
