@@ -60,9 +60,17 @@ begin
     pci_e_write(0, 32'h414, 32'd10); // write sync_prd
     pci_e_write(0, 32'h404, 32'h3);  // write enable
 
-    #10000;
-    pci_e_read(0, 32'h3000, recv_data); // get sync prd
-    pci_e_read(0, 32'h3004, recv_data); // get align
+    //#10000;
+    //pci_e_read(0, 32'h3000, recv_data); // get sync prd
+    //pci_e_read(0, 32'h3004, recv_data); // get align
+
+
+    // QSPI read write test
+    pci_e_read (0, 'h1800, recv_data);
+    pci_e_write(0, 'h1800, 'h0000DEAD);
+    pci_e_write(0, 'h1804, 'h0000BEEF);
+    pci_e_read (0, 'h1800, recv_data);
+    pci_e_read (0, 'h1804, recv_data);
 
 /*
     // TX start        
