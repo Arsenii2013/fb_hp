@@ -42,3 +42,16 @@ set_property -dict { PACKAGE_PIN AA15 IOSTANDARD LVCMOS33 } [get_ports { test_ou
 set_property -dict { PACKAGE_PIN AB16 IOSTANDARD LVCMOS33 } [get_ports { test_out[3] }];
 
 
+set_property -dict { PACKAGE_PIN R4 IOSTANDARD LVCMOS33 } [get_ports { afe_pwr_ena }];
+set_property -dict { PACKAGE_PIN R5 IOSTANDARD LVCMOS33 } [get_ports { afe_pwr_gd }];
+
+
+set_property PACKAGE_PIN A7 [get_ports {DDS_SYNC_p}]
+set_property PACKAGE_PIN A6 [get_ports {DDS_SYNC_n}]
+set_property PACKAGE_PIN D1 [get_ports {DDS_CLK_p}]
+set_property PACKAGE_PIN C1 [get_ports {DDS_CLK_n}]
+
+
+set_property -dict { IOSTANDARD LVDS_25 } [get_ports { DDS_SYNC_p }];
+set_property -dict { IOSTANDARD LVDS_25 } [get_ports { DDS_CLK_p }];
+

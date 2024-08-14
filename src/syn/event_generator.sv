@@ -49,6 +49,10 @@ module event_generator(
     logic write_data;
     logic [MMR_DEV_ADDR_W-1:0] addr;
     logic [MMR_DATA_W-1:0] data;
+    
+
+    logic [$clog2(EVENTS_N) - 1:0] read_ptr = 0;
+    logic [31:0] cnt = 0;
 
     always_ff @(posedge app_clk) begin
         if (!aresetn) begin
@@ -114,13 +118,7 @@ module event_generator(
             end 
             
         end
-    end
-
-
-    logic [$clog2(EVENTS_N) - 1:0] read_ptr = 0;
-    logic [31:0] cnt = 0;
-
-    always_ff @(posedge app_clk) begin
+        
         if (!aresetn || cr.clear) begin
             events <= '{default:0};
             delays <= '{default:0};
@@ -128,7 +126,8 @@ module event_generator(
             cnt    <= 0;
             read_ptr <= 0;
             write_ptr <= 0;
-        end else begin
+        end 
+        else begin
             if(cr.write) begin
                 events[write_ptr] <= ev_to_write;
                 delays[write_ptr] <= delay_to_write;

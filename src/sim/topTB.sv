@@ -105,10 +105,11 @@ module topTB(
         .sfp_loss(sfp_loss),
         `endif //MGT_FULL_STACK
 
-        .SCK(sck),
-        .CSn(cs_n),
-        .MISO(miso),
-        .MOSI(mosi)
+        .SCK_p(sck),
+        .CSn_p(cs_n),
+        .MISO_p(miso),
+        .MISO_n(~miso),
+        .MOSI_p(mosi)
     );
     
     `ifdef PCIE_PIPE_STACK
@@ -160,26 +161,23 @@ module topTB(
     );
     `endif //PCIE_PIPE_STACK
 
-
-    localparam SPI_AVMM_AW  = 10;
-    localparam SPI_AVMM_DW  = 32;
-    localparam MAX_BURST    = 1;
-    localparam SPI_W        = 4;
-
     logic             spi_slave_clk;
+
+    localparam SPI_AVMM_AW      = 10;
+    localparam SPI_AVMM_DW      = 32;
 
     avmm_if #(
         .AW        ( SPI_AVMM_AW ),
         .DW        ( SPI_AVMM_DW ),
-        .MAX_BURST ( MAX_BURST   )
+        .MAX_BURST ( 1   )
     ) s_i();
 
     hs_spi_slave_avmm_m
     #(
-        .AW        ( 10 ),
-        .DW        ( 32 ),
-        .SPI_W     ( 4  ),
-        .MAX_BURST ( 1  )
+        .AW        ( SPI_AVMM_AW ),
+        .DW        ( SPI_AVMM_DW ),
+        .SPI_W     ( SPI_W       ),
+        .MAX_BURST ( 1   )
     )
     spi_slave
     (
@@ -195,7 +193,7 @@ module topTB(
     avmm_slave_stub #(
         .AW        ( SPI_AVMM_AW ),
         .DW        ( SPI_AVMM_DW ),
-        .MAX_BURST ( MAX_BURST   )
+        .MAX_BURST ( 1   )
     )
     avmm_slave
     (
