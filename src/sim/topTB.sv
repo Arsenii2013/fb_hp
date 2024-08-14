@@ -105,10 +105,11 @@ module topTB(
         .sfp_loss(sfp_loss),
         `endif //MGT_FULL_STACK
 
-        .SCK(sck),
-        .CSn(cs_n),
-        .MISO(miso),
-        .MOSI(mosi)
+        .SCK_p(sck),
+        .CSn_p(cs_n),
+        .MISO_p(miso),
+        .MISO_n(~miso),
+        .MOSI_p(mosi)
     );
     
     `ifdef PCIE_PIPE_STACK

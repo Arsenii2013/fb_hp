@@ -238,6 +238,9 @@ always_ff @(posedge SCK) begin : spi_fsm
                 cnt <= cnt + 1;
             end
         end
+        else begin
+            cnt <= 0;
+        end
     end
 end
 

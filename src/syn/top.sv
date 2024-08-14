@@ -65,10 +65,14 @@ module top(
     `endif //SYNTHESIS 
 
     //-------------QSPI--------------\\
-    output logic              SCK,
-    output logic              CSn,
-    input  logic [SPI_W-1:0]  MISO,
-    output logic [SPI_W-1:0]  MOSI,
+    output logic              SCK_p,
+    output logic              CSn_p,
+    input  logic [SPI_W-1:0]  MISO_p,
+    output logic [SPI_W-1:0]  MOSI_p,
+    output logic              SCK_n,
+    output logic              CSn_n,
+    input  logic [SPI_W-1:0]  MISO_n,
+    output logic [SPI_W-1:0]  MOSI_n,
 
     //-------------SFP---------------\\
     `ifdef MGT_FULL_STACK
@@ -86,9 +90,68 @@ module top(
     //-------------GPIO--------------\\
     output logic [3:0] led,
 
-    (* IOB = "TRUE" *) output logic [3:0] test_out
+    (* IOB = "TRUE" *) output logic [3:0] test_out,
+
+    output logic afe_pwr_ena,
+    input  logic afe_pwr_gd,
+    output logic DDS_CLK_n,
+    output logic DDS_CLK_p,
+    output logic DDS_SYNC_n,
+    output logic DDS_SYNC_p
 
     );
+
+    logic DDS_SYNC;
+    logic DDS_CLK;
+
+    OBUFDS DDS_SYNC_buf (
+        .O(DDS_SYNC_p),     // Diff_p output (connect directly to top-level port)
+        .OB(DDS_SYNC_n),   // Diff_n output (connect directly to top-level port)
+        .I(DDS_SYNC)      // Buffer input
+    );
+    OBUFDS DDS_CLK_buf (
+        .O(DDS_CLK_p),     // Diff_p output (connect directly to top-level port)
+        .OB(DDS_CLK_n),   // Diff_n output (connect directly to top-level port)
+        .I(DDS_CLK)      // Buffer input
+    );
+
+    logic              SCK;
+    logic              CSn;
+    logic [SPI_W-1:0]  MISO;
+    logic [SPI_W-1:0]  MOSI;
+
+    OBUFDS SCK_buf (
+        .O(SCK_p),     // Diff_p output (connect directly to top-level port)
+        .OB(SCK_n),   // Diff_n output (connect directly to top-level port)
+        .I(SCK)      // Buffer input
+    );
+    OBUFDS CSn_buf (
+        .O(CSn_p),     // Diff_p output (connect directly to top-level port)
+        .OB(CSn_n),   // Diff_n output (connect directly to top-level port)
+        .I(CSn)      // Buffer input
+    );
+
+    genvar MOSI_i;
+    generate 
+    for (MOSI_i = 0; MOSI_i < SPI_W; MOSI_i++) begin
+        OBUFDS MOSI_buf (
+            .O(MOSI_p[MOSI_i]),     // Diff_p output (connect directly to top-level port)
+            .OB(MOSI_n[MOSI_i]),   // Diff_n output (connect directly to top-level port)
+            .I(MOSI[MOSI_i])      // Buffer input
+        );
+    end
+    endgenerate
+    genvar MISO_i;
+    generate 
+    for (MISO_i = 0; MISO_i < SPI_W; MISO_i++) begin
+        IBUFDS MISO_buf (
+            .I(MISO_p[MISO_i]),     // Diff_p output (connect directly to top-level port)
+            .IB(MISO_n[MISO_i]),   // Diff_n output (connect directly to top-level port)
+            .O(MISO[MISO_i])      // Buffer input
+        );
+    end
+    endgenerate
+
     assign sfp_tx_dis = 'b0;
 
     logic PS_clk;
