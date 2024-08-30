@@ -38,7 +38,8 @@ module axi_crossbarTB(
             mem_wrapper mem_i(
                 .aresetn(aresetn),
                 .aclk(aclk),
-                .axi(s[i])
+                .axi(s[i]),
+                .offset(0)
             );
         end
     endgenerate
@@ -163,6 +164,13 @@ initial begin
 
     @(posedge aresetn)
     #100ns
+
+    read(0 , rdata);
+    write(2 ** SAW, 'hdead);
+    write(2 * 2 ** SAW, 'hdead);
+    read(0 , rdata);
+    #100ns
+    $stop();
 
     for (i = 0; i < `SLAVES; i++) begin
         for (j = 0; j < 256; j++) begin

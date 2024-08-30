@@ -292,13 +292,6 @@ module top(
     assign emio_i[0] = PS_sync;
     assign PS_busy   = emio_o[1];
 
-
-    OBUFT OBUFT_inst (
-        .O(afe_pwr_ena),     // Buffer output (connect directly to top-level port)
-        .I(0),     // Buffer input
-        .T(emio_t[2])      // 3-state enable input
-    );
-
     assign emio_i[3] = afe_pwr_gd;
 
 
@@ -312,7 +305,9 @@ module top(
         .data_in(ev_and_sync),
         .axi(mmr[MMR_PSEVENT])
     );
+    axi4_lite_if #(.AW(GP0_ADDR_W), .DW(MMR_DATA_W)) mux_i();
 
+    axi4_lite_if #(.AW(GP0_ADDR_W), .DW(MMR_DATA_W)) unused_SLAVES[15]();
     PS_wrapper_ 
     PS_wrapper_i (
         `ifdef SYNTHESIS
@@ -343,6 +338,12 @@ module top(
         .GP_DATA(GP_DATA),
         .HP0(bar2),
         .HP0_offset(HP0_offset),
+        //.SLAVES(mmr[MMR_DEV_COUNT+1:MMR_DEV_COUNT + 15]),
+        .SLAVES({mmr[MMR_LOG], mmr[MMR_PSMEM], unused_SLAVES[0], 
+                 unused_SLAVES[1], unused_SLAVES[2], unused_SLAVES[3],
+                 unused_SLAVES[4], unused_SLAVES[5], unused_SLAVES[6], 
+                 unused_SLAVES[7], unused_SLAVES[8], unused_SLAVES[9], 
+                 unused_SLAVES[10], unused_SLAVES[11], unused_SLAVES[12]}),
 
         .EMIO_I(emio_i),
         .EMIO_O(emio_o),
@@ -412,15 +413,13 @@ module top(
     );
 
     //-------------MMR--------------\\
-    axi4_lite_if #(.AW(GP0_ADDR_W), .DW(MMR_DATA_W)) un();
-
     axi_2master 
     axi_interconnect_i(
         .aresetn(app_aresetn),
         .aclk(app_clk),
         .m1(GP_CONTROL),
         .m2(bar0),
-        .s(un)
+        .s(mux_i)
     );
 
     axi_crossbar
@@ -433,7 +432,7 @@ module top(
     (
         .aresetn(app_aresetn),
         .aclk(app_clk),
-        .m(un),
+        .m(mux_i),
         .s(mmr)
     );
 
@@ -442,22 +441,6 @@ module top(
         .aclk(app_clk),
         .aresetn(app_aresetn),
         .axi(mmr[MMR_SYS]),
-        .offset(0)
-    );
-
-    mem_wrapper
-    ps_mem_i (
-        .aclk(app_clk),
-        .aresetn(app_aresetn),
-        .axi(mmr[MMR_PSMEM]),
-        .offset(0)
-    );
-
-    mem_wrapper
-    logger_ctrl (
-        .aclk(app_clk),
-        .aresetn(app_aresetn),
-        .axi(mmr[MMR_LOG]),
         .offset(0)
     );
 

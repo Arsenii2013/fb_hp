@@ -45,6 +45,7 @@ sources:
     - src/syn/afe_model.sv
     - src/syn/event_generator.sv
     - src/syn/ev_mux.sv
+    - src/syn/cache.v
 
 
     - src/syn/event_choise.sv
