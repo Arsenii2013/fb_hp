@@ -21,7 +21,8 @@ module axi_crossbar
     typedef enum  { IDLE, READ, WRITE } state_t;
 
     state_t state = IDLE, next_state;
-    logic [BASE-1:0] id;
+    logic [BASE-1:0] id = 0;
+    logic [BASE-1:0] id_reg = 0;
 
     logic [N-1:0]    awvalid;
     logic [N-1:0]    awready;
@@ -70,24 +71,31 @@ module axi_crossbar
         end
     endgenerate
 
-    always_comb begin 
-        if(next_state == WRITE)
+    /*always_comb begin 
+        if(state == WRITE)
             id = m.awaddr[AW-1:SAW];
-        else if(next_state == READ)
+        else if(state == READ)
             id = m.araddr[AW-1:SAW];
         else 
-            id = id;
+            id = 0;
+    end*/
+
+    always_ff @(posedge aclk) begin
+        if(m.awvalid)
+            id <= m.awaddr[AW-1:SAW];
+        else if(m.arvalid)
+            id <= m.araddr[AW-1:SAW];
     end
     
-    assign m.awready     = awready[id];
-    assign m.wready      = wready[id];
-    assign m.bresp       = {bresp1[id], bresp2[id]};
-    assign m.bvalid      = bvalid[id];
+    assign m.awready     = state != IDLE ? awready[id] : 0;
+    assign m.wready      = state != IDLE ? wready[id] : 0;
+    assign m.bresp       = state != IDLE ? {bresp1[id], bresp2[id]} : 0;
+    assign m.bvalid      = state != IDLE ? bvalid[id] : 0;
 
-    assign m.arready     = arready[id];
-    assign m.rresp       = {rresp1[id], rresp2[id]};
-    assign m.rvalid      = rvalid[id];
-    assign m.rdata       = rdata[id];
+    assign m.arready     = state != IDLE ? arready[id] : 0;
+    assign m.rresp       = state != IDLE ? {rresp1[id], rresp2[id]} : 0;
+    assign m.rvalid      = state != IDLE ? rvalid[id] : 0;
+    assign m.rdata       = state != IDLE ? rdata[id] : 0;
 
     always_comb begin
         for(int i=0;i<N;i++) begin
@@ -98,11 +106,11 @@ module axi_crossbar
             rready[i]  = 0;
         end
 
-        awvalid[id]   = m.awvalid;
-        wvalid[id]    = m.wvalid;
-        bready[id]    = m.bready;
-        arvalid[id]   = m.arvalid;
-        rready[id]    = m.rready;
+        awvalid[id]   = state != IDLE ? m.awvalid : 0;
+        wvalid[id]    = state != IDLE ? m.wvalid : 0;
+        bready[id]    = state != IDLE ? m.bready : 0;
+        arvalid[id]   = state != IDLE ? m.arvalid : 0;
+        rready[id]    = state != IDLE ? m.rready : 0;
     end
 
     always_ff @( posedge aclk ) begin 
@@ -116,10 +124,10 @@ module axi_crossbar
 
     always_comb begin 
         case(state)
-        IDLE  : next_state = m.arvalid && m.rready ? READ : m.awvalid && m.wvalid ? WRITE : IDLE;
-        READ  : next_state = m.rready  && m.rvalid ? IDLE : READ;
-        WRITE : next_state = m.bready  && m.bvalid ? IDLE : WRITE;
+        IDLE  :  next_state = (m.arvalid && m.rready) ? READ : (m.awvalid && m.wvalid) ? WRITE : IDLE;
+        READ  :  next_state = (m.rready  && m.rvalid) ? IDLE : READ;
+        WRITE :  next_state = (m.bready  && m.bvalid) ? IDLE : WRITE;
+        default: next_state = IDLE;
         endcase;
     end
-
 endmodule
