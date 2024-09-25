@@ -45,8 +45,17 @@ begin
     
     // EVG 
     pci_e_write(0, 32'h2810, 32'h15);  // write ev0
-    pci_e_write(0, 32'h2814, 32'h100); // write delay0
+    pci_e_write(0, 32'h2814, 10); // write delay0
     pci_e_write(0, 32'h2804, 32'h2);   // write 
+    #1000;
+    pci_e_write(0, 32'h2810, 32'h16);  // write ev1
+    pci_e_write(0, 32'h2814, 20); // write delay1
+    pci_e_write(0, 32'h2804, 32'h2);   // write 
+    #1000;
+    pci_e_write(0, 32'h2810, 32'h17);  // write ev2
+    pci_e_write(0, 32'h2814, 20); // write delay2
+    pci_e_write(0, 32'h2804, 32'h2);   // write 
+
     pci_e_write(0, 32'h2804, 32'h8);   // start
 
     // EVM
