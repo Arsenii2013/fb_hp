@@ -319,7 +319,7 @@ endgenerate
 generate
     for (i=0; i<4; i=i+1) begin : test_pulse_formers
         assign test_ev_recv[i] = test_ev[i] != 0 && ev == test_ev[i];
-        pf_m #(.WIDTH(2)) test_pf (.clk(clk), .in(test_ev_recv[i]), .out(test_p[i]));
+        pf_m #(.WIDTH(100000)) test_pf (.clk(clk), .in(test_ev_recv[i]), .out(test_out[i]));
     end
 endgenerate
 
