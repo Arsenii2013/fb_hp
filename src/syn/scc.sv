@@ -349,7 +349,7 @@ pf_m #(.WIDTH(1), .POR("OFF")) sync_loss_pf  (.clk(clk), .in(~sr.clk_sync_done),
 
 
 //------------------------------------------------
-llrf_init_m llrf_init
+/*llrf_init_m llrf_init
 (
     .clk             ( clk                 ),
     .rst             ( rst                 ),
@@ -368,7 +368,7 @@ llrf_init_m llrf_init
     .dds_sync_ena    ( int_dds_sync_ena    ),
     
     .afe_ctrl_i      ( afe_ctrl_i          )
-);
+);*/
     
 //------------------------------------------------
 endmodule : scc_m
