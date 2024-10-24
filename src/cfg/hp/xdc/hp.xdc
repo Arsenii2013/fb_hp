@@ -40,6 +40,10 @@ set_property -dict { PACKAGE_PIN M4   IOSTANDARD LVCMOS33 } [get_ports { test_ou
 set_property -dict { PACKAGE_PIN AB19 IOSTANDARD LVCMOS33 } [get_ports { test_out[1] }];
 set_property -dict { PACKAGE_PIN AA15 IOSTANDARD LVCMOS33 } [get_ports { test_out[2] }];
 set_property -dict { PACKAGE_PIN AB16 IOSTANDARD LVCMOS33 } [get_ports { test_out[3] }];
+set_property SLEW SLOW [get_ports test_out[0]]
+set_property SLEW SLOW [get_ports test_out[1]]
+set_property SLEW SLOW [get_ports test_out[2]]
+set_property SLEW SLOW [get_ports test_out[3]]
 
 
 set_property -dict { PACKAGE_PIN R4 IOSTANDARD LVCMOS33 } [get_ports { afe_pwr_ena }];

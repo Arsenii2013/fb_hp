@@ -319,7 +319,7 @@ endgenerate
 generate
     for (i=0; i<4; i=i+1) begin : test_pulse_formers
         assign test_ev_recv[i] = test_ev[i] != 0 && ev == test_ev[i];
-        pf_m #(.WIDTH(2)) test_pf (.clk(clk), .in(test_ev_recv[i]), .out(test_p[i]));
+        pf_m #(.WIDTH(100000)) test_pf (.clk(clk), .in(test_ev_recv[i]), .out(test_out[i]));
     end
 endgenerate
 
@@ -349,7 +349,7 @@ pf_m #(.WIDTH(1), .POR("OFF")) sync_loss_pf  (.clk(clk), .in(~sr.clk_sync_done),
 
 
 //------------------------------------------------
-llrf_init_m llrf_init
+/*llrf_init_m llrf_init
 (
     .clk             ( clk                 ),
     .rst             ( rst                 ),
@@ -368,7 +368,7 @@ llrf_init_m llrf_init
     .dds_sync_ena    ( int_dds_sync_ena    ),
     
     .afe_ctrl_i      ( afe_ctrl_i          )
-);
+);*/
     
 //------------------------------------------------
 endmodule : scc_m

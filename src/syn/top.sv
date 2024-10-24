@@ -292,7 +292,12 @@ module top(
     assign emio_i[0] = PS_sync;
     assign PS_busy   = emio_o[1];
 
-    assign emio_i[3] = afe_pwr_gd;
+    OBUFT OBUFT_inst (
+        .O(afe_pwr_ena),     // Buffer output (connect directly to top-level port)
+        .I(0),     // Buffer input
+        .T(emio_t[2])      // 3-state enable input
+    );
+    assign emio_i[2] = afe_pwr_gd;
 
 
     logic [8:0] ev_and_sync;

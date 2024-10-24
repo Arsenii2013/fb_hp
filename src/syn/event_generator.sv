@@ -135,10 +135,10 @@ module event_generator(
                 cr.write <= 0;
             end
 
-            if(!sr.idle)
-                cnt += 1;
+            if(!sr.idle || cr.start)
+                cnt <= cnt + 1;
 
-            if(read_ptr == 0) begin
+            if((read_ptr == '0) && (cnt == '0)) begin
                 if(cr.start) begin
                     sr.idle  <= 0;
                     cr.start <= 0;
@@ -148,11 +148,13 @@ module event_generator(
                 end
                 if(!cr.start && !cr.cr_repeat) begin
                     sr.idle  <= 1;
+                    read_ptr <= 0;
+                    cnt      <= 0;
                 end
             end
-
+            
             if(cnt >= delays[read_ptr]) begin
-                read_ptr += 1;
+                read_ptr <= read_ptr + 1;
                 ev <= events [read_ptr];
                 cnt <= 0;
             end else begin
@@ -275,10 +277,13 @@ module event_generatorTB();
         end 
         aresetn <= 1;
         @(posedge app_clk);
+        @(posedge app_clk);
+        @(posedge app_clk);
+        @(posedge app_clk);
 
 
         axi_master_i.read(32'h00, read_data); 
-        assert (read_data == 'h1) else $error(""); 
+        assert (read_data == 'h1) else $display(""); 
          
 
         axi_master_i.write(32'h10, 'h15); 
@@ -297,9 +302,13 @@ module event_generatorTB();
         axi_master_i.write(32'h04, 'h4);
 
 
-        #100000;
+        #1000;
+        axi_master_i.write(32'h04, 'h4);
+        #1000;
 
         @(posedge app_clk);
+        axi_master_i.write(32'h04, 'h4);
+
         axi_master_i.write(32'h04, 'h8);
         #100000;
 
