@@ -201,8 +201,8 @@ module cache_signal
     assign M00_AXI_awsize = S00_AXI_awsize;
     assign M00_AXI_awburst = S00_AXI_awburst;
     assign M00_AXI_awlock = S00_AXI_awlock;
-    assign M00_AXI_awcache = 'b0010;
-    assign M00_AXI_awprot = S00_AXI_awprot;
+    assign M00_AXI_awcache = 'b1111;
+    assign M00_AXI_awprot = 'b000;
     assign M00_AXI_awqos = S00_AXI_awqos;
     assign M00_AXI_awvalid = S00_AXI_awvalid;
     assign S00_AXI_awready = M00_AXI_awready;
@@ -219,8 +219,8 @@ module cache_signal
     assign M00_AXI_arsize = S00_AXI_arsize;
     assign M00_AXI_arburst = S00_AXI_arburst;
     assign M00_AXI_arlock = S00_AXI_arlock;
-    assign M00_AXI_arcache = 'b0010;
-    assign M00_AXI_arprot = S00_AXI_arprot;
+    assign M00_AXI_arcache = 'b1111;
+    assign M00_AXI_arprot = 'b000;
     assign M00_AXI_arqos = S00_AXI_arqos;
     assign M00_AXI_arvalid = S00_AXI_arvalid;
     assign S00_AXI_arready = M00_AXI_arready;
