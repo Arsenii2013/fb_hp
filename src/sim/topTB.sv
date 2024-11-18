@@ -69,6 +69,8 @@ module topTB(
     logic [SPI_W-1:0] mosi;
     logic [SPI_W-1:0] miso;
         
+    logic external_trig;
+
     top DUT(
         `ifdef PCIE_PIPE_STACK
         .common_commands_in ( 4'b0  ),
@@ -109,7 +111,8 @@ module topTB(
         .CSn_p(cs_n),
         .MISO_p(miso),
         .MISO_n(~miso),
-        .MOSI_p(mosi)
+        .MOSI_p(mosi),
+        .external_trig(external_trig)
     );
     
     `ifdef PCIE_PIPE_STACK
@@ -237,6 +240,18 @@ module topTB(
         reset = 1'b0;
     end
     
+    initial
+    begin
+        external_trig <= 0;
+        # 10000;
+        external_trig <= 1;
+        # 5000;
+        external_trig <= 0;
+        @(posedge DUT.ssc_i.sr.dds_sync_ena) ;
+        external_trig <= 1;
+        # 5000;
+        external_trig <= 0;
+    end
     
     
     initial 

@@ -38,7 +38,10 @@ module scc_m
 
     output logic [MMR_DATA_W-1:0] sync_prd,
     output logic                  sync_PS,
-    input  logic                  busy_PS
+    input  logic                  busy_PS,
+
+    input  logic                  external_trig,
+    output logic                  external_trig_PS
 );
 
 //------------------------------------------------
@@ -333,9 +336,37 @@ always_ff @(posedge clk) begin
         sync_PS <= 1;
     else if (busy_PS)
         sync_PS <= 0;
-       
 end
 
+logic external_trig_1 = 0, external_trig_2 = 0, external_trig_3 = 0;
+
+always_ff @(posedge clk) begin
+    if(rst) begin
+        external_trig_1 <= 0;
+        external_trig_2 <= 0;
+        external_trig_3 <= 0;
+    end else begin
+        external_trig_1 <= external_trig;
+        external_trig_2 <= external_trig_1;
+        external_trig_3 <= external_trig_2;
+    end
+end
+
+data_t PS_trig_cnt = '0;
+
+always_ff @(posedge clk) begin
+    if(rst) begin
+        external_trig_PS <= 0;
+        PS_trig_cnt      <= '0;
+    end else if(external_trig_3) begin
+        PS_trig_cnt      <= (sync_prd << 2) - 1;
+        external_trig_PS <= 1;
+    end else if(PS_trig_cnt == 0) begin
+        external_trig_PS <= 0;
+    end else if(external_trig_PS) begin
+        PS_trig_cnt <= PS_trig_cnt-1;
+    end
+end
 
 //pf_m #(.WIDTH(3), .POR("ON")) rst_pf        (.clk(clk), .in(0),                           .out(rst)         );
 

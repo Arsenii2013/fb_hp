@@ -66,8 +66,8 @@ begin
 
     //pci_e_read(0, 32'h400, recv_data); // check cdr_locked
     pci_e_write(0, 32'h410, 32'h15); // write sync_ev
-    pci_e_write(0, 32'h414, 32'd10); // write sync_prd
-    pci_e_write(0, 32'h404, 32'h3);  // write enable
+    pci_e_write(0, 32'h414, 32'h7d0); // write sync_prd
+    pci_e_write(0, 32'h404, 32'h7);  // write enable
 
     //#10000;
     //pci_e_read(0, 32'h3000, recv_data); // get sync prd
