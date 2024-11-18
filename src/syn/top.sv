@@ -89,6 +89,8 @@ module top(
 
     //-------------GPIO--------------\\
     output logic [3:0] led,
+    input  logic [7:0] RIO_out,
+    input  logic [7:0] RIO_in,
 
     (* IOB = "TRUE" *) output logic [3:0] test_out,
 
@@ -284,6 +286,7 @@ module top(
     axi4_lite_if #(.AW(32), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
      
     //-------Processing System-------\\
+    logic external_trig_PS;
     logic [HP0_ADDR_W-1:0] HP0_offset;
     logic [EMIO_SIZE-1:0]  emio_o;
     logic [EMIO_SIZE-1:0]  emio_i;
@@ -298,6 +301,11 @@ module top(
         .T(emio_t[2])      // 3-state enable input
     );
     assign emio_i[2] = afe_pwr_gd;
+    assign emio_i[3] = external_trig_PS;
+
+    assign external_trig = RIO_in[0];
+    //assign led[2]    = external_trig;
+    //assign led[3]    = external_trig_PS;
 
 
     logic [8:0] ev_and_sync;
@@ -737,7 +745,9 @@ module top(
 
         .sync_prd(sync_prd),
         .sync_PS(PS_sync),
-        .busy_PS(PS_busy)
+        .busy_PS(PS_busy),
+        .external_trig_PS(external_trig_PS),
+        .external_trig(external_trig)
     );
 
     /*afe_model afe_model_i
