@@ -49,6 +49,23 @@ set_property SLEW SLOW [get_ports test_out[3]]
 set_property -dict { PACKAGE_PIN R4 IOSTANDARD LVCMOS33 } [get_ports { afe_pwr_ena }];
 set_property -dict { PACKAGE_PIN R5 IOSTANDARD LVCMOS33 } [get_ports { afe_pwr_gd }];
 
+set_property -dict { PACKAGE_PIN G8 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[0] }];
+set_property -dict { PACKAGE_PIN G7 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[1] }];
+set_property -dict { PACKAGE_PIN G3 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[2] }];
+set_property -dict { PACKAGE_PIN G2 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[3] }];
+set_property -dict { PACKAGE_PIN H1 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[4] }];
+set_property -dict { PACKAGE_PIN G1 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[5] }];
+set_property -dict { PACKAGE_PIN E4 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[6] }];
+set_property -dict { PACKAGE_PIN E3 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[7] }];
+
+set_property -dict { PACKAGE_PIN D7 IOSTANDARD LVCMOS25 } [get_ports { RIO_in[0] }];
+set_property -dict { PACKAGE_PIN D6 IOSTANDARD LVCMOS25 } [get_ports { RIO_in[1] }];
+set_property -dict { PACKAGE_PIN F5 IOSTANDARD LVCMOS25 } [get_ports { RIO_in[2] }];
+set_property -dict { PACKAGE_PIN E5 IOSTANDARD LVCMOS25 } [get_ports { RIO_in[3] }];
+set_property -dict { PACKAGE_PIN G4 IOSTANDARD LVCMOS25 } [get_ports { RIO_in[4] }];
+set_property -dict { PACKAGE_PIN F4 IOSTANDARD LVCMOS25 } [get_ports { RIO_in[5] }];
+set_property -dict { PACKAGE_PIN F1 IOSTANDARD LVCMOS25 } [get_ports { RIO_in[6] }];
+set_property -dict { PACKAGE_PIN F2 IOSTANDARD LVCMOS25 } [get_ports { RIO_in[7] }];
 
 set_property PACKAGE_PIN A7 [get_ports {DDS_SYNC_p}]
 set_property PACKAGE_PIN A6 [get_ports {DDS_SYNC_n}]
