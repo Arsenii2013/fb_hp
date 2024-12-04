@@ -76,3 +76,11 @@ set_property PACKAGE_PIN C1 [get_ports {DDS_CLK_n}]
 set_property -dict { IOSTANDARD LVDS_25 } [get_ports { DDS_SYNC_p }];
 set_property -dict { IOSTANDARD LVDS_25 } [get_ports { DDS_CLK_p }];
 
+set_property -dict { PACKAGE_PIN Y17   IOSTANDARD LVCMOS33 } [get_ports { nConfig }];
+set_property -dict { PACKAGE_PIN V15   IOSTANDARD LVCMOS33 } [get_ports { nStatus }];
+set_property -dict { PACKAGE_PIN H5    IOSTANDARD LVCMOS25 } [get_ports { CONF_DONE }];
+set_property -dict { PACKAGE_PIN H6    IOSTANDARD LVCMOS25 } [get_ports { INIT_DONE }];
+set_property -dict { PACKAGE_PIN AB14  IOSTANDARD LVCMOS33 } [get_ports { DCLK }];
+set_property -dict { PACKAGE_PIN W15   IOSTANDARD LVCMOS33 } [get_ports { DATA }];
+set_property -dict { PACKAGE_PIN V18   IOSTANDARD LVCMOS33 } [get_ports { MSEL0 }];
+set_property -dict { PACKAGE_PIN W18   IOSTANDARD LVCMOS33 } [get_ports { MSEL1 }];
