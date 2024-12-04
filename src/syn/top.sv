@@ -99,7 +99,16 @@ module top(
     output logic DDS_CLK_n,
     output logic DDS_CLK_p,
     output logic DDS_SYNC_n,
-    output logic DDS_SYNC_p
+    output logic DDS_SYNC_p,
+
+    output logic nConfig,
+    input  logic nStatus,
+    input  logic CONF_DONE,
+    input  logic INIT_DONE,
+    output logic DCLK,
+    output logic DATA,
+    output logic MSEL0,
+    output logic MSEL1
 
     );
 
@@ -296,9 +305,9 @@ module top(
     assign PS_busy   = emio_o[1];
 
     OBUFT OBUFT_inst (
-        .O(afe_pwr_ena),     // Buffer output (connect directly to top-level port)
-        .I(0),     // Buffer input
-        .T(emio_t[2])      // 3-state enable input
+        .O(afe_pwr_ena),
+        .I(0),
+        .T(emio_t[2])
     );
     assign emio_i[2] = afe_pwr_gd;
     assign emio_i[3] = external_trig_PS;
@@ -307,6 +316,20 @@ module top(
     //assign led[2]    = external_trig;
     //assign led[3]    = external_trig_PS;
 
+    afe_iobuf afe_iobuf_i(
+        .nConfig(nConfig),
+        .nStatus(nStatus),
+        .CONF_DONE(CONF_DONE),
+        .INIT_DONE(INIT_DONE),
+        .DCLK(DCLK),
+        .DATA(DATA),
+        .MSEL0(MSEL0),
+        .MSEL1(MSEL1),
+
+        .emio_o(emio_o[11:4]),
+        .emio_t(emio_t[11:4]),
+        .emio_i(emio_i[11:4])
+    );
 
     logic [8:0] ev_and_sync;
     assign ev_and_sync = {sync, ev};
