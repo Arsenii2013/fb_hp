@@ -45,10 +45,6 @@ set_property SLEW SLOW [get_ports test_out[1]]
 set_property SLEW SLOW [get_ports test_out[2]]
 set_property SLEW SLOW [get_ports test_out[3]]
 
-
-set_property -dict { PACKAGE_PIN R4 IOSTANDARD LVCMOS33 } [get_ports { afe_pwr_ena }];
-set_property -dict { PACKAGE_PIN R5 IOSTANDARD LVCMOS33 } [get_ports { afe_pwr_gd }];
-
 set_property -dict { PACKAGE_PIN G8 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[0] }];
 set_property -dict { PACKAGE_PIN G7 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[1] }];
 set_property -dict { PACKAGE_PIN G3 IOSTANDARD LVCMOS25 } [get_ports { RIO_out[2] }];
@@ -76,11 +72,14 @@ set_property PACKAGE_PIN C1 [get_ports {DDS_CLK_n}]
 set_property -dict { IOSTANDARD LVDS_25 } [get_ports { DDS_SYNC_p }];
 set_property -dict { IOSTANDARD LVDS_25 } [get_ports { DDS_CLK_p }];
 
-set_property -dict { PACKAGE_PIN Y17   IOSTANDARD LVCMOS33 } [get_ports { nConfig }];
-set_property -dict { PACKAGE_PIN V15   IOSTANDARD LVCMOS33 } [get_ports { nStatus }];
-set_property -dict { PACKAGE_PIN H5    IOSTANDARD LVCMOS25 } [get_ports { CONF_DONE }];
-set_property -dict { PACKAGE_PIN H6    IOSTANDARD LVCMOS25 } [get_ports { INIT_DONE }];
-set_property -dict { PACKAGE_PIN AB14  IOSTANDARD LVCMOS33 } [get_ports { DCLK }];
-set_property -dict { PACKAGE_PIN W15   IOSTANDARD LVCMOS33 } [get_ports { DATA }];
-set_property -dict { PACKAGE_PIN V18   IOSTANDARD LVCMOS33 } [get_ports { MSEL0 }];
-set_property -dict { PACKAGE_PIN W18   IOSTANDARD LVCMOS33 } [get_ports { MSEL1 }];
+set_property -dict { PACKAGE_PIN R4    IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { afe_pwr_ena }];
+set_property -dict { PACKAGE_PIN R5    IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { afe_pwr_gd }];
+set_property -dict { PACKAGE_PIN U13   IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { afe_prsnt_n }];
+set_property -dict { PACKAGE_PIN Y17   IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { nConfig }];
+set_property -dict { PACKAGE_PIN V15   IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { nStatus }];
+set_property -dict { PACKAGE_PIN H5    IOSTANDARD LVCMOS25 SLEW SLOW } [get_ports { CONF_DONE }];
+set_property -dict { PACKAGE_PIN H6    IOSTANDARD LVCMOS25 SLEW SLOW } [get_ports { INIT_DONE }];
+set_property -dict { PACKAGE_PIN AB14  IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { DCLK }];
+set_property -dict { PACKAGE_PIN W15   IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { DATA }];
+set_property -dict { PACKAGE_PIN V18   IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { MSEL0 }];
+set_property -dict { PACKAGE_PIN W18   IOSTANDARD LVCMOS33 SLEW SLOW } [get_ports { MSEL1 }];
