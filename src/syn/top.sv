@@ -94,13 +94,14 @@ module top(
 
     (* IOB = "TRUE" *) output logic [3:0] test_out,
 
-    output logic afe_pwr_ena,
-    input  logic afe_pwr_gd,
     output logic DDS_CLK_n,
     output logic DDS_CLK_p,
     output logic DDS_SYNC_n,
     output logic DDS_SYNC_p,
 
+    input  logic afe_prsnt_n,
+    output logic afe_pwr_ena,
+    input  logic afe_pwr_gd,
     output logic nConfig,
     input  logic nStatus,
     input  logic CONF_DONE,
@@ -303,20 +304,16 @@ module top(
 
     assign emio_i[0] = PS_sync;
     assign PS_busy   = emio_o[1];
-
-    OBUFT OBUFT_inst (
-        .O(afe_pwr_ena),
-        .I(0),
-        .T(emio_t[2])
-    );
-    assign emio_i[2] = afe_pwr_gd;
-    assign emio_i[3] = external_trig_PS;
+    assign emio_i[2] = external_trig_PS;
 
     assign external_trig = RIO_in[0];
     //assign led[2]    = external_trig;
     //assign led[3]    = external_trig_PS;
 
     afe_iobuf afe_iobuf_i(
+        .afe_prsnt(!afe_prsnt_n),
+        .afe_pwr_ena(afe_pwr_ena),
+        .afe_pwr_gd(afe_pwr_gd),
         .nConfig(nConfig),
         .nStatus(nStatus),
         .CONF_DONE(CONF_DONE),
@@ -326,9 +323,9 @@ module top(
         .MSEL0(MSEL0),
         .MSEL1(MSEL1),
 
-        .emio_o(emio_o[11:4]),
-        .emio_t(emio_t[11:4]),
-        .emio_i(emio_i[11:4])
+        .emio_o(emio_o[13:3]),
+        .emio_t(emio_t[13:3]),
+        .emio_i(emio_i[13:3])
     );
 
     logic [8:0] ev_and_sync;

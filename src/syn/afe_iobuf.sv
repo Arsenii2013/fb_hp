@@ -1,6 +1,9 @@
 `include "top.svh"
 
 module afe_iobuf(
+    input  logic afe_prsnt,
+    output logic afe_pwr_ena,
+    input  logic afe_pwr_gd,
     output logic nConfig,
     input  logic nStatus,
     input  logic CONF_DONE,
@@ -10,9 +13,9 @@ module afe_iobuf(
     output logic MSEL0,
     output logic MSEL1,
 
-    input  logic [7:0] emio_o,
-    input  logic [7:0] emio_t,
-    output logic [7:0] emio_i
+    input  logic [10:0] emio_o,
+    input  logic [10:0] emio_t,
+    output logic [10:0] emio_i
 );
 
     OBUFT OBUFT_nConfig (
@@ -44,6 +47,14 @@ module afe_iobuf(
         .O(MSEL1),
         .I(emio_o[7]),
         .T(emio_t[7])
+    );
+    assign emio_i[8] = afe_prsnt;
+    assign emio_i[9] = afe_pwr_gd;
+
+    OBUFT OBUFT_inst (
+        .O(afe_pwr_ena),
+        .I(0),
+        .T(!emio_o[10])
     );
     
 endmodule
