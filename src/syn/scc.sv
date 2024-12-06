@@ -47,7 +47,7 @@ module scc_m
 //------------------------------------------------
 `timescale 1ns / 1ps
 parameter PS_SYNC_WIDTH = 32;
-parameter SYNC_PRD_DEF  = 64;
+parameter SYNC_PRD_DEF  = 2000;
 
 //------------------------------------------------
 //
@@ -112,8 +112,6 @@ logic   [3:0] test_ev_recv;
 logic   [3:0] test_p;
 logic   [3:0] test_ena  = '0;
 
-logic         int_dds_clk_ena;
-logic         int_dds_sync_ena;
 logic         dds_clk = 0;
 
 logic         sync_loss_p;
@@ -284,8 +282,8 @@ always_ff @(posedge clk) begin
 end
 
 //------------------------------------------------
-assign sr.dds_clk_ena  = cr.clk_sync_manual ? cr.dds_clk_ena  : int_dds_clk_ena;
-assign sr.dds_sync_ena = cr.clk_sync_manual ? cr.dds_sync_ena : int_dds_sync_ena;
+assign sr.dds_clk_ena  = cr.dds_clk_ena;
+assign sr.dds_sync_ena = cr.dds_sync_ena;
 assign dds_clk_ena     = sr.dds_clk_ena;
 assign llrf_sync_done  = sr.clk_sync_done;
 
