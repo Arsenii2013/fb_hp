@@ -112,7 +112,7 @@ module topTB(
         .MISO_p(miso),
         .MISO_n(~miso),
         .MOSI_p(mosi),
-        .external_trig(external_trig)
+        .RIO_in(external_trig)
     );
     
     `ifdef PCIE_PIPE_STACK
