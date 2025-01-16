@@ -102,14 +102,14 @@ module top(
     input  logic afe_prsnt_n,
     output logic afe_pwr_ena,
     input  logic afe_pwr_gd,
-    output logic nConfig,
+    inout  logic nConfig,
     input  logic nStatus,
     input  logic CONF_DONE,
     input  logic INIT_DONE,
-    output logic DCLK,
-    output logic DATA,
-    output logic MSEL0,
-    output logic MSEL1
+    inout  logic DCLK,
+    inout  logic DATA,
+    inout  logic MSEL0,
+    inout  logic MSEL1
 
     );
 
