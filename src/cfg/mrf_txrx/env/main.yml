@@ -2,5 +2,5 @@ parameters:
     VARIANT_NAME        : = ARGUMENTS['bv']
     PROJECT_NAME        : = VARIANT_NAME
     TOP_NAME            : simple_generator
-    TESTBENCH_NAME      : simple_generatorTB
+    TESTBENCH_NAME      : mrf_txrxTB
     DEVICE              : xc7z015clg485-2

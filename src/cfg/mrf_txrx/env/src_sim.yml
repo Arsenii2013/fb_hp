@@ -3,5 +3,6 @@ import : main
 sources:
     - src/syn/evr/shared_data/simple_generator.sv
     - src/syn/evr/shared_data/simple_parser.sv
+    - src/syn/evr/shared_data/mrf_txrxTB.sv
     - src/lib/axi/axi4_lite_if.svh
     - src/syn/top.svh

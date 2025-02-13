@@ -183,6 +183,8 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
     always_ff @(posedge app_clk) begin
         if(!aresetn || generator_state == WAIT) begin
             cnt_cnt       <= '0;
+            tx_data <= '0;
+            tx_is_k <= 0;
         end else begin
             if(clk_even) begin 
                 case (generator_state)
