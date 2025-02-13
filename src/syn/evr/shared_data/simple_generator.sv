@@ -1,15 +1,15 @@
-`ifndef __SIMPLE_PARSER_SV__
-`define __SIMPLE_PARSER_SV__
+`ifndef __SIMPLE_GENERATOR_SV__
+`define __SIMPLE_GENERATOR_SV__
 
 `include "top.svh"
 `include "axi4_lite_if.svh"
 
-module simple_parser(
+module simple_generator(
     input  logic       app_clk,
     input  logic       aresetn,
 
-    input  logic [7:0] rx_data,
-    input  logic       rx_is_k,
+    output logic [7:0] tx_data,
+    output logic       tx_is_k,
 
     axi4_lite_if.s     mmr
 );
@@ -41,6 +41,7 @@ module simple_parser(
     word_t mrf_master;
     word_t mrf_addr;
     word_t mrf_data;
+    logic  mrf_start;
 
     logic read;
     logic write_addr;
@@ -63,8 +64,11 @@ module simple_parser(
             write_data         <= 0;
             mrf_master         <= 0;
             mrf_addr           <= 0;
+            mrf_start          <= 0;
         end
         else begin
+            mrf_start          <= 0;
+
             mmr.arready <= 0;
             if(mmr.arvalid && !read) begin
                 addr <= mmr.araddr;
@@ -109,7 +113,8 @@ module simple_parser(
                     CR_S      : cr <= cr | cr_t'(data);
                     CR_C      : cr <= cr & ~(cr_t'(data));
                     MASTER    : mrf_master <= data;
-                    ADDR      : mrf_addr <= data;
+                    ADDR      : mrf_addr   <= data;
+                    DATA      : begin mrf_data <= data; mrf_start <= 1; end
                     default;
                 endcase
             end 
@@ -123,30 +128,28 @@ localparam logic [7:0] MRF_TRANSFER_START = 8'h5C;
 localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
 
     typedef enum {
-        RECV_HEADER0, 
-        RECV_HEADER1, 
-        RECV_ADDR, 
-        RECV_MASTER, 
-        RECV_COUNT, 
-        RECV_DATA, 
-        RECV_END, 
-        RECV_CHSUM_MSB, 
-        RECV_CHSUM_LSB,
-        SUCCESS,
-        RESET
-    } parser_state_t;
+        SEND_HEADER0, 
+        SEND_HEADER1, 
+        SEND_ADDR, 
+        SEND_MASTER, 
+        SEND_COUNT, 
+        SEND_DATA, 
+        SEND_END, 
+        SEND_CHSUM_MSB, 
+        SEND_CHSUM_LSB,
+        WAIT
+    } generator_state_t;
 
     logic          clk_even      = 0;
     logic [15:0]   checksum      = '1;
-    logic          chsum_ena;
-    word_t         mrf_cnt       = 0;
+    logic          chsum_ena     = 0;
     logic [1:0]    cnt_cnt       = 0;
-    word_t         mrf_data_recv = 0;
-    word_t         mrf_addr_recv = 0;
-    parser_state_t parser_state  = RESET, parser_next;
+    generator_state_t generator_state  = WAIT, generator_next;
 
-    assign chsum_ena = (parser_state == RECV_ADDR)  || (parser_state == RECV_MASTER) ||
-                       (parser_state == RECV_COUNT) || (parser_state == RECV_DATA);
+    always_ff @(posedge app_clk) begin
+        chsum_ena <= (generator_state == SEND_ADDR)  || (generator_state == SEND_MASTER) ||
+                     (generator_state == SEND_COUNT) || (generator_state == SEND_DATA);
+    end
 
     always_ff @(posedge app_clk) begin
         if(!aresetn) begin
@@ -157,11 +160,11 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
     end
 
     always_ff @(posedge app_clk) begin
-        if(parser_state == RESET) begin
+        if(!aresetn) begin
             checksum <= '1;
         end else begin
-            if(clk_even && chsum_ena) begin
-                checksum <= checksum - rx_data;
+            if(!clk_even && chsum_ena) begin
+                checksum <= checksum - tx_data;
             end else begin
                 checksum <= checksum;
             end
@@ -170,98 +173,58 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
 
     always_ff @(posedge app_clk) begin
         if(!aresetn) begin
-            parser_state <= RESET; 
+            generator_state <= WAIT; 
         end else begin
-            parser_state <= parser_next;
+            if(clk_even)
+                generator_state <= generator_next;
         end
     end
 
     always_ff @(posedge app_clk) begin
-        if(!aresetn || parser_state == RESET) begin
-            mrf_addr_recv <= '0;
-            mrf_cnt       <= '0; 
+        if(!aresetn || generator_state == WAIT) begin
             cnt_cnt       <= '0;
         end else begin
-            if(parser_state == RECV_COUNT && clk_even) begin
-                cnt_cnt       <= cnt_cnt + 1;
-                mrf_cnt       <= {rx_data, mrf_cnt[31:8]};
-                mrf_addr_recv <= mrf_addr_recv;
-            end else if(parser_state == RECV_ADDR && clk_even) begin
-                cnt_cnt       <= cnt_cnt + 1;
-                mrf_cnt       <= mrf_cnt;
-                mrf_addr_recv <= {rx_data, mrf_addr_recv[23:8]};
-            end else if(parser_state == RECV_MASTER && clk_even) begin
-                cnt_cnt       <= '0;
-                mrf_addr_recv <= mrf_addr_recv;
-                mrf_cnt       <= mrf_cnt;
+            if(clk_even) begin 
+                case (generator_state)
+                    WAIT:           begin tx_data <= '0;                        tx_is_k <= 0; end
+                    SEND_HEADER0:   begin tx_data <= MRF_TRANSFER_START;        tx_is_k <= 1; end
+                    SEND_HEADER1:   begin tx_data <= '0;                        tx_is_k <= 0; end
+                    SEND_ADDR:      begin tx_data <= mrf_addr[cnt_cnt * 8+: 8]; cnt_cnt <= cnt_cnt + 1; tx_is_k <= 0; end
+                    SEND_MASTER:    begin tx_data <= mrf_master; cnt_cnt <= '0; tx_is_k <= 0; end
+                    SEND_COUNT:     begin tx_data <= cnt_cnt == 0 ? 4 : 0; cnt_cnt <= cnt_cnt + 1;      tx_is_k <= 0; end
+                    SEND_DATA:      begin tx_data <= mrf_data[cnt_cnt * 8+: 8]; cnt_cnt <= cnt_cnt + 1; tx_is_k <= 0; end
+                    SEND_END:       begin tx_data <= MRF_TRANSFER_STOP;         tx_is_k <= 1; end
+                    SEND_CHSUM_MSB: begin tx_data <= checksum[15:8];            tx_is_k <= 0; end
+                    SEND_CHSUM_LSB: begin tx_data <= checksum[7:0];             tx_is_k <= 0; end
+                endcase
             end else begin
-                cnt_cnt       <= cnt_cnt;
-                mrf_addr_recv <= mrf_addr_recv;
-                mrf_cnt       <= mrf_cnt;
+                tx_data <= '0;
+                tx_is_k <= 0;
             end
-        end
-    end
-
-    always_ff @(posedge app_clk) begin
-        if(!aresetn || parser_state == RESET) begin
-            mrf_data_recv <= '0;
-        end else begin
-            if(parser_state == RECV_DATA && clk_even) begin
-                if(mrf_addr_recv[31:2] == mrf_addr[31:2]) begin
-                    mrf_data_recv <= {rx_data, mrf_data_recv[31:8]};
-                end
-                mrf_addr_recv     <= mrf_addr_recv + 1;
-                mrf_cnt           <= mrf_cnt - 1;
-            end
-        end
-    end
-
-    always_ff @(posedge app_clk) begin
-        if(!aresetn) begin
-            mrf_data <= '0;
-        end else if(parser_state == SUCCESS) begin
-            mrf_data <= mrf_data_recv;
         end
     end
 
     always_comb begin
     if (!aresetn) begin
-        parser_next = RECV_HEADER0;
+        generator_next = WAIT;
     end else begin
-        if(clk_even) begin
-            case (parser_state)
-                RESET:         parser_next = RECV_HEADER0;
-                RECV_HEADER0:  parser_next = rx_data == MRF_TRANSFER_START && rx_is_k  ? RECV_HEADER1  : RESET;
-                RECV_HEADER1:  parser_next = rx_data == 8'h00              && !rx_is_k ? RECV_ADDR     : RESET;
-                RECV_ADDR:     parser_next = cnt_cnt == 2                              ? RECV_MASTER   : RECV_ADDR;
-                RECV_MASTER:   parser_next = rx_data == mrf_master         && !rx_is_k ? RECV_COUNT    : RESET;
-                RECV_COUNT:    parser_next = cnt_cnt == 3                              ? RECV_DATA     : RECV_COUNT;
-                RECV_DATA:     parser_next = mrf_cnt == 1                              ? RECV_END      : RECV_DATA;
-                RECV_END:      parser_next = rx_data == MRF_TRANSFER_STOP  && rx_is_k  ? RECV_CHSUM_MSB: RESET;
-                RECV_CHSUM_MSB:parser_next = rx_data == checksum[15:8]     && !rx_is_k ? RECV_CHSUM_LSB: RESET;
-                RECV_CHSUM_LSB:parser_next = rx_data == checksum[7:0]      && !rx_is_k ? SUCCESS: RESET;
-                SUCCESS:       parser_next = RESET;
-            endcase
-        end else begin
-            case (parser_state)
-                RESET:         parser_next = RECV_HEADER0;
-                RECV_HEADER0:  parser_next = RECV_HEADER0;
-                RECV_HEADER1:  parser_next = RECV_HEADER1;
-                RECV_ADDR:     parser_next = RECV_ADDR;
-                RECV_MASTER:   parser_next = RECV_MASTER;
-                RECV_COUNT:    parser_next = RECV_COUNT;
-                RECV_DATA:     parser_next = RECV_DATA;
-                RECV_END:      parser_next = RECV_END;
-                RECV_CHSUM_MSB:parser_next = RECV_CHSUM_MSB;
-                RECV_CHSUM_LSB:parser_next = RECV_CHSUM_LSB;
-                SUCCESS:       parser_next = SUCCESS;
-            endcase
-        end
+        case (generator_state)
+            WAIT:           generator_next = mrf_start ? SEND_HEADER0 : WAIT;
+            SEND_HEADER0:   generator_next = SEND_HEADER1;
+            SEND_HEADER1:   generator_next = SEND_ADDR;
+            SEND_ADDR:      generator_next = cnt_cnt == 2 ? SEND_MASTER : SEND_ADDR;
+            SEND_MASTER:    generator_next = SEND_COUNT;
+            SEND_COUNT:     generator_next = cnt_cnt == 3 ? SEND_DATA : SEND_COUNT;
+            SEND_DATA:      generator_next = cnt_cnt == 3 ? SEND_END : SEND_DATA;
+            SEND_END:       generator_next = SEND_CHSUM_MSB;
+            SEND_CHSUM_MSB: generator_next = SEND_CHSUM_LSB;
+            SEND_CHSUM_LSB: generator_next = WAIT;
+        endcase
     end
 end
 endmodule
 
-module simple_parserTB();
+module simple_generatorTB();
 
     logic app_clk = 0;
     logic app_rst;
@@ -287,19 +250,12 @@ module simple_parserTB();
         app_rst = 0;
     end 
 
-    simple_parser DUT(
+    simple_generator DUT(
         .app_clk(app_clk),
         .aresetn(!app_rst),
-        .rx_data(rx_data),
-        .rx_is_k(rx_charisk),
-        .mmr(mmr)
-    );
-
-    frame_gen frame_gen_i(
         .tx_data(rx_data),
-        .is_k(rx_charisk),
-        .tx_clk(app_clk),
-        .ready(!app_rst)
+        .tx_is_k(rx_charisk),
+        .mmr(mmr)
     );
 
     axi_master mmr_master(
@@ -312,8 +268,8 @@ module simple_parserTB();
         #1000;
         mmr_master.write(32'h10, 32'hFB); 
         mmr_master.write(32'h14, 32'hE0);
+        mmr_master.write(32'h18, 32'h12345678);
         #1000;
-        mmr_master.read(32'h18, read_data);
         $stop();
     end
 
@@ -477,5 +433,5 @@ module frame_gen (
 endmodule
 
 
-`endif//__SIMPLE_PARSER_SV__
+`endif//__SIMPLE_GENERATOR_SV__
 
