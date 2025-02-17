@@ -25,7 +25,7 @@ module evr
     output logic [7:0]      ev,
     axi4_lite_if.s          mmr,
     axi4_lite_if.s          tx,
-    axi4_lite_if.m          shared_data_out,
+    axi4_lite_if.s          rx,
     output logic            dc_coarse_done
 );
     logic ready;
@@ -202,15 +202,13 @@ module evr
     logic [   1:0] tx_cnt = '0;
     always_ff @(posedge tx_clk) tx_cnt <= tx_cnt + 1;
 
-    tx_buffer tx_buffer_i(
+    simple_generator simple_generator_i(
         .tx_clk(tx_clk),
-        .tx_ready(aligned),
-        .tx_data(tx_data[15:8]),
-        .tx_charisk(tx_charisk[1]),
-        .tx_odd(tx_cnt[0]),
         .app_clk(app_clk),
-        .aresetn(~app_rst),
-        .axi(tx)
+        .aresetn(!app_rst),
+        .tx_data(tx_data[15:8]),
+        .tx_is_k(tx_charisk[1]),
+        .mmr(tx)
     );
 
     always_comb begin
@@ -264,14 +262,12 @@ module evr
 
     assign ev                 = !fifo_empty && !rx_charisk_fifo_out && rx_data_fifo_out!='h7E ? rx_data_fifo_out : '0;
 
-
-//Shared data buffer
-    stream_decoder_m stream_decoder_i(
-        .clk(app_clk),
-        .rst(app_rst),
-        .rx_data_in(rx_data_shared_out),
-        .rx_isk_in(rx_charisk_shared_out),
-        .shared_data_out_i({shared_data_out})
+    simple_parser simple_parser_i(
+        .app_clk(app_clk),
+        .aresetn(!app_rst),
+        .rx_data(rx_data_shared_out),
+        .rx_is_k(rx_charisk_shared_out),
+        .mmr(rx)
     );
 
     

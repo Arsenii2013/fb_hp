@@ -49,8 +49,8 @@ localparam MMR_PSMEM       = MMR_LOG     + 1;
 localparam MMR_PSEVENT     = MMR_PSMEM   + 1;
 localparam MMR_EVG         = MMR_PSEVENT + 1;
 localparam MMR_TX          = MMR_EVG     + 1;
-localparam MMR_SHARED      = MMR_TX      + 1;
-localparam MMR_DEV_COUNT   = MMR_SHARED  + 1;
+localparam MMR_RX          = MMR_TX      + 1;
+localparam MMR_DEV_COUNT   = MMR_RX  + 1;
 
 //      Processing system
 localparam GP0_ADDR_W      = 32;
