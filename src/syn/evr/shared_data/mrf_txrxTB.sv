@@ -7,6 +7,10 @@ module mrf_txrxTB();
     logic [15:0] tx_data;
     logic [1:0]  rx_charisk;
     logic [1:0]  tx_charisk;
+
+    logic [15:0] mx_data;
+    logic [1:0]  mx_charisk;
+    logic        mx_ena;
  
     logic [7:0] ev;
     axi4_lite_if #(.AW(32), .DW(32)) mmr1();
@@ -37,6 +41,7 @@ module mrf_txrxTB();
 
 
     simple_generator simple_generator_i(
+        .tx_clk(app_clk),
         .app_clk(app_clk),
         .aresetn(!app_rst),
         .tx_data(tx_data),
@@ -56,12 +61,16 @@ module mrf_txrxTB();
         .aclk(app_clk)
     );
 
+    assign rx_data    = mx_data;
+    assign rx_charisk = mx_charisk;
+
     always_ff @(posedge app_clk) begin
-        rx_data <= tx_data;
-        rx_charisk <= tx_charisk;
+        mx_data    <= mx_ena ? tx_data    : 0;
+        mx_charisk <= mx_ena ? tx_charisk : 0;
     end
 
     initial begin
+        mx_ena <= 1;
         #1000;
         mmr1_master.write(32'h10, 32'hFB); 
         mmr1_master.write(32'h14, 32'hE0);
@@ -70,6 +79,17 @@ module mrf_txrxTB();
         mmr2_master.write(32'h18, 32'h12345678);
         #1000;
         mmr1_master.read(32'h18, read_data);
+
+        mmr2_master.write(32'h18, 32'h87654321);
+        wait(simple_parser_i.mrf_data_recv != 0);
+        mx_ena <= 0;
+        #100;
+        mmr1_master.read(32'h18, read_data);
+        mx_ena <= 1;
+        mmr2_master.write(32'h18, 32'h87654321);
+        #1000;
+        mmr1_master.read(32'h18, read_data);
+
         $stop();
     end
 

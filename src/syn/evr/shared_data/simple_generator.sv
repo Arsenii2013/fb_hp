@@ -6,6 +6,7 @@
 
 module simple_generator(
     input  logic       app_clk,
+    input  logic       tx_clk,
     input  logic       aresetn,
 
     output logic [7:0] tx_data,
@@ -121,6 +122,21 @@ module simple_generator(
             
         end
     end
+
+    logic [1:0] mrf_start_cnt = '1;
+    logic       mrf_start_pf;
+    assign mrf_start_pf = mrf_start_cnt != '1;
+    always_ff @(posedge app_clk) begin
+        if(mrf_start) begin
+            mrf_start_cnt     = '0;
+        end else begin
+            if(mrf_start_cnt < '1) begin
+                mrf_start_cnt <= mrf_start_cnt + 1;
+            end else begin
+                mrf_start_cnt <= mrf_start_cnt;
+            end
+        end
+    end
 // MMR logic end
 
 // MRF logic
@@ -146,12 +162,12 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
     logic [1:0]    cnt_cnt       = 0;
     generator_state_t generator_state  = WAIT, generator_next;
 
-    always_ff @(posedge app_clk) begin
+    always_ff @(posedge tx_clk) begin
         chsum_ena <= (generator_state == SEND_ADDR)  || (generator_state == SEND_MASTER) ||
                      (generator_state == SEND_COUNT) || (generator_state == SEND_DATA);
     end
 
-    always_ff @(posedge app_clk) begin
+    always_ff @(posedge tx_clk) begin
         if(!aresetn) begin
             clk_even <= 0;
         end else begin
@@ -159,19 +175,23 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         end
     end
 
-    always_ff @(posedge app_clk) begin
+    always_ff @(posedge tx_clk) begin
         if(!aresetn) begin
             checksum <= '1;
         end else begin
             if(!clk_even && chsum_ena) begin
                 checksum <= checksum - tx_data;
             end else begin
-                checksum <= checksum;
+                if(generator_state == WAIT) begin
+                    checksum <= '1;
+                end else begin
+                    checksum <= checksum;
+                end
             end
         end
     end
 
-    always_ff @(posedge app_clk) begin
+    always_ff @(posedge tx_clk) begin
         if(!aresetn) begin
             generator_state <= WAIT; 
         end else begin
@@ -180,9 +200,9 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         end
     end
 
-    always_ff @(posedge app_clk) begin
+    always_ff @(posedge tx_clk) begin
         if(!aresetn || generator_state == WAIT) begin
-            cnt_cnt       <= '0;
+            cnt_cnt <= '0;
             tx_data <= '0;
             tx_is_k <= 0;
         end else begin
@@ -211,7 +231,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         generator_next = WAIT;
     end else begin
         case (generator_state)
-            WAIT:           generator_next = mrf_start ? SEND_HEADER0 : WAIT;
+            WAIT:           generator_next = mrf_start_pf ? SEND_HEADER0 : WAIT;
             SEND_HEADER0:   generator_next = SEND_HEADER1;
             SEND_HEADER1:   generator_next = SEND_ADDR;
             SEND_ADDR:      generator_next = cnt_cnt == 2 ? SEND_MASTER : SEND_ADDR;
@@ -221,6 +241,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
             SEND_END:       generator_next = SEND_CHSUM_MSB;
             SEND_CHSUM_MSB: generator_next = SEND_CHSUM_LSB;
             SEND_CHSUM_LSB: generator_next = WAIT;
+            default:        generator_next = WAIT;
         endcase
     end
 end

@@ -141,8 +141,8 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
     logic          chsum_ena;
     word_t         mrf_cnt       = 0;
     logic [1:0]    cnt_cnt       = 0;
-    word_t         mrf_data_recv = 0;
-    word_t         mrf_addr_recv = 0;
+    word_t         mrf_data_recv;
+    word_t         mrf_addr_recv;
     parser_state_t parser_state  = RESET, parser_next;
 
     assign chsum_ena = (parser_state == RECV_ADDR)  || (parser_state == RECV_MASTER) ||
@@ -172,7 +172,11 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         if(!aresetn) begin
             parser_state <= RESET; 
         end else begin
-            parser_state <= parser_next;
+            if(clk_even) begin
+                parser_state <= parser_next;
+            end else begin
+                parser_state <= parser_state;
+            end
         end
     end
 
@@ -181,6 +185,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
             mrf_addr_recv <= '0;
             mrf_cnt       <= '0; 
             cnt_cnt       <= '0;
+            mrf_data_recv <= '0;
         end else begin
             if(parser_state == RECV_COUNT && clk_even) begin
                 cnt_cnt       <= cnt_cnt + 1;
@@ -194,24 +199,16 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
                 cnt_cnt       <= '0;
                 mrf_addr_recv <= mrf_addr_recv;
                 mrf_cnt       <= mrf_cnt;
+            end else if(parser_state == RECV_DATA && clk_even) begin
+                if(mrf_addr_recv[31:2] == mrf_addr[31:2]) begin
+                    mrf_data_recv <= {rx_data, mrf_data_recv[31:8]};
+                end
+                mrf_addr_recv <= mrf_addr_recv + 1;
+                mrf_cnt       <= mrf_cnt - 1;
             end else begin
                 cnt_cnt       <= cnt_cnt;
                 mrf_addr_recv <= mrf_addr_recv;
                 mrf_cnt       <= mrf_cnt;
-            end
-        end
-    end
-
-    always_ff @(posedge app_clk) begin
-        if(!aresetn || parser_state == RESET) begin
-            mrf_data_recv <= '0;
-        end else begin
-            if(parser_state == RECV_DATA && clk_even) begin
-                if(mrf_addr_recv[31:2] == mrf_addr[31:2]) begin
-                    mrf_data_recv <= {rx_data, mrf_data_recv[31:8]};
-                end
-                mrf_addr_recv     <= mrf_addr_recv + 1;
-                mrf_cnt           <= mrf_cnt - 1;
             end
         end
     end
@@ -228,35 +225,20 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
     if (!aresetn) begin
         parser_next = RECV_HEADER0;
     end else begin
-        if(clk_even) begin
-            case (parser_state)
-                RESET:         parser_next = RECV_HEADER0;
-                RECV_HEADER0:  parser_next = rx_data == MRF_TRANSFER_START && rx_is_k  ? RECV_HEADER1  : RESET;
-                RECV_HEADER1:  parser_next = rx_data == 8'h00              && !rx_is_k ? RECV_ADDR     : RESET;
-                RECV_ADDR:     parser_next = cnt_cnt == 2                              ? RECV_MASTER   : RECV_ADDR;
-                RECV_MASTER:   parser_next = rx_data == mrf_master         && !rx_is_k ? RECV_COUNT    : RESET;
-                RECV_COUNT:    parser_next = cnt_cnt == 3                              ? RECV_DATA     : RECV_COUNT;
-                RECV_DATA:     parser_next = mrf_cnt == 1                              ? RECV_END      : RECV_DATA;
-                RECV_END:      parser_next = rx_data == MRF_TRANSFER_STOP  && rx_is_k  ? RECV_CHSUM_MSB: RESET;
-                RECV_CHSUM_MSB:parser_next = rx_data == checksum[15:8]     && !rx_is_k ? RECV_CHSUM_LSB: RESET;
-                RECV_CHSUM_LSB:parser_next = rx_data == checksum[7:0]      && !rx_is_k ? SUCCESS: RESET;
-                SUCCESS:       parser_next = RESET;
-            endcase
-        end else begin
-            case (parser_state)
-                RESET:         parser_next = RECV_HEADER0;
-                RECV_HEADER0:  parser_next = RECV_HEADER0;
-                RECV_HEADER1:  parser_next = RECV_HEADER1;
-                RECV_ADDR:     parser_next = RECV_ADDR;
-                RECV_MASTER:   parser_next = RECV_MASTER;
-                RECV_COUNT:    parser_next = RECV_COUNT;
-                RECV_DATA:     parser_next = RECV_DATA;
-                RECV_END:      parser_next = RECV_END;
-                RECV_CHSUM_MSB:parser_next = RECV_CHSUM_MSB;
-                RECV_CHSUM_LSB:parser_next = RECV_CHSUM_LSB;
-                SUCCESS:       parser_next = SUCCESS;
-            endcase
-        end
+        case (parser_state)
+            RESET:         parser_next = RECV_HEADER0;
+            RECV_HEADER0:  parser_next = rx_data == MRF_TRANSFER_START && rx_is_k  ? RECV_HEADER1  : RECV_HEADER0;
+            RECV_HEADER1:  parser_next = rx_data == 8'h00              && !rx_is_k ? RECV_ADDR     : RESET;
+            RECV_ADDR:     parser_next = cnt_cnt == 2                              ? RECV_MASTER   : RECV_ADDR;
+            RECV_MASTER:   parser_next = rx_data == mrf_master         && !rx_is_k ? RECV_COUNT    : RESET;
+            RECV_COUNT:    parser_next = cnt_cnt == 3                              ? RECV_DATA     : RECV_COUNT;
+            RECV_DATA:     parser_next = mrf_cnt == 1                              ? RECV_END      : RECV_DATA;
+            RECV_END:      parser_next = rx_data == MRF_TRANSFER_STOP  && rx_is_k  ? RECV_CHSUM_MSB: RESET;
+            RECV_CHSUM_MSB:parser_next = rx_data == checksum[15:8]     && !rx_is_k ? RECV_CHSUM_LSB: RESET;
+            RECV_CHSUM_LSB:parser_next = rx_data == checksum[7:0]      && !rx_is_k ? SUCCESS: RESET;
+            SUCCESS:       parser_next = RESET;
+            default:       parser_next = RECV_HEADER0;
+        endcase
     end
 end
 endmodule
