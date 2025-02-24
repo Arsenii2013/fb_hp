@@ -8,6 +8,7 @@ module simple_generator(
     input  logic       app_clk,
     input  logic       tx_clk,
     input  logic       aresetn,
+    input  logic       clk_odd,
 
     output logic [7:0] tx_data,
     output logic       tx_is_k,
@@ -156,7 +157,6 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         WAIT
     } generator_state_t;
 
-    logic          clk_even      = 0;
     logic [15:0]   checksum      = '1;
     logic          chsum_ena     = 0;
     logic [1:0]    cnt_cnt       = 0;
@@ -169,17 +169,9 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
 
     always_ff @(posedge tx_clk) begin
         if(!aresetn) begin
-            clk_even <= 0;
-        end else begin
-            clk_even <= ~clk_even;
-        end
-    end
-
-    always_ff @(posedge tx_clk) begin
-        if(!aresetn) begin
             checksum <= '1;
         end else begin
-            if(!clk_even && chsum_ena) begin
+            if(!clk_odd && chsum_ena) begin
                 checksum <= checksum - tx_data;
             end else begin
                 if(generator_state == WAIT) begin
@@ -195,7 +187,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         if(!aresetn) begin
             generator_state <= WAIT; 
         end else begin
-            if(clk_even)
+            if(clk_odd)
                 generator_state <= generator_next;
         end
     end
@@ -206,7 +198,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
             tx_data <= '0;
             tx_is_k <= 0;
         end else begin
-            if(clk_even) begin 
+            if(clk_odd) begin 
                 case (generator_state)
                     WAIT:           begin tx_data <= '0;                        tx_is_k <= 0; end
                     SEND_HEADER0:   begin tx_data <= MRF_TRANSFER_START;        tx_is_k <= 1; end

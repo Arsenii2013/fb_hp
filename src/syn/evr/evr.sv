@@ -208,6 +208,7 @@ module evr
         .aresetn(!app_rst),
         .tx_data(tx_data[15:8]),
         .tx_is_k(tx_charisk[1]),
+        .clk_odd(~tx_cnt[0]),
         .mmr(tx)
     );
 

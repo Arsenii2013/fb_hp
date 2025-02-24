@@ -136,7 +136,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         RESET
     } parser_state_t;
 
-    logic          clk_even      = 0;
+    logic          clk_odd      = 0;
     logic [15:0]   checksum      = '1;
     logic          chsum_ena;
     word_t         mrf_cnt       = 0;
@@ -150,9 +150,13 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
 
     always_ff @(posedge app_clk) begin
         if(!aresetn) begin
-            clk_even <= 0;
+            clk_odd <= 0;
         end else begin
-            clk_even <= ~clk_even;
+            if(parser_next == RECV_HEADER0) begin
+                clk_odd <= 1;
+            end else begin
+                clk_odd <= ~clk_odd;
+            end
         end
     end
 
@@ -160,7 +164,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         if(parser_state == RESET) begin
             checksum <= '1;
         end else begin
-            if(clk_even && chsum_ena) begin
+            if(clk_odd && chsum_ena) begin
                 checksum <= checksum - rx_data;
             end else begin
                 checksum <= checksum;
@@ -172,7 +176,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
         if(!aresetn) begin
             parser_state <= RESET; 
         end else begin
-            if(clk_even) begin
+            if(clk_odd) begin
                 parser_state <= parser_next;
             end else begin
                 parser_state <= parser_state;
@@ -187,19 +191,19 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
             cnt_cnt       <= '0;
             mrf_data_recv <= '0;
         end else begin
-            if(parser_state == RECV_COUNT && clk_even) begin
+            if(parser_state == RECV_COUNT && clk_odd) begin
                 cnt_cnt       <= cnt_cnt + 1;
                 mrf_cnt       <= {rx_data, mrf_cnt[31:8]};
                 mrf_addr_recv <= mrf_addr_recv;
-            end else if(parser_state == RECV_ADDR && clk_even) begin
+            end else if(parser_state == RECV_ADDR && clk_odd) begin
                 cnt_cnt       <= cnt_cnt + 1;
                 mrf_cnt       <= mrf_cnt;
                 mrf_addr_recv <= {rx_data, mrf_addr_recv[23:8]};
-            end else if(parser_state == RECV_MASTER && clk_even) begin
+            end else if(parser_state == RECV_MASTER && clk_odd) begin
                 cnt_cnt       <= '0;
                 mrf_addr_recv <= mrf_addr_recv;
                 mrf_cnt       <= mrf_cnt;
-            end else if(parser_state == RECV_DATA && clk_even) begin
+            end else if(parser_state == RECV_DATA && clk_odd) begin
                 if(mrf_addr_recv[31:2] == mrf_addr[31:2]) begin
                     mrf_data_recv <= {rx_data, mrf_data_recv[31:8]};
                 end
