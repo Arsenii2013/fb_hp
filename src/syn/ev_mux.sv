@@ -108,9 +108,9 @@ module ev_mux(
         end
     end
 
-    assign ev = src == 'h0 ? ev_mrf : 
-                src == 'h1 ? ev_trigger :
-                src == 'h2 ? ev_soft : 'h0;
+    assign ev = src == 'h0 ? 'h0 : 
+                src == 'h1 ? ev_mrf :
+                src == 'h2 ? ev_soft : ev_trigger;
 endmodule
 
 module axi_master(
