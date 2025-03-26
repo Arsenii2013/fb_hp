@@ -196,7 +196,7 @@ module cache_signal
   wire [7:0]M00_AXI_wstrb;
   wire M00_AXI_wvalid;
   
-    assign M00_AXI_awaddr = S00_AXI_awaddr;
+    assign M00_AXI_awaddr = {S00_AXI_awaddr[31:3], 3'b000};
     assign M00_AXI_awlen = S00_AXI_awlen;
     assign M00_AXI_awsize = S00_AXI_awsize;
     assign M00_AXI_awburst = S00_AXI_awburst;
@@ -214,7 +214,7 @@ module cache_signal
     assign S00_AXI_bresp = M00_AXI_bresp;
     assign S00_AXI_bvalid = M00_AXI_bvalid;
     assign M00_AXI_bready = S00_AXI_bready;
-    assign M00_AXI_araddr = S00_AXI_araddr;
+    assign M00_AXI_araddr = {S00_AXI_araddr[31:3], 3'b000};
     assign M00_AXI_arlen = S00_AXI_arlen;
     assign M00_AXI_arsize = S00_AXI_arsize;
     assign M00_AXI_arburst = S00_AXI_arburst;

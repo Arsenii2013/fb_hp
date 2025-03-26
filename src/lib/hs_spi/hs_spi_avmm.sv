@@ -175,7 +175,7 @@ always_comb begin
                 else     next = WAIT_DATA_READ;
             end
             //------------------------------------------------
-            default;
+            default:     next = IDLE;
         endcase
     end
 end

@@ -30,7 +30,7 @@ set_property RXSLIDE_MODE PMA [get_cells -hierarchical -filter {NAME =~ *gtpe2_i
 set_property LOC IBUFDS_GTE2_X0Y1 [get_cells REFCLK_SFP_ibuf_i]
 set_property PACKAGE_PIN U5 [get_ports {REFCLK_SFP_p}]
 set_property PACKAGE_PIN V5 [get_ports {REFCLK_SFP_n}]
-create_clock -add -name REFCLK -period 8.00 -waveform {0 4} [get_ports { REFCLK_SFP_p }];
+create_clock -add -name REFCLK_SFP -period 8.00 -waveform {0 4} [get_ports { REFCLK_SFP_p }];
 
 #set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks gtpwizard_i/gtwizard_i/inst/gtwizard_init_i/gtwizard_i/gt0_gtwizard_i/gtpe2_i/RXOUTCLK]
 #set_false_path -from [get_clocks clk_fpga_0] -to [get_clocks gtpwizard_i/gtwizard_i/inst/gtwizard_init_i/gtwizard_i/gt0_gtwizard_i/gtpe2_i/TXOUTCLK]
