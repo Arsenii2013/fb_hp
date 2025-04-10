@@ -62,7 +62,7 @@ module PS_wrapper_(
     logic [32:0] SLAVES_ARADDR [14];
     logic [32:0] SLAVES_AWADDR [14];
 
-    localparam SLAVES_BASE = 'h3A000000;
+    localparam SLAVES_BASE = 'hFFFC0000;
     localparam SLAVES_SIZE = 'h1000;
     genvar i;
     generate
