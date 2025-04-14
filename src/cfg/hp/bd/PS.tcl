@@ -16,40 +16,6 @@
    CONFIG.PROTOCOL {AXI4LITE} \
    ] $GP_CONTROL
 
-  set HP0_FIFO_CTRL [ create_bd_intf_port -mode Slave -vlnv xilinx.com:display_processing_system7:hpstatusctrl_rtl:1.0 HP0_FIFO_CTRL ]
-
-  set HP0 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 HP0 ]
-  set_property -dict [ list \
-   CONFIG.ADDR_WIDTH {32} \
-   CONFIG.ARUSER_WIDTH {0} \
-   CONFIG.AWUSER_WIDTH {0} \
-   CONFIG.BUSER_WIDTH {0} \
-   CONFIG.DATA_WIDTH {32} \
-   CONFIG.FREQ_HZ {10000000} \
-   CONFIG.HAS_BRESP {1} \
-   CONFIG.HAS_BURST {0} \
-   CONFIG.HAS_CACHE {0} \
-   CONFIG.HAS_LOCK {0} \
-   CONFIG.HAS_PROT {1} \
-   CONFIG.HAS_QOS {0} \
-   CONFIG.HAS_REGION {0} \
-   CONFIG.HAS_RRESP {1} \
-   CONFIG.HAS_WSTRB {1} \
-   CONFIG.ID_WIDTH {0} \
-   CONFIG.MAX_BURST_LENGTH {1} \
-   CONFIG.NUM_READ_OUTSTANDING {2} \
-   CONFIG.NUM_READ_THREADS {1} \
-   CONFIG.NUM_WRITE_OUTSTANDING {2} \
-   CONFIG.NUM_WRITE_THREADS {1} \
-   CONFIG.PROTOCOL {AXI4LITE} \
-   CONFIG.READ_WRITE_MODE {READ_WRITE} \
-   CONFIG.RUSER_BITS_PER_BYTE {0} \
-   CONFIG.RUSER_WIDTH {0} \
-   CONFIG.SUPPORTS_NARROW_BURST {0} \
-   CONFIG.WUSER_BITS_PER_BYTE {0} \
-   CONFIG.WUSER_WIDTH {0} \
-   ] $HP0
-
   set GP_DATA [ create_bd_intf_port -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 GP_DATA ]
   set_property -dict [ list \
    CONFIG.ADDR_WIDTH {32} \
@@ -161,6 +127,38 @@
    CONFIG.WUSER_WIDTH {0} \
    ] $S01_AXI_0
 
+  set HP0 [ create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 HP0 ]
+  set_property -dict [ list \
+   CONFIG.ADDR_WIDTH {32} \
+   CONFIG.ARUSER_WIDTH {0} \
+   CONFIG.AWUSER_WIDTH {0} \
+   CONFIG.BUSER_WIDTH {0} \
+   CONFIG.DATA_WIDTH {64} \
+   CONFIG.FREQ_HZ {10000000} \
+   CONFIG.HAS_BRESP {1} \
+   CONFIG.HAS_BURST {1} \
+   CONFIG.HAS_CACHE {1} \
+   CONFIG.HAS_LOCK {1} \
+   CONFIG.HAS_PROT {1} \
+   CONFIG.HAS_QOS {1} \
+   CONFIG.HAS_REGION {0} \
+   CONFIG.HAS_RRESP {1} \
+   CONFIG.HAS_WSTRB {1} \
+   CONFIG.ID_WIDTH {6} \
+   CONFIG.MAX_BURST_LENGTH {1} \
+   CONFIG.NUM_READ_OUTSTANDING {8} \
+   CONFIG.NUM_READ_THREADS {1} \
+   CONFIG.NUM_WRITE_OUTSTANDING {8} \
+   CONFIG.NUM_WRITE_THREADS {1} \
+   CONFIG.PROTOCOL {AXI3} \
+   CONFIG.READ_WRITE_MODE {READ_WRITE} \
+   CONFIG.RUSER_BITS_PER_BYTE {0} \
+   CONFIG.RUSER_WIDTH {0} \
+   CONFIG.SUPPORTS_NARROW_BURST {0} \
+   CONFIG.WUSER_BITS_PER_BYTE {0} \
+   CONFIG.WUSER_WIDTH {0} \
+   ] $HP0
+
 
   # Create ports
   set peripheral_reset [ create_bd_port -dir O -from 0 -to 0 -type rst peripheral_reset ]
@@ -168,13 +166,34 @@
   set peripheral_clock [ create_bd_port -dir O -type clk peripheral_clock ]
   set app_clk [ create_bd_port -dir I -type clk -freq_hz 10000000 app_clk ]
   set_property -dict [ list \
-   CONFIG.ASSOCIATED_BUSIF {GP_CONTROL:HP0:GP_DATA:S03_AXI_0:S02_AXI_0:S01_AXI_0} \
+   CONFIG.ASSOCIATED_BUSIF {GP_CONTROL:GP_DATA:S03_AXI_0:S02_AXI_0:S01_AXI_0:HP0} \
    CONFIG.ASSOCIATED_RESET {bar_aresetn:app_aresetn} \
  ] $app_clk
   set app_aresetn [ create_bd_port -dir I -type rst app_aresetn ]
   set GPIO_I_0 [ create_bd_port -dir I -from 63 -to 0 GPIO_I_0 ]
   set GPIO_O_0 [ create_bd_port -dir O -from 63 -to 0 GPIO_O_0 ]
   set GPIO_T_0 [ create_bd_port -dir O -from 63 -to 0 GPIO_T_0 ]
+
+  # Create instance: GP0_protocol_convert, and set properties
+  set GP0_protocol_convert [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 GP0_protocol_convert ]
+  set_property -dict [list \
+    CONFIG.MI_PROTOCOL {AXI4LITE} \
+    CONFIG.SI_PROTOCOL {AXI3} \
+    CONFIG.TRANSLATION_MODE {2} \
+  ] $GP0_protocol_convert
+
+
+  # Create instance: proc_sys_reset, and set properties
+  set proc_sys_reset [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset ]
+
+  # Create instance: GP0_protocol_convert1, and set properties
+  set GP0_protocol_convert1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 GP0_protocol_convert1 ]
+  set_property -dict [list \
+    CONFIG.MI_PROTOCOL {AXI4LITE} \
+    CONFIG.SI_PROTOCOL {AXI3} \
+    CONFIG.TRANSLATION_MODE {2} \
+  ] $GP0_protocol_convert1
+
 
   # Create instance: processing_system7, and set properties
   set processing_system7 [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 processing_system7 ]
@@ -327,9 +346,11 @@
     CONFIG.PCW_GP1_EN_MODIFIABLE_TXN {1} \
     CONFIG.PCW_GP1_NUM_READ_THREADS {4} \
     CONFIG.PCW_GP1_NUM_WRITE_THREADS {4} \
+    CONFIG.PCW_GPIO_BASEADDR {0xE000A000} \
     CONFIG.PCW_GPIO_EMIO_GPIO_ENABLE {1} \
     CONFIG.PCW_GPIO_EMIO_GPIO_IO {64} \
     CONFIG.PCW_GPIO_EMIO_GPIO_WIDTH {64} \
+    CONFIG.PCW_GPIO_HIGHADDR {0xE000AFFF} \
     CONFIG.PCW_GPIO_MIO_GPIO_ENABLE {1} \
     CONFIG.PCW_GPIO_MIO_GPIO_IO {MIO} \
     CONFIG.PCW_GPIO_PERIPHERAL_ENABLE {0} \
@@ -504,6 +525,10 @@
     CONFIG.PCW_M_AXI_GP0_ID_WIDTH {12} \
     CONFIG.PCW_M_AXI_GP0_SUPPORT_NARROW_BURST {0} \
     CONFIG.PCW_M_AXI_GP0_THREAD_ID_WIDTH {12} \
+    CONFIG.PCW_M_AXI_GP1_ENABLE_STATIC_REMAP {0} \
+    CONFIG.PCW_M_AXI_GP1_ID_WIDTH {12} \
+    CONFIG.PCW_M_AXI_GP1_SUPPORT_NARROW_BURST {0} \
+    CONFIG.PCW_M_AXI_GP1_THREAD_ID_WIDTH {12} \
     CONFIG.PCW_NAND_CYCLES_T_AR {1} \
     CONFIG.PCW_NAND_CYCLES_T_CLR {1} \
     CONFIG.PCW_NAND_CYCLES_T_RC {11} \
@@ -585,6 +610,14 @@
     CONFIG.PCW_SPI1_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_SPI_PERIPHERAL_CLKSRC {IO PLL} \
     CONFIG.PCW_SPI_PERIPHERAL_VALID {0} \
+    CONFIG.PCW_S_AXI_ACP_ARUSER_VAL {31} \
+    CONFIG.PCW_S_AXI_ACP_AWUSER_VAL {31} \
+    CONFIG.PCW_S_AXI_ACP_ID_WIDTH {3} \
+    CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {64} \
+    CONFIG.PCW_S_AXI_HP0_ID_WIDTH {6} \
+    CONFIG.PCW_S_AXI_HP1_DATA_WIDTH {64} \
+    CONFIG.PCW_S_AXI_HP2_DATA_WIDTH {64} \
+    CONFIG.PCW_S_AXI_HP3_DATA_WIDTH {64} \
     CONFIG.PCW_TPIU_PERIPHERAL_CLKSRC {External} \
     CONFIG.PCW_TRACE_INTERNAL_WIDTH {2} \
     CONFIG.PCW_TRACE_PERIPHERAL_ENABLE {0} \
@@ -663,7 +696,7 @@
     CONFIG.PCW_UIPARAM_DDR_DQ_3_PACKAGE_LENGTH {148.0365} \
     CONFIG.PCW_UIPARAM_DDR_DQ_3_PROPOGATION_DELAY {160} \
     CONFIG.PCW_UIPARAM_DDR_ENABLE {1} \
-    CONFIG.PCW_UIPARAM_DDR_FREQ_MHZ {533.333333} \
+    CONFIG.PCW_UIPARAM_DDR_FREQ_MHZ {533} \
     CONFIG.PCW_UIPARAM_DDR_HIGH_TEMP {Normal (0-85)} \
     CONFIG.PCW_UIPARAM_DDR_MEMORY_TYPE {DDR 3} \
     CONFIG.PCW_UIPARAM_DDR_PARTNO {MT41J256M16 RE-125} \
@@ -676,12 +709,12 @@
     CONFIG.PCW_USB1_PERIPHERAL_ENABLE {0} \
     CONFIG.PCW_USB_RESET_ENABLE {1} \
     CONFIG.PCW_USB_RESET_POLARITY {Active Low} \
-    CONFIG.PCW_USE_AXI_FABRIC_IDLE {0} \
+    CONFIG.PCW_USE_AXI_FABRIC_IDLE {1} \
     CONFIG.PCW_USE_AXI_NONSECURE {0} \
     CONFIG.PCW_USE_CORESIGHT {0} \
     CONFIG.PCW_USE_CROSS_TRIGGER {0} \
     CONFIG.PCW_USE_CR_FABRIC {1} \
-    CONFIG.PCW_USE_DDR_BYPASS {0} \
+    CONFIG.PCW_USE_DDR_BYPASS {1} \
     CONFIG.PCW_USE_DEBUG {0} \
     CONFIG.PCW_USE_DEFAULT_ACP_USER_VAL {1} \
     CONFIG.PCW_USE_DMA0 {0} \
@@ -693,12 +726,12 @@
     CONFIG.PCW_USE_HIGH_OCM {0} \
     CONFIG.PCW_USE_M_AXI_GP0 {1} \
     CONFIG.PCW_USE_M_AXI_GP1 {1} \
-    CONFIG.PCW_USE_PROC_EVENT_BUS {0} \
+    CONFIG.PCW_USE_PROC_EVENT_BUS {1} \
     CONFIG.PCW_USE_PS_SLCR_REGISTERS {0} \
     CONFIG.PCW_USE_S_AXI_ACP {1} \
     CONFIG.PCW_USE_S_AXI_GP0 {0} \
     CONFIG.PCW_USE_S_AXI_GP1 {0} \
-    CONFIG.PCW_USE_S_AXI_HP0 {0} \
+    CONFIG.PCW_USE_S_AXI_HP0 {1} \
     CONFIG.PCW_USE_S_AXI_HP1 {0} \
     CONFIG.PCW_USE_S_AXI_HP2 {0} \
     CONFIG.PCW_USE_S_AXI_HP3 {0} \
@@ -710,61 +743,40 @@
   ] $processing_system7
 
 
-  # Create instance: GP0_protocol_convert, and set properties
-  set GP0_protocol_convert [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 GP0_protocol_convert ]
-  set_property -dict [list \
-    CONFIG.MI_PROTOCOL {AXI4LITE} \
-    CONFIG.SI_PROTOCOL {AXI3} \
-    CONFIG.TRANSLATION_MODE {2} \
-  ] $GP0_protocol_convert
-
-
-  # Create instance: proc_sys_reset, and set properties
-  set proc_sys_reset [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset ]
-
-  # Create instance: GP0_protocol_convert1, and set properties
-  set GP0_protocol_convert1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 GP0_protocol_convert1 ]
-  set_property -dict [list \
-    CONFIG.MI_PROTOCOL {AXI4LITE} \
-    CONFIG.SI_PROTOCOL {AXI3} \
-    CONFIG.TRANSLATION_MODE {2} \
-  ] $GP0_protocol_convert1
-
-
   # Create instance: smartconnect_0, and set properties
   set smartconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_0 ]
   set_property CONFIG.NUM_SI {4} $smartconnect_0
 
 
   # Create instance: cache_signal_0, and set properties
-#  set block_name cache_signal
-#  set block_cell_name cache_signal_0
-#  if { [catch {set cache_signal_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-#     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-#     return 1
-#   } elseif { $cache_signal_0 eq "" } {
-#     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-#     return 1
-#   }
+  set block_name cache_signal
+  set block_cell_name cache_signal_0
+  if { [catch {set cache_signal_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $cache_signal_0 eq "" } {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
   
   # Create interface connections
+  connect_bd_intf_net -intf_net Conn [get_bd_intf_pins cache_signal_0/M00_AXI] [get_bd_intf_pins processing_system7/S_AXI_ACP]
   connect_bd_intf_net -intf_net GP0_protocol_convert1_M_AXI [get_bd_intf_ports GP_DATA] [get_bd_intf_pins GP0_protocol_convert1/M_AXI]
   connect_bd_intf_net -intf_net GP0_protocol_convert_M_AXI [get_bd_intf_ports GP_CONTROL] [get_bd_intf_pins GP0_protocol_convert/M_AXI]
-  connect_bd_intf_net -intf_net HP0_1 [get_bd_intf_ports HP0] [get_bd_intf_pins smartconnect_0/S00_AXI]
   connect_bd_intf_net -intf_net S01_AXI_0_1 [get_bd_intf_ports S01_AXI_0] [get_bd_intf_pins smartconnect_0/S01_AXI]
   connect_bd_intf_net -intf_net S02_AXI_0_1 [get_bd_intf_ports S02_AXI_0] [get_bd_intf_pins smartconnect_0/S02_AXI]
   connect_bd_intf_net -intf_net S03_AXI_0_1 [get_bd_intf_ports S03_AXI_0] [get_bd_intf_pins smartconnect_0/S03_AXI]
-#  connect_bd_intf_net -intf_net cache_signal_0_M00_AXI [get_bd_intf_pins processing_system7/S_AXI_ACP] [get_bd_intf_pins cache_signal_0/M00_AXI]
+  connect_bd_intf_net -intf_net S_AXI_HP0_0_1 [get_bd_intf_ports HP0] [get_bd_intf_pins processing_system7/S_AXI_HP0]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins processing_system7/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7/FIXED_IO]
-  connect_bd_intf_net -intf_net processing_system7_0_M_AXI_GP0 [get_bd_intf_pins processing_system7/M_AXI_GP0] [get_bd_intf_pins GP0_protocol_convert/S_AXI]
+  connect_bd_intf_net -intf_net processing_system7_M_AXI_GP0 [get_bd_intf_pins processing_system7/M_AXI_GP0] [get_bd_intf_pins GP0_protocol_convert/S_AXI]
   connect_bd_intf_net -intf_net processing_system7_M_AXI_GP1 [get_bd_intf_pins GP0_protocol_convert1/S_AXI] [get_bd_intf_pins processing_system7/M_AXI_GP1]
-#  connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_pins smartconnect_0/M00_AXI] [get_bd_intf_pins cache_signal_0/S00_AXI]
+  connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_pins smartconnect_0/M00_AXI] [get_bd_intf_pins cache_signal_0/S00_AXI]
 
   # Create port connections
   connect_bd_net -net GPIO_I_0_1 [get_bd_ports GPIO_I_0] [get_bd_pins processing_system7/GPIO_I]
   connect_bd_net -net aresetn_0_1 [get_bd_ports app_aresetn] [get_bd_pins GP0_protocol_convert/aresetn] [get_bd_pins GP0_protocol_convert1/aresetn] [get_bd_pins smartconnect_0/aresetn]
-  connect_bd_net -net bar_clk_1 [get_bd_ports app_clk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK] [get_bd_pins GP0_protocol_convert/aclk] [get_bd_pins processing_system7/M_AXI_GP1_ACLK] [get_bd_pins GP0_protocol_convert1/aclk] [get_bd_pins processing_system7/S_AXI_ACP_ACLK] [get_bd_pins smartconnect_0/aclk]
+  connect_bd_net -net bar_clk_1 [get_bd_ports app_clk] [get_bd_pins GP0_protocol_convert/aclk] [get_bd_pins GP0_protocol_convert1/aclk] [get_bd_pins processing_system7/M_AXI_GP0_ACLK] [get_bd_pins processing_system7/M_AXI_GP1_ACLK] [get_bd_pins smartconnect_0/aclk] [get_bd_pins processing_system7/S_AXI_ACP_ACLK] [get_bd_pins processing_system7/S_AXI_HP0_ACLK]
   connect_bd_net -net proc_sys_reset_0_peripheral_reset [get_bd_pins proc_sys_reset/peripheral_reset] [get_bd_ports peripheral_reset]
   connect_bd_net -net proc_sys_reset_peripheral_aresetn [get_bd_pins proc_sys_reset/peripheral_aresetn] [get_bd_ports peripheral_aresetn]
   connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins processing_system7/FCLK_RESET0_N] [get_bd_pins proc_sys_reset/ext_reset_in]
@@ -775,12 +787,12 @@
   # Create address segments
   assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7/Data] [get_bd_addr_segs GP_CONTROL/Reg] -force
   assign_bd_address -offset 0x83C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7/Data] [get_bd_addr_segs GP_DATA/Reg] -force
-#  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_DDR_LOWOCM] -force
-#  assign_bd_address -offset 0xE0000000 -range 0x00400000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_IOP] -force
-#  assign_bd_address -offset 0x40000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_M_AXI_GP0] -force
-#  assign_bd_address -offset 0x80000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_M_AXI_GP1] -force
-#  assign_bd_address -offset 0xFC000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_QSPI_LINEAR] -force
-#  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces HP0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
-#  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S01_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
-#  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S02_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
-#  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S03_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_DDR_LOWOCM] -force
+  assign_bd_address -offset 0xE0000000 -range 0x00400000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_IOP] -force
+  assign_bd_address -offset 0x40000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_M_AXI_GP0] -force
+  assign_bd_address -offset 0x80000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_M_AXI_GP1] -force
+  assign_bd_address -offset 0xFC000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_QSPI_LINEAR] -force
+  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces HP0] [get_bd_addr_segs processing_system7/S_AXI_HP0/HP0_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S01_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
+  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S02_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
+  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S03_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force

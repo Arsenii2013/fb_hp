@@ -55,8 +55,8 @@ module PS_wrapper_(
 
 
     logic [HP0_ADDR_W-1:0]   HP0_araddr, HP0_awaddr;
-    assign HP0_araddr = HP0.araddr + HP0_offset;
-    assign HP0_awaddr = HP0.awaddr + HP0_offset;
+    assign HP0_araddr = HP0.araddr + HP0_offset + 'h100000;
+    assign HP0_awaddr = HP0.awaddr + HP0_offset + 'h100000;
 
 
     logic [32:0] SLAVES_ARADDR [14];

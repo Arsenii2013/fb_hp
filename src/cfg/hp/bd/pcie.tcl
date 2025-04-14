@@ -54,6 +54,35 @@
   set m_axi_aclk [ create_bd_port -dir I -type clk -freq_hz 10000000 m_axi_aclk ]
   set m_axi_aresetn [ create_bd_port -dir I -type rst m_axi_aresetn ]
 
+  # Create instance: proc_sys_reset_0, and set properties
+  set proc_sys_reset_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0 ]
+
+  # Create instance: axi_protocol_convert_0, and set properties
+  set axi_protocol_convert_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_0 ]
+  set_property CONFIG.DATA_WIDTH {64} $axi_protocol_convert_0
+
+
+  # Create instance: axi_clock_converter_0, and set properties
+  set axi_clock_converter_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_clock_converter:2.1 axi_clock_converter_0 ]
+  set_property -dict [list \
+    CONFIG.ACLK_ASYNC {1} \
+    CONFIG.DATA_WIDTH {64} \
+    CONFIG.PROTOCOL {AXI4LITE} \
+  ] $axi_clock_converter_0
+
+
+  # Create instance: axi_crossbar_0, and set properties
+  set axi_crossbar_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_crossbar:2.1 axi_crossbar_0 ]
+  set_property -dict [list \
+    CONFIG.DATA_WIDTH {64} \
+    CONFIG.M00_A00_BASE_ADDR {0x0000000000000000} \
+    CONFIG.M01_A00_BASE_ADDR {0x0000000000100000} \
+    CONFIG.M02_A00_BASE_ADDR {0x0000000000200000} \
+    CONFIG.NUM_MI {3} \
+    CONFIG.PROTOCOL {AXI4LITE} \
+  ] $axi_crossbar_0
+
+
   # Create instance: axi_pcie_0, and set properties
   set axi_pcie_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_pcie:2.9 axi_pcie_0 ]
   set_property -dict [list \
@@ -91,35 +120,6 @@
     CONFIG.enable_jtag_dbg {false} \
     CONFIG.shared_logic_in_core {false} \
   ] $axi_pcie_0
-
-
-  # Create instance: proc_sys_reset_0, and set properties
-  set proc_sys_reset_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 proc_sys_reset_0 ]
-
-  # Create instance: axi_protocol_convert_0, and set properties
-  set axi_protocol_convert_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_0 ]
-  set_property CONFIG.DATA_WIDTH {64} $axi_protocol_convert_0
-
-
-  # Create instance: axi_clock_converter_0, and set properties
-  set axi_clock_converter_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_clock_converter:2.1 axi_clock_converter_0 ]
-  set_property -dict [list \
-    CONFIG.ACLK_ASYNC {1} \
-    CONFIG.DATA_WIDTH {64} \
-    CONFIG.PROTOCOL {AXI4LITE} \
-  ] $axi_clock_converter_0
-
-
-  # Create instance: axi_crossbar_0, and set properties
-  set axi_crossbar_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_crossbar:2.1 axi_crossbar_0 ]
-  set_property -dict [list \
-    CONFIG.DATA_WIDTH {64} \
-    CONFIG.M00_A00_BASE_ADDR {0x0000000000000000} \
-    CONFIG.M01_A00_BASE_ADDR {0x0000000000100000} \
-    CONFIG.M02_A00_BASE_ADDR {0x0000000000200000} \
-    CONFIG.NUM_MI {3} \
-    CONFIG.PROTOCOL {AXI4LITE} \
-  ] $axi_crossbar_0
 
 
   # Create interface connections
