@@ -25,8 +25,11 @@ module evr
     output logic [7:0]      ev,
     axi4_lite_if.s          mmr,
     axi4_lite_if.s          tx,
-    axi4_lite_if.m          shared_data_out
+    axi4_lite_if.s          rx,
+    output logic            dc_coarse_done
 );
+localparam FIFO_DEPTH = 1024;
+
     logic ready;
     logic ready_sync;
     logic mmcm_locked;
@@ -49,6 +52,10 @@ module evr
     logic [         31:0] adjust_delay_comp;
 
     logic [         31:0] target_delay;
+    logic                 target_delay_valid;
+
+    assign dc_coarse_done = adjust_status != 0;
+    assign target_delay_valid = (parser_delay < target_delay) && (target_delay < (parser_delay + (FIFO_DEPTH << 16)));
 
 //MMR logic 
     typedef logic [MMR_DEV_ADDR_W-1:0] addr_t;
@@ -66,6 +73,7 @@ module evr
     } evr_regs;
 
     typedef struct packed {
+        logic       tgt_invalid;
         logic [1:0] dc_status;
         logic [2:0] link_delay_st;
         logic       link_up;
@@ -86,7 +94,8 @@ module evr
     assign sr.link_up       = ready_sync;
     assign sr.dc_status     = adjust_status;
     assign sr.link_delay_st = parser_status;
-    assign adjust_dc_ena    = cr.dc_ena;
+    assign sr.tgt_invalid   = ~target_delay_valid;
+    assign adjust_dc_ena    = cr.dc_ena && target_delay_valid;
     assign adjust_delay_req = target_delay - parser_delay;
 
     always_ff @(posedge app_clk) begin
@@ -157,10 +166,8 @@ module evr
                     CR_S      : cr <= cr | cr_t'(data);
                     CR_C      : cr <= cr & ~(cr_t'(data));
                     TGT_DELAY : begin
-                        if (data > parser_delay) begin
-                            target_delay <= data;
-                            adjust_delay_req_upd <= 1;
-                        end
+                        target_delay <= data;
+                        adjust_delay_req_upd <= 1;
                     end
                     default;
                 endcase
@@ -199,15 +206,14 @@ module evr
     logic [   1:0] tx_cnt = '0;
     always_ff @(posedge tx_clk) tx_cnt <= tx_cnt + 1;
 
-    tx_buffer tx_buffer_i(
+    simple_generator simple_generator_i(
         .tx_clk(tx_clk),
-        .tx_ready(aligned),
-        .tx_data(tx_data[15:8]),
-        .tx_charisk(tx_charisk[1]),
-        .tx_odd(tx_cnt[0]),
         .app_clk(app_clk),
-        .aresetn(~app_rst),
-        .axi(tx)
+        .aresetn(!app_rst),
+        .tx_data(tx_data[15:8]),
+        .tx_is_k(tx_charisk[1]),
+        .clk_odd(~tx_cnt[0]),
+        .mmr(tx)
     );
 
     always_comb begin
@@ -259,16 +265,14 @@ module evr
         rx_data_fifo_in       = local_beacon_ena && local_beacon_cnt == '0 ? 8'h7E : (beacon_pulse_rx ? '0 : rx_data[7:0]); // ignore external beacons becouse of fifo lenght
     end
 
-    assign ev                 = !fifo_empty && !rx_charisk_fifo_out ? rx_data_fifo_out : '0;
+    assign ev                 = !fifo_empty && !rx_charisk_fifo_out && rx_data_fifo_out!='h7E ? rx_data_fifo_out : '0;
 
-
-//Shared data buffer
-    stream_decoder_m stream_decoder_i(
-        .clk(app_clk),
-        .rst(app_rst),
-        .rx_data_in(rx_data_shared_out),
-        .rx_isk_in(rx_charisk_shared_out),
-        .shared_data_out_i({shared_data_out})
+    simple_parser simple_parser_i(
+        .app_clk(app_clk),
+        .aresetn(!app_rst),
+        .rx_data(rx_data_shared_out),
+        .rx_is_k(rx_charisk_shared_out),
+        .mmr(rx)
     );
 
     
@@ -397,8 +401,8 @@ module evr
 
 //FIFO 
     fifo_wrapper #(
-        .WIDTH( $bits(rx_data) ),
-        .DEPTH( 1024 )
+        .WIDTH( $bits({rx_charisk, rx_data}) ),
+        .DEPTH( FIFO_DEPTH )
     ) fifo_i (
         .rst(app_rst),
         .wr_clk(rx_clk),

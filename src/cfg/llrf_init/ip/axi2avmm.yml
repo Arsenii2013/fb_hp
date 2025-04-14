@@ -1,0 +1,7 @@
+
+type : axi_amm_bridge
+
+config:
+  C_BURST_SUPPORT       : 1
+  C_HAS_RESPONSE        : 0
+  C_NUM_ADDRESS_RANGES  : 0

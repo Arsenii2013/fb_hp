@@ -1,0 +1,5 @@
+import : main
+
+sources:
+    - src/syn/llrf_init.sv
+    - src/syn/mem_wrapper.sv

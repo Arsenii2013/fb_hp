@@ -1,0 +1,5 @@
+import : main
+
+sources:
+    - src/syn/llrf_init.sv
+    - src/lib/axi/axi4_lite_if.svh

@@ -12,14 +12,22 @@ begin
 //--------------------------------------------------------------------------
 // Event : Testing BARs
 //--------------------------------------------------------------------------
+
+    pci_e_write(0, 32'h2c10, 2);  
+    #1000;
+    pci_e_write(0, 32'h2c14, 0); 
+    #1000;
+    pci_e_write(0, 32'h2c18, 32'hfcd6e90);
+    #1000;
+
     pci_e_write(0, 'h0, 'h0000DEAD); // MMR_SYS
     pci_e_read (0, 'h0, recv_data);
 
-    pci_e_write(0, 'h810, 'h00000100); // MMR_MEM offset 100 byte
-    pci_e_read (0, 'h810, recv_data);
+    pci_e_write(0, 'h1410, 'h00000100); // MMR_MEM offset 100 byte
+    pci_e_read (0, 'h1410, recv_data);
     //pci_e_write(2, 'h0, 'h0000BEEF);    // HP0
 
-    pci_e_write(0, 'h810, 'h00000000); // MMR_MEM offset 0 byte
+    pci_e_write(0, 'h1410, 'h00000000); // MMR_MEM offset 0 byte
     //pci_e_read (2, 'h100, recv_data);   // HP0
 
     // bar 1 test
@@ -32,9 +40,9 @@ begin
     //pci_e_read (1, 'h7FC, recv_data); 
 
     // EVR
-    pci_e_write(0, 'hC04, 'h01); // DC enable
+    //pci_e_write(0, 'hC04, 'h01); // DC enable
     #10000;
-    pci_e_read (0, 'hC14, recv_data); 
+    //pci_e_read (0, 'hC14, recv_data); 
     $display ("EVR link delay %x", recv_data);
 
     if(topTB.DUT.evr_i.parser_delay != '0)
@@ -42,51 +50,77 @@ begin
     else begin
         $display ("EVR hasn't gotten a delay yet!");
     end
+    
+    // EVG 
+    pci_e_write(0, 32'h2810, 32'h15);  // write ev0
+    pci_e_write(0, 32'h2814, 10); // write delay0
+    pci_e_write(0, 32'h2804, 32'h2);   // write 
+    #1000;
+    pci_e_write(0, 32'h2810, 32'h16);  // write ev1
+    pci_e_write(0, 32'h2814, 20); // write delay1
+    pci_e_write(0, 32'h2804, 32'h2);   // write 
+    #1000;
+    pci_e_write(0, 32'h2810, 32'h17);  // write ev2
+    pci_e_write(0, 32'h2814, 20); // write delay2
+    pci_e_write(0, 32'h2804, 32'h2);   // write 
+
+    pci_e_write(0, 32'h2804, 32'h8);   // start
+
+    // EVM
+    pci_e_write(0, 32'h1010, 32'h2);   // ev_soft
+
 
     // SCC
 
-    pci_e_read(0, 32'h400, recv_data); // check cdr_locked
+    //pci_e_read(0, 32'h400, recv_data); // check cdr_locked
     pci_e_write(0, 32'h410, 32'h15); // write sync_ev
-    pci_e_write(0, 32'h414, 32'd10); // write sync_prd
-    pci_e_write(0, 32'h418, 32'h15); // write align_ev
-    pci_e_write(0, 32'h41c, 32'h15); // write test0_ev
+    pci_e_write(0, 32'h414, 32'h7d0); // write sync_prd
+    pci_e_write(0, 32'h404, 32'h7);  // write enable
+
+    //#10000;
+    //pci_e_read(0, 32'h3000, recv_data); // get sync prd
+    //pci_e_read(0, 32'h3004, recv_data); // get align
 
 
+    // QSPI read write test
+    pci_e_read (0, 'h1800, recv_data);
+    pci_e_write(0, 'h1800, 'h0000DEAD);
+    pci_e_write(0, 'h1804, 'h0000BEEF);
+    pci_e_read (0, 'h1800, recv_data);
+    pci_e_read (0, 'h1804, recv_data);
+
+/*
     // TX start        
-    pci_e_read(0, 32'h1000, recv_data); 
+    pci_e_read(0, 32'h2000, recv_data); 
     //start
-    pci_e_write(0, 32'h1014, 32'h15C); 
-    pci_e_write(0, 32'h1014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h15C); 
+    pci_e_write(0, 32'h2014, 32'h000); 
     //addr
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h002);
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h002);
     //cnt 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h000); 
-    pci_e_write(0, 32'h1014, 32'h004);
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h000); 
+    pci_e_write(0, 32'h2014, 32'h004);
     //data
-    pci_e_write(0, 32'h1014, 32'h0DE); 
-    pci_e_write(0, 32'h1014, 32'h0AD); 
-    pci_e_write(0, 32'h1014, 32'h0BE); 
-    pci_e_write(0, 32'h1014, 32'h0EF); 
+    pci_e_write(0, 32'h2014, 32'h0DE); 
+    pci_e_write(0, 32'h2014, 32'h0AD); 
+    pci_e_write(0, 32'h2014, 32'h0BE); 
+    pci_e_write(0, 32'h2014, 32'h0EF); 
     //stop
-    pci_e_write(0, 32'h1014, 32'h13C); 
-    pci_e_write(0, 32'h1014, 32'h0FC); 
-    pci_e_write(0, 32'h1014, 32'h0C7); 
+    pci_e_write(0, 32'h2014, 32'h13C); 
+    pci_e_write(0, 32'h2014, 32'h0FC); 
+    pci_e_write(0, 32'h2014, 32'h0C7); 
 
-    pci_e_read(0, 32'h1000, recv_data); 
-    pci_e_write(0, 32'h1004, 32'b1); 
-    pci_e_read(0, 32'h1000, recv_data); 
+    pci_e_read(0, 32'h2000, recv_data); 
+    pci_e_write(0, 32'h2004, 32'b1); 
+    pci_e_read(0, 32'h2000, recv_data); 
     #300;
-    pci_e_read(0, 32'h1000, recv_data); 
-    pci_e_write(0, 32'h1004, 32'b1); 
-
-    // Shared data
-    pci_e_read (0, 'h1414, recv_data); 
-    $display ("Shared data delay %x", recv_data);
+    pci_e_read(0, 32'h2000, recv_data); 
+    pci_e_write(0, 32'h2004, 32'b1); 
 
 
     // QSPI read write test
@@ -94,7 +128,7 @@ begin
     pci_e_write(0, 'h1804, 'h0000BEEF);
     pci_e_read (0, 'h1800, recv_data);
     pci_e_read (0, 'h1804, recv_data);
-
+*/
     $display("[%t] : Finished transmission of PCI-Express TLPs", $realtime);
     if (!test_failed_flag) begin 
         $display ("Test Completed Successfully");

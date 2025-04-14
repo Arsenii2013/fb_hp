@@ -65,10 +65,14 @@ module top(
     `endif //SYNTHESIS 
 
     //-------------QSPI--------------\\
-    output logic              SCK,
-    output logic              CSn,
-    input  logic [SPI_W-1:0]  MISO,
-    output logic [SPI_W-1:0]  MOSI,
+    output logic              SCK_p,
+    output logic              CSn_p,
+    input  logic [SPI_W-1:0]  MISO_p,
+    output logic [SPI_W-1:0]  MOSI_p,
+    output logic              SCK_n,
+    output logic              CSn_n,
+    input  logic [SPI_W-1:0]  MISO_n,
+    output logic [SPI_W-1:0]  MOSI_n,
 
     //-------------SFP---------------\\
     `ifdef MGT_FULL_STACK
@@ -84,11 +88,82 @@ module top(
     `endif // MGT_FULL_STACK
 
     //-------------GPIO--------------\\
-    output logic [3:0] led
+    output logic [3:0] led,
+    input  logic [7:0] RIO_out,
+    input  logic [7:0] RIO_in,
 
-    //(* IOB = "TRUE" *) output logic [3:0] test_out
+    (* IOB = "TRUE" *) output logic [3:0] test_out,
+
+    output logic DDS_CLK_n,
+    output logic DDS_CLK_p,
+    output logic DDS_SYNC_n,
+    output logic DDS_SYNC_p,
+
+    input  logic afe_prsnt_n,
+    output logic afe_pwr_ena,
+    input  logic afe_pwr_gd,
+    inout  logic nConfig,
+    input  logic nStatus,
+    input  logic CONF_DONE,
+    input  logic INIT_DONE,
+    inout  logic DCLK,
+    inout  logic DATA,
+    inout  logic MSEL0,
+    inout  logic MSEL1
 
     );
+
+    logic DDS_SYNC;
+    logic DDS_CLK;
+
+    OBUFDS DDS_SYNC_buf (
+        .O(DDS_SYNC_p),     // Diff_p output (connect directly to top-level port)
+        .OB(DDS_SYNC_n),   // Diff_n output (connect directly to top-level port)
+        .I(DDS_SYNC)      // Buffer input
+    );
+    OBUFDS DDS_CLK_buf (
+        .O(DDS_CLK_p),     // Diff_p output (connect directly to top-level port)
+        .OB(DDS_CLK_n),   // Diff_n output (connect directly to top-level port)
+        .I(DDS_CLK)      // Buffer input
+    );
+
+    logic              SCK;
+    logic              CSn;
+    logic [SPI_W-1:0]  MISO;
+    logic [SPI_W-1:0]  MOSI;
+
+    OBUFDS SCK_buf (
+        .O(SCK_p),     // Diff_p output (connect directly to top-level port)
+        .OB(SCK_n),   // Diff_n output (connect directly to top-level port)
+        .I(SCK)      // Buffer input
+    );
+    OBUFDS CSn_buf (
+        .O(CSn_p),     // Diff_p output (connect directly to top-level port)
+        .OB(CSn_n),   // Diff_n output (connect directly to top-level port)
+        .I(CSn)      // Buffer input
+    );
+
+    genvar MOSI_i;
+    generate 
+    for (MOSI_i = 0; MOSI_i < SPI_W; MOSI_i++) begin
+        OBUFDS MOSI_buf (
+            .O(MOSI_p[MOSI_i]),     // Diff_p output (connect directly to top-level port)
+            .OB(MOSI_n[MOSI_i]),   // Diff_n output (connect directly to top-level port)
+            .I(MOSI[MOSI_i])      // Buffer input
+        );
+    end
+    endgenerate
+    genvar MISO_i;
+    generate 
+    for (MISO_i = 0; MISO_i < SPI_W; MISO_i++) begin
+        IBUFDS MISO_buf (
+            .I(MISO_p[MISO_i]),     // Diff_p output (connect directly to top-level port)
+            .IB(MISO_n[MISO_i]),   // Diff_n output (connect directly to top-level port)
+            .O(MISO[MISO_i])      // Buffer input
+        );
+    end
+    endgenerate
+
     assign sfp_tx_dis = 'b0;
 
     logic PS_clk;
@@ -98,6 +173,9 @@ module top(
     logic app_reset;
     logic app_aresetn;
     logic PS_sync;
+    logic PS_busy;
+    logic [7:0] ev;
+    logic sync;
 
     xpm_cdc_async_rst #(
         .INIT_SYNC_FF(0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
@@ -205,36 +283,64 @@ module top(
 
 
     //-----------Interfaces----------\\
-    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP0();
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP_CONTROL();
+    axi4_lite_if #(.DW(GP0_DATA_W), .AW(GP0_ADDR_W)) GP_DATA();
     axi4_lite_if #(.DW(HP0_DATA_W), .AW(HP0_ADDR_W)) HP0();
 
-    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) bar0();
+    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(FB_DW)) bar0();
     axi4_lite_if #(.DW(BAR1_DATA_W), .AW(BAR1_ADDR_W)) bar1();
     axi4_lite_if #(.DW(BAR2_DATA_W), .AW(BAR2_ADDR_W)) bar2();    
     
     //localparam MMR_DEV_COUNT2 = 2 ** ($clog2(MMR_DEV_COUNT) + 1);
     localparam MMR_DEV_COUNT2 = 64;
-    axi4_lite_if #(.AW(MMR_DEV_ADDR_W), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
+    axi4_lite_if #(.AW(32), .DW(MMR_DATA_W)) mmr[MMR_DEV_COUNT2]();
      
     //-------Processing System-------\\
-    logic spi_aclk;
-    logic spi_oclk;
-    logic spi_aresetn;
+    logic external_trig_PS;
     logic [HP0_ADDR_W-1:0] HP0_offset;
     logic [EMIO_SIZE-1:0]  emio_o;
     logic [EMIO_SIZE-1:0]  emio_i;
     logic [EMIO_SIZE-1:0]  emio_t;
 
-    assign emio_i[0] = led[0];
-    assign emio_i[1] = emio_o[1];
-    
-    counter counter_i(
-        .clk(app_clk),
-        .start(led[0]),
-        .stop(emio_o[1]),
-        .cnt(emio_i[9:2])
+    assign emio_i[0] = PS_sync;
+    assign PS_busy   = emio_o[1];
+    assign emio_i[2] = external_trig_PS;
+
+    assign external_trig = RIO_in[0];
+    //assign led[2]    = external_trig;
+    //assign led[3]    = external_trig_PS;
+
+    afe_iobuf afe_iobuf_i(
+        .afe_prsnt(!afe_prsnt_n),
+        .afe_pwr_ena(afe_pwr_ena),
+        .afe_pwr_gd(afe_pwr_gd),
+        .nConfig(nConfig),
+        .nStatus(nStatus),
+        .CONF_DONE(CONF_DONE),
+        .INIT_DONE(INIT_DONE),
+        .DCLK(DCLK),
+        .DATA(DATA),
+        .MSEL0(MSEL0),
+        .MSEL1(MSEL1),
+
+        .emio_o(emio_o[13:3]),
+        .emio_t(emio_t[13:3]),
+        .emio_i(emio_i[13:3])
     );
 
+    logic [8:0] ev_and_sync;
+    assign ev_and_sync = {sync, ev};
+
+    event_fifo event_fifo_i(
+        .aclk(app_clk),
+        .aresetn(app_aresetn),
+        .wr_en(ev_and_sync != 0),
+        .data_in(ev_and_sync),
+        .axi(mmr[MMR_PSEVENT])
+    );
+    axi4_lite_if #(.AW(GP0_ADDR_W), .DW(MMR_DATA_W)) mux_i();
+
+    axi4_lite_if #(.AW(GP0_ADDR_W), .DW(MMR_DATA_W)) unused_SLAVES[15]();
     PS_wrapper_ 
     PS_wrapper_i (
         `ifdef SYNTHESIS
@@ -261,9 +367,16 @@ module top(
         .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),
         `endif // SYNTHESIS
 
-        .GP0(GP0),
+        .GP_CONTROL(GP_CONTROL),
+        .GP_DATA(GP_DATA),
         .HP0(bar2),
         .HP0_offset(HP0_offset),
+        //.SLAVES(mmr[MMR_DEV_COUNT+1:MMR_DEV_COUNT + 15]),
+        .SLAVES({mmr[MMR_LOG], mmr[MMR_PSMEM], unused_SLAVES[0], 
+                 unused_SLAVES[1], unused_SLAVES[2], unused_SLAVES[3],
+                 unused_SLAVES[4], unused_SLAVES[5], unused_SLAVES[6], 
+                 unused_SLAVES[7], unused_SLAVES[8], unused_SLAVES[9], 
+                 unused_SLAVES[10], unused_SLAVES[11], unused_SLAVES[12]}),
 
         .EMIO_I(emio_i),
         .EMIO_O(emio_o),
@@ -333,6 +446,15 @@ module top(
     );
 
     //-------------MMR--------------\\
+    axi_2master 
+    axi_interconnect_i(
+        .aresetn(app_aresetn),
+        .aclk(app_clk),
+        .m1(GP_CONTROL),
+        .m2(bar0),
+        .s(mux_i)
+    );
+
     axi_crossbar
     #(
         .N(MMR_DEV_COUNT2),
@@ -343,7 +465,7 @@ module top(
     (
         .aresetn(app_aresetn),
         .aclk(app_clk),
-        .m(bar0),
+        .m(mux_i),
         .s(mmr)
     );
 
@@ -363,6 +485,24 @@ module top(
     );
 
     //-------------QSPI--------------\\
+    logic spi_aclk;
+    logic spi_oclk;
+    logic spi_aresetn;
+
+    xpm_cdc_async_rst #(
+        .INIT_SYNC_FF(0),    // DECIMAL; 0=disable simulation init values, 1=enable simulation init values
+        .RST_ACTIVE_HIGH(0)  // DECIMAL; 0=active low reset, 1=active high reset
+    )
+    xpm_cdc_spi_aresetn_inst (
+        .dest_arst(spi_aresetn), // 1-bit output: src_arst asynchronous reset signal synchronized to destination
+                                // clock domain. This output is registered. NOTE: Signal asserts asynchronously
+                                // but deasserts synchronously to dest_clk. Width of the reset signal is at least
+                                // (DEST_SYNC_FF*dest_clk) period.
+
+        .dest_clk(spi_aclk),   // 1-bit input: Destination clock.
+        .src_arst(PS_aresetn)    // 1-bit input: Source asynchronous reset signal.
+    );
+
     `ifndef SYNTHESIS
     sys_clk_gen
     #(
@@ -371,20 +511,34 @@ module top(
     ) CLK_GEN (
         .sys_clk (spi_aclk)
     );
-    assign spi_oclk = ~spi_aclk;
+    sys_clk_gen
+    #(
+        .halfcycle (CLK_PRD / 2 * 1000), // in ps
+        .offset    (2000)  // 
+    ) CLK_GEN_1 (
+        .sys_clk (spi_oclk)
+    );
     `else // SYNTHESIS
-    
-    assign spi_aresetn = app_aresetn;
     qspi_pll (
         .clk_out1(spi_aclk),
         .clk_out2(spi_oclk),
-        .resetn(spi_aresetn),
+        .resetn(app_aresetn),
         .locked(),
         .clk_in1(app_clk)
     );
     `endif // SYNTHESIS
 
-    axi4_lite_if #(.DW(BAR0_DATA_W), .AW(BAR0_ADDR_W)) plug();
+    axi4_lite_if #(.DW(32), .AW(BAR0_ADDR_W)) plug();
+    assign plug.awaddr  = '0;
+    assign plug.arprot  = '0;
+    assign plug.awvalid = '0;
+    assign plug.wdata   = '0;
+    assign plug.wstrb   = '0;
+    assign plug.wvalid  = '0;
+    assign plug.bready  = '0;
+    assign plug.araddr  = '0;
+    assign plug.arvalid = '0;
+    assign plug.rready  = '0;
 
     qspi_wrapper 
     #(
@@ -392,7 +546,7 @@ module top(
     ) qspi_wrapper_i (
         .aclk(app_clk),
         .aresetn(app_aresetn),
-        .ps_bus(GP0),
+        .ps_bus(plug),
         .pcie_bus(mmr[MMR_QSPI]),
         //.pcie_bus(plug),
 
@@ -405,6 +559,13 @@ module top(
         .MISO(MISO),
         .MOSI(MOSI)
     );
+
+    /*ila_0 ila_tx(
+        .clk(spi_oclk),
+        .probe0(CSn),
+        .probe1(MISO),
+        .probe2(MOSI)
+    );*/
 
     //-------------SFP---------------\\
     logic        sfp_reset;
@@ -479,7 +640,8 @@ module top(
     `endif // MGT_FULL_STACK
 
     //--------------EVR--------------\\
-    logic [7:0] ev;
+    logic       dc_coarse_done;
+    logic [7:0] ev_mrf;
     axi4_lite_if #(.AW(32), .DW(32)) shared_data();
     evr evr_i
     (
@@ -501,81 +663,78 @@ module top(
         //------Application signals-------
         .app_clk(app_clk),
         .app_rst(app_reset),
-        .ev(ev),
+        .ev(ev_mrf),
         .mmr(mmr[MMR_EVR]),
         .tx(mmr[MMR_TX]),
-        .shared_data_out(shared_data)
+        .rx(mmr[MMR_RX]),
+        .dc_coarse_done(dc_coarse_done)
     );
 
-    //ddsc_if #( .DW        ( 32              )) ddsc_out_i();
-    axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) ddsc_shared();
-
-    /*axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) conv_tbl_i();
-    axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) desc_tbl_i();
-    axi4_lite_if #(.AW(TBL_MEM_ADDR_W), .DW(TBL_DATA_W)) ddsc_shared();
-    ddsc_if #( .DW        ( 32              )) ddsc_out_i();
-
-
-    ddsc_m #(
-        .NUMBER         (0              ),
-        .AW             (TBL_MEM_ADDR_W ),
-        .DW             (TBL_DATA_W     ),
-        .EVENT_BUS_W    (EV_W           ),
-        .DESC_ITEM_DW   (DESC_ITEM_DW   ),
-        .DESC_ITEM_COUNT(DESC_ITEM_COUNT),
-        .B_FIELD_W      (B_FIELD_W      ),
-        .CLK_PRD        (CLK_PRD        )
-    ) ddsc_avmm (
-        .clk        (app_clk         ),
-        .rst        (app_reset       ),
-        .mmr_i      (mmr[MMR_DDSC]   ),
-        .conv_tbl_i (conv_tbl_i      ),
-        .desc_tbl_i (desc_tbl_i      ),
-        .sync       (sync            ),
-        .sync_prd   (sync_prd        ),
-        .ev         (ev              ),
-        .b_field    (b_field         ),
-        .b_ready    (b_ready         ),
-        .out        (ddsc_out_i      ),
-        .shared_in_i(shared_data     )
-    );*/
-
-    /*ila_0 ila_tx(
-        .clk(sfp_tx_clk),
-        .probe0(sfp_tx_data),
-        .probe1(sfp_tx_is_k)
-    );*/
-
-    shared_data_mem shared_data_mem_i
-    (
-        .clk(app_clk),
+    //---------------EV_MUX----------------
+    logic [7:0] ev_soft;
+    event_generator event_generator_i(
+        .app_clk(app_clk),
         .aresetn(app_aresetn),
-        .mmr(mmr[MMR_SHARED]),
-        .shared_data_in(ddsc_shared)
+        .mmr(mmr[MMR_EVG]),
+        .ev(ev_soft)
     );
+
+    ev_mux ev_mux_i(
+        .app_clk(app_clk),
+        .aresetn(app_aresetn),
+        .mmr(mmr[MMR_EVMUX]),
+        .ev(ev),
+        .ev_mrf(ev_mrf),
+        .ev_trigger(0),
+        .ev_soft(ev_soft)
+    );
+    
+    axi4_lite_if #(.AW(32), .DW(32)) afe_ctrl_i();
+    logic dds_clk;
+    logic afe_ready;
 
     scc_m ssc_i(
         .clk(app_clk),
-        .aresetn(),
-        .cdr_locked(sfp_aligned),
+        .rst(!app_aresetn),
+        //.evr_link_ok(sfp_aligned),
+        //.dc_coarse_done(dc_coarse_done),
+        .evr_link_ok(1),
+        .dc_coarse_done(1),
+
+        .afe_init_done(afe_ready),
 
         .mmr(mmr[MMR_SCC]),
+        .afe_ctrl_i(afe_ctrl_i),
 
         .ev(ev),
         .sync(sync),
         .align(),
-        .log_start(),
+        .dds_clk_out(DDS_CLK),
 
-        .dds_clk_ena(),
-
-        .sync_x2(), 
+        .sync_x2(DDS_SYNC), 
         .align_x2(),
 
         .test_out(test_out),
 
         .sync_prd(sync_prd),
-        .sync_PS(PS_sync)
+        .sync_PS(PS_sync),
+        .busy_PS(PS_busy),
+        .external_trig_PS(external_trig_PS),
+        .external_trig(external_trig)
     );
+
+    /*afe_model afe_model_i
+    (
+        .clk(app_clk),
+        .clk_d2(dds_clk),
+        .aresetn(app_aresetn),
+
+        .afe_ready(afe_ready),
+        .sync_x2(sync_x2),
+        .align_x2(align_x2),
+        .afe_ctrl_i(afe_ctrl_i),
+        .test_mmr(mmr[MMR_DEV_COUNT + 1])
+    );*/
 
     //-------------GPIO--------------\\
     blink #(
@@ -687,27 +846,53 @@ module frame_gen (
 
 endmodule
 
-module counter(
-    input  logic       clk,
+module test_fifo(
+    input  logic        clk,
+    input  logic        rst,
+    input  logic        clear,
 
-    input  logic       start,
-    input  logic       stop,
-    output logic [7:0] cnt
+    axi4_lite_if.s      axi,
+
+    input  logic [30:0] presc,
+
+    output logic [7:0]  event_out
 );
-    logic run = 0;
-    always_ff @( posedge clk ) begin 
-        if(start) 
+    logic wr_en;
+    logic [7:0] data_in;
+    logic [32:0] cnt;
+    logic full;
+
+    assign event_out    = data_in;
+
+    assign wr_en = cnt == presc;
+    always_ff @(posedge clk) begin
+        if(rst || clear)
         begin
-            cnt <= 0;
-            run <= 1;
+            data_in <= 0;
+            cnt     <= 0;
         end
-        if(stop) 
+        else 
         begin
-            run <= 0;
-        end
-        if(run)
-        begin
-            cnt <= cnt+1;
+            if(!full)
+                cnt <= cnt + 1;
+            if(cnt >= presc)
+                cnt <= 0;
+
+            if(cnt == presc)
+            begin
+                data_in <= data_in+1;
+            end
         end
     end
+
+
+    event_fifo event_fifo_i(
+        .aclk(clk),
+        .aresetn(!rst && !clear),
+        .wr_en(wr_en),
+        .data_in(data_in),
+        .axi(axi),
+        .full(full)
+    );
+
 endmodule
