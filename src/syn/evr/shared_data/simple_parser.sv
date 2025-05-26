@@ -219,7 +219,7 @@ localparam logic [7:0] MRF_TRANSFER_STOP  = 8'h3C;
 
     always_ff @(posedge app_clk) begin
         if(!aresetn) begin
-            mrf_data <= '0;
+            mrf_data <= 'h1b4e81b;
         end else if(parser_state == SUCCESS) begin
             mrf_data <= mrf_data_recv;
         end
