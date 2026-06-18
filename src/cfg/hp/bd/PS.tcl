@@ -747,20 +747,8 @@
   set smartconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_0 ]
   set_property CONFIG.NUM_SI {4} $smartconnect_0
 
-
-  # Create instance: cache_signal_0, and set properties
-  set block_name cache_signal
-  set block_cell_name cache_signal_0
-  if { [catch {set cache_signal_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $cache_signal_0 eq "" } {
-     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
   
   # Create interface connections
-  connect_bd_intf_net -intf_net Conn [get_bd_intf_pins cache_signal_0/M00_AXI] [get_bd_intf_pins processing_system7/S_AXI_ACP]
   connect_bd_intf_net -intf_net GP0_protocol_convert1_M_AXI [get_bd_intf_ports GP_DATA] [get_bd_intf_pins GP0_protocol_convert1/M_AXI]
   connect_bd_intf_net -intf_net GP0_protocol_convert_M_AXI [get_bd_intf_ports GP_CONTROL] [get_bd_intf_pins GP0_protocol_convert/M_AXI]
   connect_bd_intf_net -intf_net S01_AXI_0_1 [get_bd_intf_ports S01_AXI_0] [get_bd_intf_pins smartconnect_0/S01_AXI]
@@ -771,7 +759,7 @@
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins processing_system7/FIXED_IO]
   connect_bd_intf_net -intf_net processing_system7_M_AXI_GP0 [get_bd_intf_pins processing_system7/M_AXI_GP0] [get_bd_intf_pins GP0_protocol_convert/S_AXI]
   connect_bd_intf_net -intf_net processing_system7_M_AXI_GP1 [get_bd_intf_pins GP0_protocol_convert1/S_AXI] [get_bd_intf_pins processing_system7/M_AXI_GP1]
-  connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_pins smartconnect_0/M00_AXI] [get_bd_intf_pins cache_signal_0/S00_AXI]
+
 
   # Create port connections
   connect_bd_net -net GPIO_I_0_1 [get_bd_ports GPIO_I_0] [get_bd_pins processing_system7/GPIO_I]
@@ -787,12 +775,4 @@
   # Create address segments
   assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7/Data] [get_bd_addr_segs GP_CONTROL/Reg] -force
   assign_bd_address -offset 0x83C00000 -range 0x00010000 -target_address_space [get_bd_addr_spaces processing_system7/Data] [get_bd_addr_segs GP_DATA/Reg] -force
-  assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_DDR_LOWOCM] -force
-  assign_bd_address -offset 0xE0000000 -range 0x00400000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_IOP] -force
-  assign_bd_address -offset 0x40000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_M_AXI_GP0] -force
-  assign_bd_address -offset 0x80000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_M_AXI_GP1] -force
-  assign_bd_address -offset 0xFC000000 -range 0x01000000 -target_address_space [get_bd_addr_spaces cache_signal_0/M00_AXI] [get_bd_addr_segs processing_system7/S_AXI_ACP/ACP_QSPI_LINEAR] -force
   assign_bd_address -offset 0x00000000 -range 0x40000000 -target_address_space [get_bd_addr_spaces HP0] [get_bd_addr_segs processing_system7/S_AXI_HP0/HP0_DDR_LOWOCM] -force
-  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S01_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
-  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S02_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
-  assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S03_AXI_0] [get_bd_addr_segs cache_signal_0/S00_AXI/reg0] -force
